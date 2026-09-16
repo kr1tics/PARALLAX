@@ -1,0 +1,25 @@
+{
+  "teamName": "Four Sure",
+  "teamMembers": [
+    {
+      "name": "Cache Luk",
+      "github": "kr1tics",
+      "email": "cachechihiml@student.unimelb.edu.au"
+    },
+    {
+      "name": "Sabrina Sun",
+      "github": "Soyuuuuu",
+      "email": "sunjs4@student.unimelb.edu.au"
+    },
+    {
+      "name": "Amy Mauseth",
+      "github": "Siri-chan",
+      "email": "rmauseth@student.unimelb.edu.au"
+    },
+    {
+      "name": "William Ames",
+      "github": "SoapOnToast",
+      "email": "wames@student.unimelb.edu.au"
+    }
+  ]
+}
