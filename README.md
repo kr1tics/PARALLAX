@@ -178,7 +178,7 @@ The first-person perspective keeps interaction direct and makes changes between 
 | `W` `A` `S` `D` | Move |
 | Mouse | Look |
 | `E` | Interact |
-| `F` | Switch between past and future |
+| `T` | Switch between past and future |
 | `Space` | Jump / push away in low gravity |
 | `R` | Reset current puzzle |
 | `Esc` | Pause / settings |
