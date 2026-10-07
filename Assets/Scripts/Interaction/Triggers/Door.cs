@@ -1,16 +1,19 @@
 using UnityEngine;
 
-public class Door : MonoBehaviour
+public class Door : Trigger
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    [SerializeField] private Collider col;
+    [SerializeField] private Renderer ren;
+
+    public override void onStartTrigger()
     {
-        
+        col.enabled = false;
+        ren.enabled = false;
     }
 
-    // Update is called once per frame
-    void Update()
+    public override void onEndTrigger()
     {
-        
+        col.enabled = true;
+        ren.enabled = true;
     }
 }

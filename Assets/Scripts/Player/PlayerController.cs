@@ -26,6 +26,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float jetpackDampening = 0.15f;
     private float jumpForce = 0f;
     private Vector3 lastIntent = new();
+
+    [SerializeField] private Interact interactionController;
     
     void Start()
     {
@@ -68,6 +70,11 @@ public class PlayerController : MonoBehaviour
         if (Keyboard.current.fKey.wasPressedThisFrame)
         {
             TryDistortObject();
+        }
+
+        if (Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            interactionController.TryInteract();
         }
     }
 
@@ -119,7 +126,7 @@ public class PlayerController : MonoBehaviour
         // TODO: Make crouching happen if we 
         if (Keyboard.current.ctrlKey.isPressed)
         {
-            movementIntent += Vector3.up;
+            movementIntent += Vector3.down;
         }
     }
     

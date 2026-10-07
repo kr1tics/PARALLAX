@@ -21,10 +21,9 @@ public class GlobalState
     
     #region Physics
     
-    public float gravity = 9.81f;
+    public float gravity = 0.0f;
     
     #endregion
-
 
     #region TimeTravel
 
