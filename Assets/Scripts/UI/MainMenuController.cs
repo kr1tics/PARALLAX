@@ -27,6 +27,7 @@ namespace Parallax.UI
                 settings = new GameObject("Settings Menu").AddComponent<GameSettingsMenu>();
             settings.Close();
             settings.SetMainMenuContext(true);
+            ApplySettingsTypography();
             Time.timeScale = 1f;
             AudioListener.pause = false;
             Cursor.lockState = CursorLockMode.None;
@@ -78,9 +79,30 @@ namespace Parallax.UI
             play.schedule.Execute(() => { if (!settings.IsOpen) play.Focus(); });
         }
 
+        private void ApplySettingsTypography()
+        {
+            var document = settings.GetComponent<UIDocument>();
+            if (document == null) return;
+            var root = document.rootVisualElement;
+            // Inherit the secondary face in generated controls, including quality dropdown items.
+            if (secondaryFont != null && secondaryFont.sourceFontFile != null)
+                root.style.unityFontDefinition = FontDefinition.FromFont(secondaryFont.sourceFontFile);
+            foreach (var text in root.Query<TextElement>().ToList())
+            {
+                bool heading = text is Button || text.ClassListContains("title") ||
+                    text.ClassListContains("controls-title") || text.ClassListContains("unity-base-field__label");
+                var font = heading ? primaryFont : secondaryFont;
+                if (font != null && font.sourceFontFile != null)
+                    text.style.unityFontDefinition = FontDefinition.FromFont(font.sourceFontFile);
+                text.style.unityFontStyleAndWeight = FontStyle.Normal;
+                text.style.letterSpacing = heading ? .5f : 0f;
+            }
+        }
+
         private void OpenPanel(bool controls, Button source)
         {
             if (loading) return;
+            ApplySettingsTypography();
             returnFocus = source;
             if (controls) settings.OpenControls();
             else settings.Open();
