@@ -89,7 +89,8 @@ public sealed class Level1Presentation : MonoBehaviour
         bool actionableCube = target is MovableObject movable && !movable.GetComponent<Rigidbody>().isKinematic;
         prompt.text = held != null ? "E — Place" : actionableCube ? "E — Pick up" : target is Switch ?
             (state.now == TimeState.Past ? "E — Toggle gravity" : "F — Switch Timeline") :
-            instruction.text.StartsWith("Switch") || instruction.text.StartsWith("Return to") ? "F — Switch Timeline" : "";
+            instruction.text.StartsWith("Switch") || instruction.text == "Return to the Future." ||
+            (state.now == TimeState.Future && instruction.text.StartsWith("Return to")) ? "F — Switch Timeline" : "";
         foreach (var item in cubeDetails) SetDetail(item.Value, item.Key == held || (actionableCube && item.Key == target));
         SetDetail(accessDetails, access); SetDetail(engineeringDetails, engineering);
         status.text = (state.now == TimeState.Past ? "2026 / PAST" : "2176 / FUTURE") +
@@ -117,7 +118,7 @@ public sealed class Level1Presentation : MonoBehaviour
             bool placed = interaction.HeldObject == null && CubeOnPlate(engineeringCubes[past ? 0 : 1], engineeringPlate);
             string next = !placed ? (interaction.HeldObject == engineeringCubes[0].GetComponent<MovableObject>() ? "Place the cube on relay plate 02." :
                 level.StorageReleased ? "Take the cube out of storage." : "Return to the Past; turn gravity OFF.") :
-                !gravityOn ? "Restore gravity at the Past console." : past ? "Switch to the Future." : "Wait for the relay to engage.";
+                !gravityOn ? "Return to the Past console.\nTurn station gravity ON." : past ? "Switch to the Future." : "Wait for the relay to engage.";
             SetObjective("OBJECTIVE 02", "Restore the Engineering Relay", next); return;
         }
         SetObjective("OBJECTIVE 03", "Access restored", past ? "Return to the Future." : "Proceed through the west exit.");
@@ -225,12 +226,12 @@ public sealed class Level1Presentation : MonoBehaviour
         hud = uiRoot.GetComponent<CanvasGroup>(); hud.blocksRaycasts = false; hud.interactable = false;
         var panel = new GameObject("Objective panel", typeof(RectTransform), typeof(Image)); panel.transform.SetParent(uiRoot.transform, false);
         var rect = panel.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = new Vector2(0, 1); rect.pivot = new Vector2(0, 1);
-        rect.anchoredPosition = new Vector2(28, -28); rect.sizeDelta = new Vector2(470, 126);
+        rect.anchoredPosition = new Vector2(28, -28); rect.sizeDelta = new Vector2(470, 148);
         panel.GetComponent<Image>().color = new Color(.035f, .044f, .05f, .82f); panel.GetComponent<Image>().raycastTarget = false;
         number = Label(panel.transform, "Objective number", titleFont, 14, new Vector2(16, -12), new Vector2(438, 22));
         number.color = new Color(.56f, .59f, .60f);
         heading = Label(panel.transform, "Objective title", titleFont, titleSize, new Vector2(16, -38), new Vector2(438, 32));
-        instruction = Label(panel.transform, "Current instruction", supportingFont, instructionSize, new Vector2(16, -78), new Vector2(438, 42));
+        instruction = Label(panel.transform, "Current instruction", supportingFont, instructionSize, new Vector2(16, -78), new Vector2(438, 64));
         status = Label(uiRoot.transform, "Timeline status", supportingFont, 16, new Vector2(-28, -28), new Vector2(450, 28));
         var sr = status.rectTransform; sr.anchorMin = sr.anchorMax = new Vector2(1, 1); sr.pivot = new Vector2(1, 1); status.alignment = TextAlignmentOptions.TopRight;
         prompt = Label(uiRoot.transform, "Contextual interaction prompt", supportingFont, 19, new Vector2(0, -90), new Vector2(600, 36));

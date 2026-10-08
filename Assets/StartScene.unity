@@ -11082,5 +11082,3 @@ MonoBehaviour:
   playerBody: {fileID: 1786953325}
   playerGravity: {fileID: 1786953324}
   supportingFont: {fileID: 11400000, guid: 5ab9449966a174634bb20e4c7e5bc291, type: 2}
-  hoverDelay: 8
-  stationarySpeed: 1.5

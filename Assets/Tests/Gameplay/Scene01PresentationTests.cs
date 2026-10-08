@@ -52,6 +52,29 @@ namespace Parallax.Gameplay.Tests
             Assert.That(Instruction, Does.Contain("Switch to the Past"));
         }
 
+        [UnityTest] public IEnumerator EngineeringPlacementRequestsGravityOnBeforeSwitchingTimeline()
+        {
+            yield return Swap();
+            level.GetType().GetField("<IntroSolved>k__BackingField", Fields).SetValue(level, true);
+            level.GetType().GetField("<StorageAccessGranted>k__BackingField", Fields).SetValue(level, true);
+            state.GetType().GetField("gravity").SetValue(state, 0f);
+            var cube = ((Rigidbody[])Field(presentation, "engineeringCubes"))[0];
+            var plate = (Component)Field(presentation, "engineeringPlate");
+            var bounds = plate.GetComponent<Collider>().bounds;
+            cube.isKinematic = true;
+            cube.position = new Vector3(bounds.center.x, bounds.max.y + .6f, bounds.center.z);
+            cube.transform.position = cube.position; Physics.SyncTransforms();
+            yield return null; yield return null;
+            Assert.That(Instruction, Is.EqualTo("Return to the Past console.\nTurn station gravity ON."));
+            var label = Object.FindObjectsByType<TMPro.TMP_Text>(FindObjectsSortMode.None).Single(x => x.text == Instruction);
+            label.ForceMeshUpdate(); Assert.That(label.isTextOverflowing, Is.False);
+            Capture(Camera.main, "objective02-gravity-off", 1280, 720);
+            state.GetType().GetField("gravity").SetValue(state, 14.715f);
+            yield return null;
+            Assert.That(Instruction, Is.EqualTo("Switch to the Future."));
+            Assert.That((bool)Property(level, "MainSolved"), Is.False, "UI must not complete the puzzle.");
+        }
+
         [UnityTest] public IEnumerator VisualDetailsDoNotAddPhysicsOrBlockPause()
         {
             var details = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
@@ -84,7 +107,7 @@ namespace Parallax.Gameplay.Tests
             Capture(camera, "past-relay-small", 960, 540);
             Assert.That((bool)Property(level, "IntroSolved"), Is.False);
         }
-        static void Capture(Camera camera, string name, int width, int height)
+        internal static void Capture(Camera camera, string name, int width, int height)
         {
             Directory.CreateDirectory(".utmp/scene01");
             var canvas = GameObject.Find("Scene 01 Objective UI").GetComponent<Canvas>();

@@ -35,23 +35,29 @@ namespace Parallax.Gameplay.Tests
             // Isolate observer conditions; no puzzle methods or gravity mechanics are replaced.
             foreach (var component in body.GetComponents<MonoBehaviour>()) if (component.GetType().Name == "PlayerController") component.enabled = false;
             body.isKinematic = true; body.interpolation = RigidbodyInterpolation.None;
-            Set(guidance, "hoverDelay", .1f); Set(gravity, "effective", false);
+            Set(gravity, "effective", false);
             body.position = new Vector3(3, 3, 9); body.transform.position = body.position; Physics.SyncTransforms();
             keyboard = InputSystem.AddDevice<Keyboard>(); keyboard.MakeCurrent();
         }
         [UnityTearDown] public IEnumerator Cleanup()
         { if (GameSettingsMenu.Instance != null) { GameSettingsMenu.Instance.Close(); Object.Destroy(GameSettingsMenu.Instance.gameObject); } InputSystem.RemoveDevice(keyboard); Time.timeScale = 1; yield return null; }
-        [UnityTest] public IEnumerator RecoveryOnlyAppearsForSustainedHoverInObjectiveTwoAndStopsOnDescent()
+        [UnityTest] public IEnumerator FlightHelpAppearsImmediatelyInObjectiveTwoAndHidesAfterCompletion()
         {
             yield return new WaitForSeconds(.2f); Assert.That(Hint, Is.Empty, "Objective 01 must not show this hint.");
             Set(level, "<IntroSolved>k__BackingField", true);
-            yield return null; Assert.That(Hint, Is.Empty, "Do not display immediately.");
-            yield return new WaitForSeconds(.2f); Assert.That(Hint, Does.Contain("CTRL — Thrust down"));
+            yield return null; Assert.That(Hint, Does.Contain("Hold CTRL to descend while floating."));
+            var help = Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None).Single(x => x.name == "Hover recovery hint");
+            Assert.That(help.rectTransform.anchorMax.y, Is.EqualTo(1));
+            Assert.That(help.rectTransform.parent.GetComponent<RectTransform>().anchoredPosition, Is.EqualTo(new Vector2(28, -188)));
+            help.ForceMeshUpdate(); Assert.That(help.isTextOverflowing, Is.False);
+            Scene01PresentationTests.Capture(Camera.main, "objective02-flight-help-small", 960, 540);
+            Scene01PresentationTests.Capture(Camera.main, "objective02-flight-help", 1280, 720);
+            Scene01PresentationTests.Capture(Camera.main, "objective02-flight-help-wide", 1920, 1080);
             GameSettingsMenu.Instance.Open(); yield return new WaitForSecondsRealtime(.2f);
             Assert.That(GameObject.Find("Scene 01 Objective UI").GetComponent<CanvasGroup>().alpha, Is.Zero);
             GameSettingsMenu.Instance.Close(); yield return null; yield return null;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.LeftCtrl));
-            InputSystem.Update(); yield return null; Assert.That(Hint, Is.Empty);
+            InputSystem.Update(); yield return null; Assert.That(Hint, Is.Not.Empty, "Keep help visible while practicing descent.");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState()); InputSystem.Update();
             yield return new WaitForSeconds(.2f); Assert.That(Hint, Is.Not.Empty);
             Set(level, "<MainSolved>k__BackingField", true); yield return null; Assert.That(Hint, Is.Empty);

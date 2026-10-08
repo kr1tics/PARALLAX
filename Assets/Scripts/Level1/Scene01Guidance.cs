@@ -1,7 +1,7 @@
 using Parallax.Settings;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 /// <summary>Observes tutorial navigation only; does not alter gravity or player controls.</summary>
 [DefaultExecutionOrder(325)]
@@ -11,9 +11,7 @@ public sealed class Scene01Guidance : MonoBehaviour
     [SerializeField] Rigidbody playerBody;
     [SerializeField] ArtificialGravity playerGravity;
     [SerializeField] TMP_FontAsset supportingFont;
-    [SerializeField, Min(1)] float hoverDelay = 8;
-    [SerializeField, Min(.1f)] float stationarySpeed = 1.5f;
-    float hoverTime;
+    GameObject recoveryPanel;
     TMP_Text controls, recovery;
     readonly RaycastHit[] floorHits = new RaycastHit[32];
     public string RecoveryHint => recovery == null ? "" : recovery.text;
@@ -23,19 +21,26 @@ public sealed class Scene01Guidance : MonoBehaviour
     {
         var hud = transform.Find("Scene 01 Objective UI");
         controls = Label(hud, "Contextual control hints", new Vector2(28, 24), new Vector2(1000, 32), 16);
-        recovery = Label(hud, "Hover recovery hint", new Vector2(28, 70), new Vector2(880, 58), 18);
+        recoveryPanel = new GameObject("Objective 02 flight help", typeof(RectTransform), typeof(Image));
+        recoveryPanel.transform.SetParent(hud, false);
+        var panelRect = recoveryPanel.GetComponent<RectTransform>();
+        panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0, 1);
+        panelRect.anchoredPosition = new Vector2(28, -188);
+        panelRect.sizeDelta = new Vector2(470, 88);
+        var background = recoveryPanel.GetComponent<Image>();
+        background.color = new Color(0, 0, 0, .78f); background.raycastTarget = false;
+        recovery = Label(recoveryPanel.transform, "Hover recovery hint", new Vector2(16, -12), new Vector2(438, 64), 17);
+        recovery.rectTransform.anchorMin = recovery.rectTransform.anchorMax = recovery.rectTransform.pivot = new Vector2(0, 1);
+        recovery.color = new Color(220f / 255, 228f / 255, 232f / 255);
+        recoveryPanel.SetActive(false);
     }
     void LateUpdate()
     {
         if (controls == null || GameSettingsMenu.GameplayInputBlocked) return;
         bool floating = !playerGravity.IsGravityActive;
-        bool verticalInput = Keyboard.current != null && (Keyboard.current.ctrlKey.isPressed || Keyboard.current.spaceKey.isPressed);
-        bool eligible = level.IntroSolved && !level.MainSolved && !level.Completed && floating &&
-            !HasFloor() && playerBody.linearVelocity.magnitude < stationarySpeed && !verticalInput;
-        hoverTime = eligible ? hoverTime + Time.deltaTime : 0;
-        bool showRecovery = eligible && hoverTime >= hoverDelay;
-        recovery.text = showRecovery ? "CTRL — Thrust down   ·   SPACE — Thrust up\n" +
-            (GlobalState.get().gravity < .1f ? "Restore station gravity at the Past console." : "Q — Toggle jetpack to return to walking.") : "";
+        bool showRecovery = level.IntroSolved && !level.MainSolved && !level.Completed && floating && !HasFloor();
+        recovery.text = showRecovery ? "Hold CTRL to descend while floating.\nSPACE — Thrust up" : "";
+        recoveryPanel.SetActive(showRecovery);
         controls.text = "ESC / P — Settings / Resume" +
             (level.Completed ? "    ·    R — Replay" : floating ? "    ·    Q — Toggle jetpack" : "") +
             (showRecovery ? "    ·    R — Reset checkpoint" : "");
