@@ -19,7 +19,7 @@ public class Switch : Interactable
         }
     }
 
-    public override void onInteract()
+    public override void onInteract(Interact i)
     {
         foreach (var effect in sideEffects)
         {
