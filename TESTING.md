@@ -1,6 +1,6 @@
 # Station gameplay testing
 
-## Local branches
+## Branches
 
 | Branch | Based on | Contents |
 | --- | --- | --- |
@@ -9,7 +9,7 @@
 | `fix/settings-scroll-controls` | `main` | Controls reference, menu layout, slower bounded wheel/trackpad scrolling, scrolling regression test |
 | `test/station-gameplay` | Gameplay branch plus settings branch | Combined build for acceptance testing |
 
-These branches are local. `main` is unchanged. Test the combined branch before merging or publishing.
+The feature and fix branches are published on `origin` and merged into `main`. `test/station-gameplay` remains local. Both `main` and the local test branch contain the combined gameplay and settings changes.
 
 ## Automated checks
 
@@ -19,7 +19,7 @@ Coverage includes modular-deck walking with the jetpack off, stopping/reversing/
 
 ## Manual acceptance pass
 
-Use `test/station-gameplay` in Unity, or refresh the rebuilt local web player at <http://127.0.0.1:8765/>. Click the game to capture the mouse; **P** opens settings reliably when the browser uses Escape for pointer lock.
+Use `main` or `test/station-gameplay` in Unity, or refresh the rebuilt local web player at <http://127.0.0.1:8765/>. Click the game to capture the mouse; **P** opens settings reliably when the browser uses Escape for pointer lock.
 
 1. Start with the jetpack off. Walk and strafe with WASD, release the keys, turn the camera and repeat. Walk across tile seams. Check that the player stops rather than continuing to slide.
 2. Jump with Space. Hold it through landing: it should not cause repeated jumps. Release and press again to jump again.
