@@ -35,4 +35,4 @@ TODO - see specification for details
 
 ## References and External Resources
 
-TODO - see specification for details
+- **OpenAI Codex:** used to implement the prototype settings menu, integrate it with player input and camera preferences, implement the space backdrop and procedural Earth textures using built-in Unity materials, repair exterior station faces and collision, scope artificial gravity to station decks. The team specified the living-past / barren-future Earth appearance.
