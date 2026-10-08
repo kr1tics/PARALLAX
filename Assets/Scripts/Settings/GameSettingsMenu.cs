@@ -41,6 +41,8 @@ namespace Parallax.Settings
         private bool previousCursorVisible;
         private CursorLockMode previousCursorLock;
         private bool lastFullscreen;
+        private int lastScrollFrame = -1;
+        private float scrollUsedThisFrame;
 
         private void Awake()
         {
@@ -93,6 +95,9 @@ namespace Parallax.Settings
             launcher = root.Q<Button>("open-settings");
             closeButton = root.Q<Button>("close-settings");
             settingsScroll = root.Q<ScrollView>("settings-scroll");
+            // Use a modest wheel increment instead of the default page-sized jump.
+            settingsScroll.mouseWheelScrollSize = 3f;
+            settingsScroll.RegisterCallback<WheelEvent>(ScrollSettings, TrickleDown.TrickleDown);
             volume = root.Q<Slider>("volume");
             sensitivity = root.Q<Slider>("sensitivity");
             quality = root.Q<DropdownField>("quality");
@@ -128,6 +133,23 @@ namespace Parallax.Settings
             overlay.style.display = IsOpen ? DisplayStyle.Flex : DisplayStyle.None;
             launcher.style.display = IsOpen ? DisplayStyle.None : DisplayStyle.Flex;
             lastFullscreen = Screen.fullScreen;
+        }
+
+        private void ScrollSettings(WheelEvent evt)
+        {
+            if (Mathf.Abs(evt.delta.y) < 0.001f) return;
+            // Wheel and trackpad deltas vary by platform; cap a single event to one small step.
+            if (lastScrollFrame != Time.frameCount)
+            {
+                lastScrollFrame = Time.frameCount;
+                scrollUsedThisFrame = 0f;
+            }
+            float remaining = Mathf.Max(0f, 8f - scrollUsedThisFrame);
+            float step = Mathf.Clamp(evt.delta.y, -remaining, remaining);
+            scrollUsedThisFrame += Mathf.Abs(step);
+            settingsScroll.scrollOffset = new Vector2(0f, Mathf.Clamp(
+                settingsScroll.scrollOffset.y + step, 0f, settingsScroll.verticalScroller.highValue));
+            evt.StopImmediatePropagation();
         }
 
         private void EnsureInterface()

@@ -418,6 +418,72 @@ namespace Parallax.Settings.Tests
             Assert.That(AudioListener.pause, Is.False);
         }
 
+        [UnityTest]
+        public IEnumerator WheelAndTrackpadScrollingStaySmallAndControlsRemainReachable()
+        {
+            menu.Open();
+            var document = menu.GetComponent<UIDocument>();
+            var target = new RenderTexture(960, 540, 24); target.Create();
+            document.panelSettings.targetTexture = target;
+            for (int i = 0; i < 10; i++) yield return null;
+            var scroll = Field<ScrollView>("settings-scroll");
+            Assert.That(root.Q("controls-list"), Is.Not.Null);
+            Assert.That(root.Query<VisualElement>(className: "control-row").ToList().Count, Is.EqualTo(9));
+            foreach (float delta in new[] {3f, 120f, 0.25f})
+            {
+                scroll.scrollOffset = Vector2.zero;
+                yield return null;
+                using (var wheel = WheelEvent.GetPooled(new Event { type = EventType.ScrollWheel, delta = new Vector2(0f, delta) }))
+                {
+                    wheel.target = scroll.contentContainer;
+                    scroll.contentContainer.SendEvent(wheel);
+                }
+                yield return null;
+                Assert.That(scroll.scrollOffset.y, Is.GreaterThan(0f));
+                Assert.That(scroll.scrollOffset.y, Is.LessThanOrEqualTo(8.1f), "One event must not jump a page.");
+            }
+            scroll.scrollOffset = Vector2.zero;
+            yield return null;
+            for (int burst = 0; burst < 10; burst++)
+            {
+                using (var wheel = WheelEvent.GetPooled(new Event { type = EventType.ScrollWheel, delta = new Vector2(0f, 120f) }))
+                {
+                    wheel.target = scroll.contentContainer;
+                    scroll.contentContainer.SendEvent(wheel);
+                }
+            }
+            Assert.That(scroll.scrollOffset.y, Is.LessThanOrEqualTo(8.1f), "Trackpad bursts share one frame budget.");
+            yield return null;
+            for (int tick = 0; tick < 200; tick++)
+            {
+                using (var wheel = WheelEvent.GetPooled(new Event { type = EventType.ScrollWheel, delta = new Vector2(0f, 3f) }))
+                {
+                    wheel.target = scroll.contentContainer;
+                    scroll.contentContainer.SendEvent(wheel);
+                }
+                yield return null;
+            }
+            yield return null;
+            Assert.That(scroll.scrollOffset.y, Is.EqualTo(scroll.verticalScroller.highValue).Within(0.1f));
+            float bottom = scroll.scrollOffset.y;
+            using (var wheel = WheelEvent.GetPooled(new Event { type = EventType.ScrollWheel, delta = new Vector2(0f, -120f) }))
+            {
+                wheel.target = scroll.contentContainer;
+                scroll.contentContainer.SendEvent(wheel);
+            }
+            yield return null;
+            Assert.That(bottom - scroll.scrollOffset.y, Is.InRange(0.1f, 8.1f));
+            Assert.That(Field<Button>("resume").worldBound.yMax,
+                Is.LessThanOrEqualTo(root.Q(className: "settings-panel").worldBound.yMax + 1f));
+            var panelBounds = root.Q(className: "settings-panel").worldBound;
+            var scrollbarBounds = scroll.verticalScroller.worldBound;
+            Assert.That(scrollbarBounds.xMin, Is.GreaterThan(panelBounds.xMin));
+            Assert.That(scrollbarBounds.xMax, Is.LessThan(panelBounds.xMax - 2f), "Scrollbar stays inside the border.");
+            Assert.That(scrollbarBounds.yMin, Is.GreaterThan(panelBounds.yMin));
+            Assert.That(scrollbarBounds.yMax, Is.LessThan(panelBounds.yMax));
+            document.panelSettings.targetTexture = null; UnityEngine.Object.Destroy(target);
+        }
+
         private T Field<T>(string name) where T : VisualElement
         {
             T field = root.Q<T>(name);

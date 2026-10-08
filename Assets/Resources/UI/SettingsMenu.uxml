@@ -20,6 +20,19 @@
                         <ui:Label name="sensitivity-value" text="1.0x" class="slider-value" />
                     </ui:VisualElement>
                     <ui:Toggle name="invert" label="Invert vertical look" class="setting-toggle last-setting" tooltip="Moving the mouse up looks down" />
+                    <ui:VisualElement name="controls-list" class="controls-list">
+                        <ui:Label text="Controls" class="controls-title" />
+                        <ui:VisualElement class="control-row"><ui:Label text="W A S D" class="control-key" /><ui:Label text="Move" class="control-action" /></ui:VisualElement>
+                        <ui:VisualElement class="control-row"><ui:Label text="Mouse" class="control-key" /><ui:Label text="Look around" class="control-action" /></ui:VisualElement>
+                        <ui:VisualElement class="control-row"><ui:Label text="Space" class="control-key" /><ui:Label text="Jump / thrust upward" class="control-action" /></ui:VisualElement>
+                        <ui:VisualElement class="control-row"><ui:Label text="Ctrl" class="control-key" /><ui:Label text="Thrust downward in zero gravity" class="control-action" /></ui:VisualElement>
+                        <ui:VisualElement class="control-row"><ui:Label text="Q" class="control-key" /><ui:Label text="Toggle jetpack" class="control-action" /></ui:VisualElement>
+                        <ui:VisualElement class="control-row"><ui:Label text="E / Left click" class="control-key" /><ui:Label text="Interact / grab" class="control-action" /></ui:VisualElement>
+                        <ui:VisualElement class="control-row"><ui:Label text="F / T" class="control-key" /><ui:Label text="Switch past / future" class="control-action" /></ui:VisualElement>
+                        <ui:VisualElement class="control-row"><ui:Label text="G" class="control-key" /><ui:Label text="Distort the object you are looking at" class="control-action" /></ui:VisualElement>
+                        <ui:VisualElement class="control-row"><ui:Label text="Esc / P" class="control-key" /><ui:Label text="Settings / resume" class="control-action" /></ui:VisualElement>
+                        <ui:Label text="Gravity applies on station decks. In open space, use WASD, Space and Ctrl to fly." class="controls-hint" />
+                    </ui:VisualElement>
                 </ui:ScrollView>
                 <ui:VisualElement class="footer">
                     <ui:Label name="settings-status" text="Saved on resume." class="save-status" />
