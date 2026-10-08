@@ -80,3 +80,5 @@ UI 提示音：
 已按分类生成独立副本并接入当前 Unity 项目；原音频未修改。新增的完成双音和运行时 relay 确认/设备 Hum 仍未试听验证，拾取片段仍为候选。见 [AUDIO_INTEGRATION.md](AUDIO_INTEGRATION.md) 与 [处理记录](AUDIO_PROCESSING_MANIFEST.json)。
 
 后续用户调整：Gravity OFF 改用 187326 — powerdown2；169994 移为 Gravity ON，覆盖初始方案中不需要 Gravity ON 的决定。Main Menu 已接入 511493；暂停菜单下背景环境音继续播放。详见音频接入记录。
+
+用户随后纠正，最终映射为：Gravity OFF = 169994，Gravity ON = 187326，覆盖上一条相反的对应。

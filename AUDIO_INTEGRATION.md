@@ -55,3 +55,7 @@ Unity 6000.3.20f1 编译及全部 10 个工作副本导入成功。最终 17/17 
 用户指定 187326 — powerdown2 为 Gravity OFF：新增 GravityOff187326.wav，完整保留约 3.307 秒的事件，去 DC、5 ms 起止淡化，峰值上限 0.30。原 169994 工作副本（文件仍叫 GravityOff.wav，以保留原资源及 GUID）已改接 Gravity ON 槽。Main Menu 继续使用 511493 的 Menu.wav 循环。所有环境循环（菜单、两个时代与局部设备）在 Settings 下继续播放；动作音仍遵循暂停，Master Volume 仍有效。没有修改 Settings 菜单或暂停玩法逻辑。新增音效仍待实际试听和混音确认。
 
 本轮 Unity 编译及 3/3 AudioIntegrationTests 通过；确认菜单音源为 Menu.wav、ON/OFF 引用有效及环境音不受 AudioListener.pause 中断。尚未直接试听。报告：Verification/audio-pause-gravity-playmode.xml。
+
+## 用户纠正：重力音效互换
+
+最终对应：Gravity OFF 使用原 169994 的 Systems/GravityOff.wav；Gravity ON 使用新 187326 的 Systems/GravityOff187326.wav。仅互换 palette 引用，文件名、文件内容与原素材均保持不变。此条覆盖上一轮 ON/OFF 对应；暂停背景音和 Main Menu 的 511493 保持不变。仍待直接试听确认。
