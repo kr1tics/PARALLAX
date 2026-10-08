@@ -1299,3 +1299,7 @@ Use clear differences in lighting, sound, material condition, system activity an
 Some concept images in this document were generated using OpenAI's ChatGPT image generation tools. These images are used solely as visual references to communicate the intended art direction, atmosphere and gameplay concepts. They do not represent final in-game assets or screenshots.
 
 ---
+
+## Audio planning
+
+[PARALLAX — 第一版音效选型与处理清单](AUDIO_SELECTION_V1.md) records the current candidates, processing requirements and source paths. Direct listening and in-game mixing verification are still pending.
