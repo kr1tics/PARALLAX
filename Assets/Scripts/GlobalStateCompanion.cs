@@ -22,7 +22,7 @@ public class GlobalStateCompanion : MonoBehaviour
         GlobalState.get().Update();
     }
 
-    void Destroy()
+    void OnDestroy()
     {
         unique = true;
     }

@@ -10,7 +10,7 @@ public class Entangler : MonoBehaviour
         OnTimeChange();
     }
     
-    void Destroy()
+    void OnDestroy()
     {
         GlobalState.get().entangled.Remove(this);
         Destroy(pastOrigObject);
