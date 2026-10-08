@@ -1,0 +1,104 @@
+using System.Collections;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using NUnit.Framework;
+using Parallax.Settings;
+using TMPro;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
+
+namespace Parallax.Gameplay.Tests
+{
+    public class TutorialCompletionTests
+    {
+        const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+        MonoBehaviour level, completion;
+        static void Set(object obj, string name, object value) => obj.GetType().GetField(name, Flags).SetValue(obj, value);
+        static bool Flag(object obj, string name) => (bool)obj.GetType().GetProperty(name).GetValue(obj);
+        static void Call(object obj, string name) => obj.GetType().GetMethod(name).Invoke(obj, null);
+        [UnitySetUp] public IEnumerator Setup()
+        {
+            if (GameSettingsMenu.Instance != null) { Object.Destroy(GameSettingsMenu.Instance.gameObject); yield return null; }
+            Time.timeScale = 1; GameSettingsMenu.StartupInputBlocked = false;
+            yield return SceneManager.LoadSceneAsync("StartScene"); yield return null;
+            var root = GameObject.Find("Level 1 - Engineering Access");
+            level = root.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "Level1Controller");
+            completion = root.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "TutorialCompletionScreen");
+        }
+        [UnityTearDown] public IEnumerator Cleanup()
+        {
+            if (completion != null) completion.enabled = false;
+            if (GameSettingsMenu.Instance != null) { GameSettingsMenu.Instance.Close(); Object.Destroy(GameSettingsMenu.Instance.gameObject); }
+            Time.timeScale = 1; GameSettingsMenu.StartupInputBlocked = false; yield return null;
+        }
+        IEnumerator Complete()
+        {
+            Set(level, "<IntroSolved>k__BackingField", true); Set(level, "<MainSolved>k__BackingField", true);
+            Call(level, "TryComplete"); yield return null;
+            Assert.That(Flag(completion, "IsOpen"), Is.True);
+            Assert.That(Time.timeScale, Is.Zero); Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.True);
+            Assert.That(Cursor.visible, Is.True); Assert.That(Cursor.lockState, Is.EqualTo(CursorLockMode.None));
+            Assert.That(GameObject.Find("Tutorial Completion Screen"), Is.Null, "Wait before revealing.");
+            yield return new WaitForSecondsRealtime(2.7f);
+            Assert.That(Flag(completion, "IsReady"), Is.True);
+        }
+        [UnityTest] public IEnumerator RequiresFinalObjectiveAndShowsExactCopyWithoutDuplicateOrSettings()
+        {
+            Call(level, "TryComplete"); yield return new WaitForSecondsRealtime(1.2f);
+            Assert.That(Flag(completion, "IsOpen"), Is.False);
+            Set(level, "<IntroSolved>k__BackingField", true); Call(level, "TryComplete"); yield return null;
+            Assert.That(Flag(completion, "IsOpen"), Is.False);
+            yield return Complete();
+            var screen = GameObject.Find("Tutorial Completion Screen");
+            var text = screen.GetComponentsInChildren<TMP_Text>();
+            CollectionAssert.AreEquivalent(new[] { "TUTORIAL COMPLETE", "You've learned the basics of time manipulation and gravity control.", "The investigation begins now.", "REPLAY TUTORIAL", "CONTINUE" }, text.Select(x => x.text).ToArray());
+            foreach (var label in text)
+            {
+                Assert.That(label.font.name, Is.EqualTo(label.name.Contains("description") || label.name.Contains("final message") ? "SpaceMono-Regular SDF" : "Oxanium-Regular SDF"));
+                label.ForceMeshUpdate(); Assert.That(label.isTextOverflowing, Is.False, label.name);
+            }
+            GameSettingsMenu.Instance.Open(); Assert.That(GameSettingsMenu.Instance.IsOpen, Is.False);
+            Call(level, "TryComplete"); yield return null;
+            Assert.That(Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None).Count(x => x.name == "Tutorial Completion Screen"), Is.EqualTo(1));
+            foreach (var size in new[] { new Vector2Int(960, 540), new Vector2Int(1280, 720), new Vector2Int(1920, 1080) }) Capture(screen.GetComponent<Canvas>(), size);
+        }
+        [UnityTest] public IEnumerator ReplayReloadsInitialFutureStateWithoutIntro()
+        {
+            yield return Complete();
+            Call(completion, "ReplayTutorial"); yield return null; yield return null;
+            var root = GameObject.Find("Level 1 - Engineering Access");
+            var fresh = root.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "Level1Controller");
+            foreach (var name in new[] { "IntroSolved", "MainSolved", "StorageAccessGranted", "Completed" }) Assert.That(Flag(fresh, name), Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1)); Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
+            var state = fresh.GetType().Assembly.GetType("GlobalState").GetMethod("get").Invoke(null, null);
+            Assert.That(state.GetType().GetField("now").GetValue(state).ToString(), Is.EqualTo("Future"));
+            Assert.That((float)state.GetType().GetField("gravity").GetValue(state), Is.EqualTo(14.715f));
+            Assert.That(GameObject.Find("Context Intro"), Is.Null);
+            Assert.That(Vector3.Distance(GameObject.Find("Player").transform.position, new Vector3(3, .02f, 9)), Is.LessThan(.2f));
+            level = fresh; completion = root.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "TutorialCompletionScreen");
+            yield return Complete(); // New scene supports a second completion cycle.
+        }
+        [UnityTest] public IEnumerator ContinueSafelyReturnsToExistingMenu()
+        {
+            yield return Complete(); Call(completion, "Continue"); yield return null; yield return null;
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("MainMenu"));
+            Assert.That(GameSettingsMenu.StartupInputBlocked, Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
+            Assert.That(Cursor.visible, Is.True); Assert.That(Cursor.lockState, Is.EqualTo(CursorLockMode.None));
+        }
+        static void Capture(Canvas canvas, Vector2Int size)
+        {
+            Directory.CreateDirectory(".utmp/completion");
+            var camera = Camera.main; var rt = new RenderTexture(size.x, size.y, 24);
+            canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = camera; canvas.planeDistance = .8f;
+            camera.targetTexture = rt; Canvas.ForceUpdateCanvases(); camera.Render();
+            RenderTexture.active = rt; var image = new Texture2D(size.x, size.y, TextureFormat.RGB24, false);
+            image.ReadPixels(new Rect(0, 0, size.x, size.y), 0, 0); image.Apply();
+            File.WriteAllBytes(".utmp/completion/" + size.x + "x" + size.y + ".png", image.EncodeToPNG());
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay; camera.targetTexture = null; RenderTexture.active = null;
+            Object.Destroy(image); Object.Destroy(rt);
+        }
+    }
+}

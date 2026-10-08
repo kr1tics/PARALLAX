@@ -169,7 +169,9 @@ namespace Parallax.Gameplay.Tests
             Assert.That(Door("exitDoor").enabled, Is.False, "Solved gates remain open when a cube moves.");
             Aim(new Vector3(-11.5f, 0, 4.45f), new Vector3(-14, 0, 4.45f)); Snapshot("exit");
             playerBody.position = new Vector3(-13.3f, 0, 4.45f); Physics.SyncTransforms();
-            yield return Ticks(5); Assert.That(Flag("Completed"), Is.True);
+            yield return new WaitForSecondsRealtime(.15f); Assert.That(Flag("Completed"), Is.True);
+            // This physics test exercises checkpoint reset independently of the completion modal.
+            Component(level.gameObject, "TutorialCompletionScreen").enabled = false;
             Call(level, "ResetCurrentPuzzle"); yield return null;
             Assert.That(Flag("Completed"), Is.False); Assert.That(Flag("IntroSolved"), Is.False);
             Assert.That(Door("introDoor").enabled, Is.True); Assert.That(Door("exitDoor").enabled, Is.True);

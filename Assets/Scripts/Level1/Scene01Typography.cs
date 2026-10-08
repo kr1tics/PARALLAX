@@ -51,7 +51,7 @@ public sealed class Scene01Typography : MonoBehaviour
         foreach (var root in roots)
         foreach (var text in root.GetComponentsInChildren<TMP_Text>(true))
         {
-            if (text.GetComponentInParent<ContextIntro>() != null || !configured.Add(text)) continue;
+            if (text.GetComponentInParent<ContextIntro>() != null || text.GetComponentInParent<Canvas>()?.name == "Tutorial Completion Screen" || !configured.Add(text)) continue;
             bool heading = headings.Contains(text) || text.name == "Objective title" || text.name == "Objective number" ||
                 text.GetComponentInParent<UnityEngine.UI.Button>() != null;
             TMP_FontAsset font = heading ? headingFont : supportingFont;
