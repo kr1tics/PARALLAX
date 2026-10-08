@@ -17,8 +17,9 @@ namespace Parallax.Settings
         public bool IsMainMenuContext { get; private set; }
         private bool controlsOnly;
         // Ignore the click/key that resumes the game until the next frame.
-        public static bool GameplayInputBlocked => Instance != null &&
-            (Instance.IsMainMenuContext || Instance.IsOpen || Instance.lastClosedFrame == Time.frameCount);
+        public static bool StartupInputBlocked { get; set; }
+        public static bool GameplayInputBlocked => StartupInputBlocked || (Instance != null &&
+            (Instance.IsMainMenuContext || Instance.IsOpen || Instance.lastClosedFrame == Time.frameCount));
         private int lastClosedFrame = -1;
         public event Action<bool> OpenChanged;
 
@@ -187,6 +188,8 @@ namespace Parallax.Settings
         private void Update()
         {
             EnsureInterface();
+            if (shell != null) shell.style.display = StartupInputBlocked ? DisplayStyle.None : DisplayStyle.Flex;
+            if (StartupInputBlocked) return;
             var keyboard = Keyboard.current;
             if (keyboard != null && (IsOpen || !IsMainMenuContext) &&
                 (keyboard.escapeKey.wasPressedThisFrame || keyboard.pKey.wasPressedThisFrame))
@@ -215,7 +218,7 @@ namespace Parallax.Settings
         private void Open(bool showControlsOnly)
         {
             EnsureInterface();
-            if (IsOpen || !isActiveAndEnabled || overlay == null) return;
+            if (StartupInputBlocked || IsOpen || !isActiveAndEnabled || overlay == null) return;
 
             controlsOnly = showControlsOnly;
 

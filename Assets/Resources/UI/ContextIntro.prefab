@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &455245355
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 455245357}
+  - component: {fileID: 455245356}
+  m_Layer: 0
+  m_Name: Context Intro
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &455245356
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 455245355}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d005352e03d8646ee9214553cd9efd44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ContextIntro
+  font: {fileID: 11400000, guid: d006551d96cdf48d39739dfe3c748d6c, type: 2}
+  metadataFont: {fileID: 11400000, guid: 5ab9449966a174634bb20e4c7e5bc291, type: 2}
+  secondaryColor: {r: 0.54509807, g: 0.57254905, b: 0.59607846, a: 1}
+  metadataSize: 14
+  signalSize: 18
+  signalColor: {r: 0.7254902, g: 0.7764706, b: 0.8039216, a: 1}
+  skipSize: 15
+  textColor: {r: 0.8627451, g: 0.89411765, b: 0.9098039, a: 1}
+  yearSize: 80
+  lineSize: 38
+  initialDelay: 0.5
+  fadeDuration: 0.8
+  displayDuration: 2
+  revealDuration: 1.75
+  blackHoldDuration: 0.5
+  openingHum: {fileID: 0}
+  mechanicalAmbience: {fileID: 0}
+  signalSound: {fileID: 0}
+  futureAmbience: {fileID: 0}
+  humVolume: 0.035
+  mechanicalVolume: 0.07
+  signalVolume: 0.12
+  futureVolume: 0.15
+  laboratoryAmbience: []
+  allowSkip: 1
+  showStartGameButton: 0
+--- !u!4 &455245357
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 455245355}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

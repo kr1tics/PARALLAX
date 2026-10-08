@@ -106,10 +106,12 @@ namespace Parallax.UI
             Cursor.visible = false;
             try
             {
+                ContextIntroFlow.Request(gameplayScene);
                 SceneManager.LoadSceneAsync(gameplayScene, LoadSceneMode.Single);
             }
             catch (Exception exception)
             {
+                ContextIntroFlow.Cancel();
                 loading = false;
                 settings.SetMainMenuContext(true);
                 Cursor.lockState = CursorLockMode.None;

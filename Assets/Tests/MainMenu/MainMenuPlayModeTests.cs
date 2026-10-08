@@ -163,6 +163,11 @@ namespace Parallax.MainMenu.Tests
             Assert.That(stateType.GetField("lastSwap", Fields).GetValue(state), Is.EqualTo(-999f));
             Assert.That(GameSettingsMenu.Instance, Is.SameAs(persistent));
             Assert.That(Object.FindObjectsByType<GameSettingsMenu>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
+            var intro = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
+                .Single(component => component.GetType().Name == "ContextIntro");
+            Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.True, "Story must lock controls before the tutorial begins.");
+            intro.GetType().GetMethod("Skip").Invoke(intro, null);
+            yield return new WaitForSecondsRealtime(2.1f);
             Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
             Assert.That(GameSettings.MasterVolume, Is.EqualTo(0.37f).Within(0.001f));
             Assert.That(Time.timeScale, Is.EqualTo(1f));
