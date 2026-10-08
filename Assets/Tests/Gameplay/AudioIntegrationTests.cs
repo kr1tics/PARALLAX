@@ -25,7 +25,7 @@ namespace Parallax.Gameplay.Tests
         {
             yield return SceneManager.LoadSceneAsync("StartScene"); yield return null;
             var palette = Resources.Load<ScriptableObject>("Audio/ParallaxAudioPalette"); Assert.That(palette, Is.Not.Null);
-            foreach (string field in new[] { "menu", "past", "future", "deviceHum", "click", "timeSwitch", "gravityOff", "pickup", "drop", "complete" })
+            foreach (string field in new[] { "menu", "past", "future", "deviceHum", "click", "timeSwitch", "gravityOff", "gravityOn", "pickup", "drop", "complete" })
             {
                 var clip = (AudioClip)palette.GetType().GetField(field).GetValue(palette);
                 Assert.That(clip, Is.Not.Null, field); Assert.That(clip.length, Is.GreaterThan(0), field);
@@ -54,6 +54,7 @@ namespace Parallax.Gameplay.Tests
             Assert.That(past.volume, Is.EqualTo(.18f).Within(.01f)); Assert.That(future.volume, Is.Zero);
             GameSettingsMenu.Instance.Open(); yield return null;
             Assert.That(AudioListener.pause, Is.True); Assert.That(Time.timeScale, Is.Zero);
+            Assert.That(past.ignoreListenerPause, Is.True); Assert.That(future.ignoreListenerPause, Is.True);
             GameSettingsMenu.Instance.Close(); yield return null; Assert.That(AudioListener.pause, Is.False);
         }
         [UnityTest] public IEnumerator MenuUsesItsOwnLowVolumeLoopAndUiSurvivesSettingsPause()
@@ -61,6 +62,7 @@ namespace Parallax.Gameplay.Tests
             yield return SceneManager.LoadSceneAsync("MainMenu"); yield return new WaitForSecondsRealtime(1.7f);
             var source = GameObject.Find("Primary ambience").GetComponent<AudioSource>();
             Assert.That(source.clip.name, Is.EqualTo("Menu")); Assert.That(source.loop, Is.True); Assert.That(source.volume, Is.EqualTo(.12f).Within(.01f));
+            Assert.That(source.ignoreListenerPause, Is.True);
             Assert.That(GameObject.Find("UI audio").GetComponent<AudioSource>().ignoreListenerPause, Is.True);
             GameSettingsMenu.Instance.Open(); yield return null; Assert.That(AudioListener.pause, Is.True);
             GameSettingsMenu.Instance.Close(); yield return null;

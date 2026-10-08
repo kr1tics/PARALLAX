@@ -12,7 +12,8 @@
 | 2176 环境 | Ambience/Future.wav | 864658 开头 30 秒，经 1 秒循环衔接得到 29 秒工作循环。 |
 | 局部设备 | Ambience/DeviceHum.wav | 571922 的 7 秒单声道循环；两个 relay 附近的 3D AudioSource，仅对应 relay 成功后淡入，9 米外不可闻。 |
 | 时间切换 | Systems/TimeSwitch.wav | 872647 经 afconvert 从实际 AIFF 正确转换为 WAV；保留开头 0.32 秒（约 0.2 秒事件及尾音）。实际时代变化时播放，环境底音交叉淡化 1.5 秒。 |
-| 重力关闭 | Systems/GravityOff.wav | 169994 转 WAV，保留 4.4 秒下降趋势；仅 station gravity 从 ON 变 OFF 时播放。 |
+| 重力关闭 | Systems/GravityOff187326.wav | 新选 187326，完整事件约 3.307 秒，去 DC、起止淡化、峰值降低；仅 station gravity 从 ON 变 OFF 时播放。 |
+| 重力开启 | Systems/GravityOff.wav | 原 169994 的 4.4 秒工作副本，按用户要求改接 ON；文件名与 GUID 保留，仅 station gravity 从 OFF 变 ON 时播放。 |
 | 拾取 | Interaction/PickupCandidate.wav | 762911 暂选第一事件周边 0.17–0.64 秒，含前后余量；不是最终试听裁切点。实际 HeldObject 获得物体时播放，不播放整段 19 秒集合。 |
 | 重物落地 | Interaction/HeavyDrop.wav | 810170 转 WAV，测量检测主要事件，保留少量起音/尾音余量，降低峰值；松手后在实际碰撞且相对速度至少 0.45 m/s 时播放一次，不在失重松手时直接播放。 |
 | Relay 激活 | UI/Click.wav + 局部 DeviceHum | 一个短确认音后，成功的 relay 附近 Hum 淡入；运行时组合，尚未试听混音确认，不存在已验证的合成成品。 |
@@ -20,13 +21,13 @@
 
 所有工作文件位于 `Assets/Audio/Processed/`；原始素材仍在用户提供的 Downloads / Desktop 路径，未被修改。工作副本使用 44.1 kHz、16-bit PCM WAV；环境导入使用压缩内存模式，短事件为 PCM。处理包括所选片段的 DC 均值移除、事件 5 ms 起止淡化、峰值降低与环境首尾交叉衔接。详细裁切、实际长度、增益、样本边界差和原始/输出 SHA-256 记录于 `AUDIO_PROCESSING_MANIFEST.json`。原始文件哈希已复查一致；副本峰值均低于 0.36，无数字削波。
 
-**Gravity ON、Jetpack Thrust 未新增，也不列为缺少素材。** 未使用 197993；872648 保留为方案中的替换备选，未提供路径、未导入。
+**后续按用户要求新增 Gravity ON；Jetpack Thrust 仍不需要。** 未使用 197993；872648 保留为方案中的替换备选，未提供路径、未导入。
 
 ## 调整位置
 
 在 Project 面板打开 **Assets/Resources/Audio/ParallaxAudioPalette.asset**。这里集中提供所有 AudioClip 引用、菜单/Past/Future/局部 Hum 音量，以及 UI、系统、交互音量和交叉淡化时长。
 
-初始值：菜单 0.12；Past/Future 各 0.18；局部 Hum 0.10；UI 0.45；系统/交互各 0.40；交叉淡化 1.5 秒。这是保守的接入起点，不是已验证的最终混音。所有声音继续受 Settings 的 Master Volume 控制。Settings 暂停普通声音，UI 确认音仍可响应；未另建 AudioMixer 或改变现有音量系统。
+初始值：菜单 0.12；Past/Future 各 0.18；局部 Hum 0.10；UI 0.45；系统/交互各 0.40；交叉淡化 1.5 秒。这是保守的接入起点，不是已验证的最终混音。所有声音继续受 Settings 的 Master Volume 控制。Settings 暂停动作音，背景环境音和 UI 确认音仍可响应；未另建 AudioMixer 或改变现有音量系统。
 
 Intro 的 Opening Hum、Mechanical Ambience、Signal Sound 引用了处理副本。最终揭幕的音频交给教程的同一条 Future 环境声，使用一个只读揭幕进度属性，避免 Intro Future 声与游戏 Future 声同时铺底。Intro 的时序、画面、文字、字体与控制恢复逻辑均未改变。
 
@@ -48,3 +49,9 @@ Intro 的 Opening Hum、Mechanical Ambience、Signal Sound 引用了处理副本
 Unity 6000.3.20f1 编译及全部 10 个工作副本导入成功。最终 17/17 针对性 PlayMode 测试通过（音频资源、交叉淡化、Settings 暂停、Intro/Skip、菜单、完成界面/Replay/Continue）。此前完整回归为 51/52 通过，唯一失败是新测试将方块数量写成 4，实际还包含 2 个练习方块；已修正为核对所有 MovableObject 都有落地音观察组件，并在最终测试中通过。报告：Verification/audio-integration-playmode.xml。
 
 验证不包括直接试听、游戏内主观混音、实际扬声器输出或 WebGL 构建。所有这些听觉/目标平台确认仍待完成，不能称为已试听通过。
+
+## 后续音频调整
+
+用户指定 187326 — powerdown2 为 Gravity OFF：新增 GravityOff187326.wav，完整保留约 3.307 秒的事件，去 DC、5 ms 起止淡化，峰值上限 0.30。原 169994 工作副本（文件仍叫 GravityOff.wav，以保留原资源及 GUID）已改接 Gravity ON 槽。Main Menu 继续使用 511493 的 Menu.wav 循环。所有环境循环（菜单、两个时代与局部设备）在 Settings 下继续播放；动作音仍遵循暂停，Master Volume 仍有效。没有修改 Settings 菜单或暂停玩法逻辑。新增音效仍待实际试听和混音确认。
+
+本轮 Unity 编译及 3/3 AudioIntegrationTests 通过；确认菜单音源为 Menu.wav、ON/OFF 引用有效及环境音不受 AudioListener.pause 中断。尚未直接试听。报告：Verification/audio-pause-gravity-playmode.xml。

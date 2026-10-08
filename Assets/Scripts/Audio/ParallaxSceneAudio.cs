@@ -62,6 +62,7 @@ public sealed class ParallaxSceneAudio : MonoBehaviour
         if (GameSettingsMenu.GameplayInputBlocked) return;
         if (state.now != previousTime) PlayEvent(palette.timeSwitch, palette.systemVolume);
         if (previousGravity > .1f && state.gravity < .1f) PlayEvent(palette.gravityOff, palette.systemVolume);
+        if (previousGravity < .1f && state.gravity > .1f) PlayEvent(palette.gravityOn, palette.systemVolume);
         var held = interaction.HeldObject;
         if (held != previousHeld)
         {
@@ -79,6 +80,7 @@ public sealed class ParallaxSceneAudio : MonoBehaviour
         var go = new GameObject(name); go.transform.SetParent(parent, false);
         var source = go.AddComponent<AudioSource>(); source.playOnAwake = false; source.clip = clip;
         source.loop = loop; source.volume = loop ? 0 : 1;
+        source.ignoreListenerPause = loop; // Keep ambience running underneath Settings.
         source.spatialBlend = spatial ? 1 : 0; source.minDistance = 1.5f; source.maxDistance = 9;
         source.rolloffMode = AudioRolloffMode.Linear; source.dopplerLevel = 0;
         if (loop && clip != null) source.Play(); return source;

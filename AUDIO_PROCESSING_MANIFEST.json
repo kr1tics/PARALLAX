@@ -95,7 +95,7 @@
     "loop_boundary_max_sample_delta": null
   },
   {
-    "key": "gravity",
+    "key": "gravityOn",
     "source": "/Users/soyuuuuu/Downloads/169994__peepholecircus__power-down.mp3",
     "source_sha256": "ddb4e0e3df0f5aebc2932e5554c5ef321b8c549e904627facde20b694e70f278",
     "output": "Assets/Audio/Processed/Systems/GravityOff.wav",
@@ -111,7 +111,8 @@
     "status": "technical candidate; listening and in-game mix pending",
     "output_sha256": "252c67811e8b55278c6e668c8e213d4a8b1db479f40587cf066cd3f3f6a614b8",
     "output_dc_mean": -4.292812280570372e-07,
-    "loop_boundary_max_sample_delta": null
+    "loop_boundary_max_sample_delta": null,
+    "usage": "169994 moved to Gravity ON by user request; original work-copy filename retained"
   },
   {
     "key": "pickup",
@@ -178,5 +179,20 @@
     "output_sha256": "c9ba68b4d19248fafe03d2c5438e09b5733d2e8e755a6a69710a3fdcd29f345b",
     "output_dc_mean": -5.222480547143127e-05,
     "loop_boundary_max_sample_delta": null
+  },
+  {
+    "key": "gravityOff",
+    "source": "/Users/soyuuuuu/Downloads/187326__duckduckpony__powerdown2.wav",
+    "source_sha256": "f6c43b8311232b453d829be309f4da2def8572fd013d12b1c6418506aac2b8ba",
+    "output": "Assets/Audio/Processed/Systems/GravityOff187326.wav",
+    "output_sha256": "53ac30936d70b126a74dd6a57ab51c810524df3ffff93dbca7a0a8aaa570de98",
+    "duration_seconds": 3.307142857142857,
+    "removed_dc": [
+      -5.501722250612808e-06,
+      -5.501722250612808e-06
+    ],
+    "gain": 1.0,
+    "peak": 0.1980535803089994,
+    "status": "user selected; processed full-length copy; listening and mix pending"
   }
 ]

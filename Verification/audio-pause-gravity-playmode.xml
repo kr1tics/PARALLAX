@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-08 21:37:56Z" end-time="2026-10-08 21:38:04Z" duration="8.2384977">
+  <test-suite type="TestSuite" id="1078" name="Project-1-Game" fullname="Project-1-Game" runstate="Runnable" testcasecount="52" result="Passed" start-time="2026-10-08 21:37:56Z" end-time="2026-10-08 21:38:04Z" duration="8.238498" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1042" name="Parallax.Gameplay.PlayModeTests.dll" fullname="/private/tmp/IntroIntegrationVerification/Library/ScriptAssemblies/Parallax.Gameplay.PlayModeTests.dll" runstate="Runnable" testcasecount="33" result="Passed" start-time="2026-10-08 21:37:56Z" end-time="2026-10-08 21:38:04Z" duration="8.232383" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="24838" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1043" name="Parallax" fullname="Parallax" runstate="Runnable" testcasecount="30" result="Passed" start-time="2026-10-08 21:37:56Z" end-time="2026-10-08 21:38:04Z" duration="8.231604" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1044" name="Gameplay" fullname="Parallax.Gameplay" runstate="Runnable" testcasecount="30" result="Passed" start-time="2026-10-08 21:37:56Z" end-time="2026-10-08 21:38:04Z" duration="8.231171" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1045" name="Tests" fullname="Parallax.Gameplay.Tests" runstate="Runnable" testcasecount="30" result="Passed" start-time="2026-10-08 21:37:56Z" end-time="2026-10-08 21:38:04Z" duration="8.230810" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1005" name="AudioIntegrationTests" fullname="Parallax.Gameplay.Tests.AudioIntegrationTests" classname="Parallax.Gameplay.Tests.AudioIntegrationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-08 21:37:56Z" end-time="2026-10-08 21:38:04Z" duration="8.229468" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1006" name="ClassifiedClipsAndCollisionObserversArePresent" fullname="Parallax.Gameplay.Tests.AudioIntegrationTests.ClassifiedClipsAndCollisionObserversArePresent" methodname="ClassifiedClipsAndCollisionObserversArePresent" classname="Parallax.Gameplay.Tests.AudioIntegrationTests" runstate="Runnable" seed="359801813" result="Passed" start-time="2026-10-08 21:37:56Z" end-time="2026-10-08 21:37:58Z" duration="1.875130" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1008" name="MenuUsesItsOwnLowVolumeLoopAndUiSurvivesSettingsPause" fullname="Parallax.Gameplay.Tests.AudioIntegrationTests.MenuUsesItsOwnLowVolumeLoopAndUiSurvivesSettingsPause" methodname="MenuUsesItsOwnLowVolumeLoopAndUiSurvivesSettingsPause" classname="Parallax.Gameplay.Tests.AudioIntegrationTests" runstate="Runnable" seed="11323490" result="Passed" start-time="2026-10-08 21:37:58Z" end-time="2026-10-08 21:38:00Z" duration="2.006972" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1007" name="TimelineAmbienceCrossfadesAndPausingRemainsFunctional" fullname="Parallax.Gameplay.Tests.AudioIntegrationTests.TimelineAmbienceCrossfadesAndPausingRemainsFunctional" methodname="TimelineAmbienceCrossfadesAndPausingRemainsFunctional" classname="Parallax.Gameplay.Tests.AudioIntegrationTests" runstate="Runnable" seed="92924934" result="Passed" start-time="2026-10-08 21:38:00Z" end-time="2026-10-08 21:38:04Z" duration="4.338816" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: /Users/soyuuuuu/Library/Application Support/DefaultCompany/Project-1-Game/TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
