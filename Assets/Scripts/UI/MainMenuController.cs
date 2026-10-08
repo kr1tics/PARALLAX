@@ -52,6 +52,8 @@ namespace Parallax.UI
             document.panelSettings = panel;
             document.visualTreeAsset = tree;
             var root = document.rootVisualElement;
+            root.Q("temporal-art").Add(new TemporalMenuBackdrop(
+                Resources.Load<Texture2D>("UI/MenuLaboratoryPast"), Resources.Load<Texture2D>("UI/MenuLaboratoryFuture")));
             // UI Toolkit uses TextCore; reuse the source faces of our established TMP assets.
             foreach (var text in root.Query<TextElement>().ToList())
             {
@@ -124,7 +126,7 @@ namespace Parallax.UI
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
                 home.Query<Button>().ForEach(button => button.SetEnabled(true));
-                play.text = "START GAME";
+                play.text = "START GAME →";
                 status.text = "Connection failed. Please try again.";
                 Debug.LogException(exception, this);
             }

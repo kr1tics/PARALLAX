@@ -80,7 +80,12 @@ namespace Parallax.MainMenu.Tests
                 Assert.That(text.resolvedStyle.unityFontDefinition.font.name, Is.EqualTo(primary ? "Oxanium-Regular" : "SpaceMono-Regular"), text.name);
                 Assert.That(text.resolvedStyle.unityFontStyleAndWeight, Is.EqualTo(FontStyle.Normal));
             }
-            Assert.That(Button("play").text, Is.EqualTo("START GAME"));
+            Assert.That(Button("play").text, Is.EqualTo("START GAME →"));
+            Assert.That(Resources.Load<Texture2D>("UI/MenuLaboratoryPast"), Is.Not.Null);
+            Assert.That(Resources.Load<Texture2D>("UI/MenuLaboratoryFuture"), Is.Not.Null);
+            Assert.That(document.rootVisualElement.Q("temporal-art").childCount, Is.EqualTo(1));
+            foreach (string action in new[] { "settings", "controls", "quit" })
+                Assert.That(Button(action).resolvedStyle.backgroundColor.a, Is.Zero, "Secondary navigation stays text-only.");
             Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.True);
             Assert.That(GameSettingsMenu.Instance.IsOpen, Is.False);
             Assert.That(Cursor.lockState, Is.EqualTo(CursorLockMode.None));
