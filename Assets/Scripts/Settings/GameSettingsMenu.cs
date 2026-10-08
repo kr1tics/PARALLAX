@@ -41,6 +41,8 @@ namespace Parallax.Settings
         private bool previousCursorVisible;
         private CursorLockMode previousCursorLock;
         private bool lastFullscreen;
+        private int lastScrollFrame = -1;
+        private float scrollUsedThisFrame;
 
         private void Awake()
         {
@@ -94,7 +96,7 @@ namespace Parallax.Settings
             closeButton = root.Q<Button>("close-settings");
             settingsScroll = root.Q<ScrollView>("settings-scroll");
             // Use a modest wheel increment instead of the default page-sized jump.
-            settingsScroll.mouseWheelScrollSize = 12f;
+            settingsScroll.mouseWheelScrollSize = 3f;
             settingsScroll.RegisterCallback<WheelEvent>(ScrollSettings, TrickleDown.TrickleDown);
             volume = root.Q<Slider>("volume");
             sensitivity = root.Q<Slider>("sensitivity");
@@ -137,7 +139,14 @@ namespace Parallax.Settings
         {
             if (Mathf.Abs(evt.delta.y) < 0.001f) return;
             // Wheel and trackpad deltas vary by platform; cap a single event to one small step.
-            float step = Mathf.Clamp(evt.delta.y * 4f, -36f, 36f);
+            if (lastScrollFrame != Time.frameCount)
+            {
+                lastScrollFrame = Time.frameCount;
+                scrollUsedThisFrame = 0f;
+            }
+            float remaining = Mathf.Max(0f, 8f - scrollUsedThisFrame);
+            float step = Mathf.Clamp(evt.delta.y, -remaining, remaining);
+            scrollUsedThisFrame += Mathf.Abs(step);
             settingsScroll.scrollOffset = new Vector2(0f, Mathf.Clamp(
                 settingsScroll.scrollOffset.y + step, 0f, settingsScroll.verticalScroller.highValue));
             evt.StopImmediatePropagation();

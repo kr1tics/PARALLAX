@@ -38,6 +38,7 @@
     background-color: rgba(0, 0, 0, 0.65);
 }
 .settings-panel {
+    overflow: hidden;
     width: 600px;
     max-width: 100%;
     max-height: 100%;
@@ -64,7 +65,7 @@
     font-size: 26px;
 }
 .close-button:hover { color: rgb(232, 234, 237); background-color: rgb(42, 46, 52); }
-.settings-scroll { flex-shrink: 1; min-height: 0; }
+.settings-scroll { flex-shrink: 1; min-height: 0; min-width: 0; margin-left: 1px; margin-right: 12px; overflow: hidden; }
 .settings-scroll .unity-scroll-view__content-container { padding: 0 28px 24px 28px; }
 .slider-setting { position: relative; margin-bottom: 22px; }
 .setting-slider { flex-direction: column; align-items: stretch; margin: 0; }
@@ -125,7 +126,7 @@
 .unity-base-dropdown__label { color: rgb(232, 234, 237); }
 .unity-base-dropdown__item:hover, .unity-base-dropdown__item:focus { background-color: rgb(67, 73, 82); }
 .unity-base-dropdown__checkmark { -unity-background-image-tint-color: rgb(221, 226, 232); }
-.settings-scroll .unity-scroller--vertical { width: 10px; margin-right: 7px; }
+.settings-scroll .unity-scroller--vertical { width: 10px; min-width: 10px; flex-shrink: 0; margin-right: 6px; }
 .settings-scroll .unity-scroller__low-button, .settings-scroll .unity-scroller__high-button { display: none; }
 .settings-scroll .unity-scroller--vertical .unity-base-slider__tracker { background-color: rgb(42, 46, 52); border-width: 0; }
 .settings-scroll .unity-scroller--vertical .unity-base-slider__dragger { background-color: rgb(88, 95, 105); border-width: 0; border-radius: 3px; }
