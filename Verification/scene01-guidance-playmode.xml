@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="44" result="Passed" total="44" passed="44" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-08 19:25:12Z" end-time="2026-10-08 19:27:31Z" duration="138.8643541">
+  <test-suite type="TestSuite" id="1068" name="Project-1-Game" fullname="Project-1-Game" runstate="Runnable" testcasecount="44" result="Passed" start-time="2026-10-08 19:25:12Z" end-time="2026-10-08 19:27:31Z" duration="138.864354" total="44" passed="44" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1032" name="Parallax.Gameplay.PlayModeTests.dll" fullname="/private/tmp/IntroIntegrationVerification/Library/ScriptAssemblies/Parallax.Gameplay.PlayModeTests.dll" runstate="Runnable" testcasecount="25" result="Passed" start-time="2026-10-08 19:25:12Z" end-time="2026-10-08 19:27:22Z" duration="129.751387" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="19679" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestFixture" id="1001" name="ContextIntroIntegrationTests" fullname="ContextIntroIntegrationTests" classname="ContextIntroIntegrationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-08 19:25:12Z" end-time="2026-10-08 19:25:34Z" duration="21.606561" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1003" name="EscapeSkipsWithoutOpeningSettings" fullname="ContextIntroIntegrationTests.EscapeSkipsWithoutOpeningSettings" methodname="EscapeSkipsWithoutOpeningSettings" classname="ContextIntroIntegrationTests" runstate="Runnable" seed="704994271" result="Passed" start-time="2026-10-08 19:25:12Z" end-time="2026-10-08 19:25:15Z" duration="3.092797" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1002" name="MenuPlayShowsStoryThenRevealsCurrentTutorial" fullname="ContextIntroIntegrationTests.MenuPlayShowsStoryThenRevealsCurrentTutorial" methodname="MenuPlayShowsStoryThenRevealsCurrentTutorial" classname="ContextIntroIntegrationTests" runstate="Runnable" seed="2042720177" result="Passed" start-time="2026-10-08 19:25:15Z" end-time="2026-10-08 19:25:29Z" duration="13.971196" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1004" name="SkipButtonAndMenuReplayWork" fullname="ContextIntroIntegrationTests.SkipButtonAndMenuReplayWork" methodname="SkipButtonAndMenuReplayWork" classname="ContextIntroIntegrationTests" runstate="Runnable" seed="767950795" result="Passed" start-time="2026-10-08 19:25:29Z" end-time="2026-10-08 19:25:34Z" duration="4.533652" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestSuite" id="1033" name="Parallax" fullname="Parallax" runstate="Runnable" testcasecount="22" result="Passed" start-time="2026-10-08 19:25:34Z" end-time="2026-10-08 19:27:22Z" duration="108.143641" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1034" name="Gameplay" fullname="Parallax.Gameplay" runstate="Runnable" testcasecount="22" result="Passed" start-time="2026-10-08 19:25:34Z" end-time="2026-10-08 19:27:22Z" duration="108.142556" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1035" name="Tests" fullname="Parallax.Gameplay.Tests" runstate="Runnable" testcasecount="22" result="Passed" start-time="2026-10-08 19:25:34Z" end-time="2026-10-08 19:27:22Z" duration="108.142040" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1005" name="GameplayRegressionTests" fullname="Parallax.Gameplay.Tests.GameplayRegressionTests" classname="Parallax.Gameplay.Tests.GameplayRegressionTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-08 19:25:34Z" end-time="2026-10-08 19:25:49Z" duration="14.712067" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1012" name="ChildCollidersResolveToParentInteractableAndRepeatedPickupIsReliable" fullname="Parallax.Gameplay.Tests.GameplayRegressionTests.ChildCollidersResolveToParentInteractableAndRepeatedPickupIsReliable" methodname="ChildCollidersResolveToParentInteractableAndRepeatedPickupIsReliable" classname="Parallax.Gameplay.Tests.GameplayRegressionTests" runstate="Runnable" seed="1138275751" result="Passed" start-time="2026-10-08 19:25:34Z" end-time="2026-10-08 19:25:34Z" duration="0.333198" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1007" name="JetpackTransitionsAndPausePreserveMovementControls" fullname="Parallax.Gameplay.Tests.GameplayRegressionTests.JetpackTransitionsAndPausePreserveMovementControls" methodname="JetpackTransitionsAndPausePreserveMovementControls" classname="Parallax.Gameplay.Tests.GameplayRegressionTests" runstate="Runnable" seed="589267808" result="Passed" start-time="2026-10-08 19:25:34Z" end-time="2026-10-08 19:25:38Z" duration="3.581012" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Toggling jetpack to True
+Toggling jetpack to False
+]]></output>
+              </test-case>
+              <test-case id="1010" name="ParentScaledObjectFollowsAndDropsEvenWhenLookingAway" fullname="Parallax.Gameplay.Tests.GameplayRegressionTests.ParentScaledObjectFollowsAndDropsEvenWhenLookingAway" methodname="ParentScaledObjectFollowsAndDropsEvenWhenLookingAway" classname="Parallax.Gameplay.Tests.GameplayRegressionTests" runstate="Runnable" seed="594453375" result="Passed" start-time="2026-10-08 19:25:38Z" end-time="2026-10-08 19:25:39Z" duration="1.699086" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1008" name="RealKeyboardAndMouseCanCarryWhileWalkingAndReleaseOnce" fullname="Parallax.Gameplay.Tests.GameplayRegressionTests.RealKeyboardAndMouseCanCarryWhileWalkingAndReleaseOnce" methodname="RealKeyboardAndMouseCanCarryWhileWalkingAndReleaseOnce" classname="Parallax.Gameplay.Tests.GameplayRegressionTests" runstate="Runnable" seed="781745026" result="Passed" start-time="2026-10-08 19:25:39Z" end-time="2026-10-08 19:25:41Z" duration="1.647762" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1009" name="TimeSwitchReleasesTheActualEntangledCubeAndRestoresGravity" fullname="Parallax.Gameplay.Tests.GameplayRegressionTests.TimeSwitchReleasesTheActualEntangledCubeAndRestoresGravity" methodname="TimeSwitchReleasesTheActualEntangledCubeAndRestoresGravity" classname="Parallax.Gameplay.Tests.GameplayRegressionTests" runstate="Runnable" seed="926066975" result="Passed" start-time="2026-10-08 19:25:41Z" end-time="2026-10-08 19:25:42Z" duration="1.015853" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1006" name="WalkingStopsOnReleaseAndJumpDoesNotRepeatWhileHeld" fullname="Parallax.Gameplay.Tests.GameplayRegressionTests.WalkingStopsOnReleaseAndJumpDoesNotRepeatWhileHeld" methodname="WalkingStopsOnReleaseAndJumpDoesNotRepeatWhileHeld" classname="Parallax.Gameplay.Tests.GameplayRegressionTests" runstate="Runnable" seed="1348607873" result="Passed" start-time="2026-10-08 19:25:42Z" end-time="2026-10-08 19:25:46Z" duration="4.120899" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1011" name="WallsOccludeInteractionAndHeldObjectsKeepWorldCollision" fullname="Parallax.Gameplay.Tests.GameplayRegressionTests.WallsOccludeInteractionAndHeldObjectsKeepWorldCollision" methodname="WallsOccludeInteractionAndHeldObjectsKeepWorldCollision" classname="Parallax.Gameplay.Tests.GameplayRegressionTests" runstate="Runnable" seed="1876143443" result="Passed" start-time="2026-10-08 19:25:46Z" end-time="2026-10-08 19:25:49Z" duration="2.312274" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1013" name="Level1PlayModeTests" fullname="Parallax.Gameplay.Tests.Level1PlayModeTests" classname="Parallax.Gameplay.Tests.Level1PlayModeTests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-10-08 19:25:49Z" end-time="2026-10-08 19:27:10Z" duration="81.540181" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1015" name="BothPhysicsPuzzlesAndPlayerExitCompleteTheLevel" fullname="Parallax.Gameplay.Tests.Level1PlayModeTests.BothPhysicsPuzzlesAndPlayerExitCompleteTheLevel" methodname="BothPhysicsPuzzlesAndPlayerExitCompleteTheLevel" classname="Parallax.Gameplay.Tests.Level1PlayModeTests" runstate="Runnable" seed="1608002909" result="Passed" start-time="2026-10-08 19:25:49Z" end-time="2026-10-08 19:26:07Z" duration="18.700743" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Future Position being updated
+Future Position being updated
+Setting linear velocity of a kinematic body is not supported.
+Setting angular velocity of a kinematic body is not supported.
+Future Position being updated
+]]></output>
+              </test-case>
+              <test-case id="1016" name="CheckpointCancelsTimeSwapAndRestoresGravityWithoutLosingAccess" fullname="Parallax.Gameplay.Tests.Level1PlayModeTests.CheckpointCancelsTimeSwapAndRestoresGravityWithoutLosingAccess" methodname="CheckpointCancelsTimeSwapAndRestoresGravityWithoutLosingAccess" classname="Parallax.Gameplay.Tests.Level1PlayModeTests" runstate="Runnable" seed="1817775034" result="Passed" start-time="2026-10-08 19:26:07Z" end-time="2026-10-08 19:26:23Z" duration="16.054315" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Future Position being updated
+Setting linear velocity of a kinematic body is not supported.
+Setting angular velocity of a kinematic body is not supported.
+Future Position being updated
+]]></output>
+              </test-case>
+              <test-case id="1021" name="CompactStationSignsRetainSafeProjectionReferences" fullname="Parallax.Gameplay.Tests.Level1PlayModeTests.CompactStationSignsRetainSafeProjectionReferences" methodname="CompactStationSignsRetainSafeProjectionReferences" classname="Parallax.Gameplay.Tests.Level1PlayModeTests" runstate="Runnable" seed="1881926834" result="Passed" start-time="2026-10-08 19:26:23Z" end-time="2026-10-08 19:26:26Z" duration="2.488836" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1018" name="InterlockRespondsRepeatedlyAndKeepsGravityAcrossTimelines" fullname="Parallax.Gameplay.Tests.Level1PlayModeTests.InterlockRespondsRepeatedlyAndKeepsGravityAcrossTimelines" methodname="InterlockRespondsRepeatedlyAndKeepsGravityAcrossTimelines" classname="Parallax.Gameplay.Tests.Level1PlayModeTests" runstate="Runnable" seed="1905502015" result="Passed" start-time="2026-10-08 19:26:26Z" end-time="2026-10-08 19:26:38Z" duration="12.185338" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Future Position being updated
+]]></output>
+              </test-case>
+              <test-case id="1017" name="PressurePlateRejectsPlayerWrongCubeAndWeightlessCube" fullname="Parallax.Gameplay.Tests.Level1PlayModeTests.PressurePlateRejectsPlayerWrongCubeAndWeightlessCube" methodname="PressurePlateRejectsPlayerWrongCubeAndWeightlessCube" classname="Parallax.Gameplay.Tests.Level1PlayModeTests" runstate="Runnable" seed="1895641790" result="Passed" start-time="2026-10-08 19:26:38Z" end-time="2026-10-08 19:26:43Z" duration="4.681266" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1019" name="RealQKeyChangesPersonalFlightWithoutReleasingStorage" fullname="Parallax.Gameplay.Tests.Level1PlayModeTests.RealQKeyChangesPersonalFlightWithoutReleasingStorage" methodname="RealQKeyChangesPersonalFlightWithoutReleasingStorage" classname="Parallax.Gameplay.Tests.Level1PlayModeTests" runstate="Runnable" seed="1975801351" result="Passed" start-time="2026-10-08 19:26:43Z" end-time="2026-10-08 19:26:51Z" duration="8.283871" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Future Position being updated
+Toggling jetpack to True
+Toggling jetpack to False
+]]></output>
+              </test-case>
+              <test-case id="1014" name="SpawnDecksSealedStoreAndLockedRoutesAreValid" fullname="Parallax.Gameplay.Tests.Level1PlayModeTests.SpawnDecksSealedStoreAndLockedRoutesAreValid" methodname="SpawnDecksSealedStoreAndLockedRoutesAreValid" classname="Parallax.Gameplay.Tests.Level1PlayModeTests" runstate="Runnable" seed="2061765737" result="Passed" start-time="2026-10-08 19:26:51Z" end-time="2026-10-08 19:26:55Z" duration="4.415388" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1020" name="StorageSafetyProtectsPlayerAndCarriedCubeAcrossTimeChanges" fullname="Parallax.Gameplay.Tests.Level1PlayModeTests.StorageSafetyProtectsPlayerAndCarriedCubeAcrossTimeChanges" methodname="StorageSafetyProtectsPlayerAndCarriedCubeAcrossTimeChanges" classname="Parallax.Gameplay.Tests.Level1PlayModeTests" runstate="Runnable" seed="1156181540" result="Passed" start-time="2026-10-08 19:26:55Z" end-time="2026-10-08 19:27:10Z" duration="14.728160" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Future Position being updated
+Future Position being updated
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1022" name="Scene01GuidanceTests" fullname="Parallax.Gameplay.Tests.Scene01GuidanceTests" classname="Parallax.Gameplay.Tests.Scene01GuidanceTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-08 19:27:10Z" end-time="2026-10-08 19:27:12Z" duration="1.988598" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1023" name="RecoveryOnlyAppearsForSustainedHoverInObjectiveTwoAndStopsOnDescent" fullname="Parallax.Gameplay.Tests.Scene01GuidanceTests.RecoveryOnlyAppearsForSustainedHoverInObjectiveTwoAndStopsOnDescent" methodname="RecoveryOnlyAppearsForSustainedHoverInObjectiveTwoAndStopsOnDescent" classname="Parallax.Gameplay.Tests.Scene01GuidanceTests" runstate="Runnable" seed="1475050977" result="Passed" start-time="2026-10-08 19:27:10Z" end-time="2026-10-08 19:27:11Z" duration="1.127628" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1024" name="SettingsLauncherMovesBelowStatusAndRestoresItsOriginalPlacementOutsideTheScene" fullname="Parallax.Gameplay.Tests.Scene01GuidanceTests.SettingsLauncherMovesBelowStatusAndRestoresItsOriginalPlacementOutsideTheScene" methodname="SettingsLauncherMovesBelowStatusAndRestoresItsOriginalPlacementOutsideTheScene" classname="Parallax.Gameplay.Tests.Scene01GuidanceTests" runstate="Runnable" seed="1723453824" result="Passed" start-time="2026-10-08 19:27:11Z" end-time="2026-10-08 19:27:12Z" duration="0.859955" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1025" name="Scene01PresentationTests" fullname="Parallax.Gameplay.Tests.Scene01PresentationTests" classname="Parallax.Gameplay.Tests.Scene01PresentationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-08 19:27:12Z" end-time="2026-10-08 19:27:20Z" duration="7.838415" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1028" name="CapturesBothTimelinesAndChecksFontReferences" fullname="Parallax.Gameplay.Tests.Scene01PresentationTests.CapturesBothTimelinesAndChecksFontReferences" methodname="CapturesBothTimelinesAndChecksFontReferences" classname="Parallax.Gameplay.Tests.Scene01PresentationTests" runstate="Runnable" seed="2014624822" result="Passed" start-time="2026-10-08 19:27:12Z" end-time="2026-10-08 19:27:14Z" duration="2.189258" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1026" name="ObjectiveFollowsActualPlacementAndReset" fullname="Parallax.Gameplay.Tests.Scene01PresentationTests.ObjectiveFollowsActualPlacementAndReset" methodname="ObjectiveFollowsActualPlacementAndReset" classname="Parallax.Gameplay.Tests.Scene01PresentationTests" runstate="Runnable" seed="371467572" result="Passed" start-time="2026-10-08 19:27:14Z" end-time="2026-10-08 19:27:20Z" duration="5.322533" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Future Position being updated
+]]></output>
+              </test-case>
+              <test-case id="1027" name="VisualDetailsDoNotAddPhysicsOrBlockPause" fullname="Parallax.Gameplay.Tests.Scene01PresentationTests.VisualDetailsDoNotAddPhysicsOrBlockPause" methodname="VisualDetailsDoNotAddPhysicsOrBlockPause" classname="Parallax.Gameplay.Tests.Scene01PresentationTests" runstate="Runnable" seed="1184758156" result="Passed" start-time="2026-10-08 19:27:20Z" end-time="2026-10-08 19:27:20Z" duration="0.325262" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1029" name="Scene01TypographyTests" fullname="Parallax.Gameplay.Tests.Scene01TypographyTests" classname="Parallax.Gameplay.Tests.Scene01TypographyTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-08 19:27:20Z" end-time="2026-10-08 19:27:22Z" duration="2.061680" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1030" name="EverySavedAndGeneratedTmpLabelUsesItsAssignedFaceWithoutFallback" fullname="Parallax.Gameplay.Tests.Scene01TypographyTests.EverySavedAndGeneratedTmpLabelUsesItsAssignedFaceWithoutFallback" methodname="EverySavedAndGeneratedTmpLabelUsesItsAssignedFaceWithoutFallback" classname="Parallax.Gameplay.Tests.Scene01TypographyTests" runstate="Runnable" seed="1183661057" result="Passed" start-time="2026-10-08 19:27:20Z" end-time="2026-10-08 19:27:21Z" duration="0.998255" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1031" name="SettingsUsesMatchingRegularFacesAtThreeResolutionsAndRestoresOnUnload" fullname="Parallax.Gameplay.Tests.Scene01TypographyTests.SettingsUsesMatchingRegularFacesAtThreeResolutionsAndRestoresOnUnload" methodname="SettingsUsesMatchingRegularFacesAtThreeResolutionsAndRestoresOnUnload" classname="Parallax.Gameplay.Tests.Scene01TypographyTests" runstate="Runnable" seed="2071611686" result="Passed" start-time="2026-10-08 19:27:21Z" end-time="2026-10-08 19:27:22Z" duration="1.062083" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+    <test-suite type="Assembly" id="1044" name="Parallax.MainMenu.PlayModeTests.dll" fullname="/private/tmp/IntroIntegrationVerification/Library/ScriptAssemblies/Parallax.MainMenu.PlayModeTests.dll" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-08 19:27:22Z" end-time="2026-10-08 19:27:27Z" duration="4.755882" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="19679" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1045" name="Parallax" fullname="Parallax" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-08 19:27:22Z" end-time="2026-10-08 19:27:27Z" duration="4.755300" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1046" name="MainMenu" fullname="Parallax.MainMenu" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-08 19:27:22Z" end-time="2026-10-08 19:27:27Z" duration="4.754958" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1047" name="Tests" fullname="Parallax.MainMenu.Tests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-08 19:27:22Z" end-time="2026-10-08 19:27:27Z" duration="4.754612" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1036" name="MainMenuPlayModeTests" fullname="Parallax.MainMenu.Tests.MainMenuPlayModeTests" classname="Parallax.MainMenu.Tests.MainMenuPlayModeTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-08 19:27:22Z" end-time="2026-10-08 19:27:27Z" duration="4.754229" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1038" name="KeyboardNavigatesAndMouseReturnsFromSettings" fullname="Parallax.MainMenu.Tests.MainMenuPlayModeTests.KeyboardNavigatesAndMouseReturnsFromSettings" methodname="KeyboardNavigatesAndMouseReturnsFromSettings" classname="Parallax.MainMenu.Tests.MainMenuPlayModeTests" runstate="Runnable" seed="887568684" result="Passed" start-time="2026-10-08 19:27:22Z" end-time="2026-10-08 19:27:22Z" duration="0.255263" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1037" name="LaunchSceneHasFourActionsAndBlocksGameplayInput" fullname="Parallax.MainMenu.Tests.MainMenuPlayModeTests.LaunchSceneHasFourActionsAndBlocksGameplayInput" methodname="LaunchSceneHasFourActionsAndBlocksGameplayInput" classname="Parallax.MainMenu.Tests.MainMenuPlayModeTests" runstate="Runnable" seed="928959446" result="Passed" start-time="2026-10-08 19:27:22Z" end-time="2026-10-08 19:27:22Z" duration="0.196319" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1043" name="MenusFitCommonAspectRatiosAndControlsScrollToTheEnd" fullname="Parallax.MainMenu.Tests.MainMenuPlayModeTests.MenusFitCommonAspectRatiosAndControlsScrollToTheEnd" methodname="MenusFitCommonAspectRatiosAndControlsScrollToTheEnd" classname="Parallax.MainMenu.Tests.MainMenuPlayModeTests" runstate="Runnable" seed="1720506597" result="Passed" start-time="2026-10-08 19:27:22Z" end-time="2026-10-08 19:27:23Z" duration="0.370211" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1041" name="MissingGameplaySceneLeavesAUsableMenu" fullname="Parallax.MainMenu.Tests.MainMenuPlayModeTests.MissingGameplaySceneLeavesAUsableMenu" methodname="MissingGameplaySceneLeavesAUsableMenu" classname="Parallax.MainMenu.Tests.MainMenuPlayModeTests" runstate="Runnable" seed="576600124" result="Passed" start-time="2026-10-08 19:27:23Z" end-time="2026-10-08 19:27:23Z" duration="0.196769" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1040" name="PlayResetsDirtyStateKeepsPreferencesAndPreservesPauseMenu" fullname="Parallax.MainMenu.Tests.MainMenuPlayModeTests.PlayResetsDirtyStateKeepsPreferencesAndPreservesPauseMenu" methodname="PlayResetsDirtyStateKeepsPreferencesAndPreservesPauseMenu" classname="Parallax.MainMenu.Tests.MainMenuPlayModeTests" runstate="Runnable" seed="398055644" result="Passed" start-time="2026-10-08 19:27:23Z" end-time="2026-10-08 19:27:26Z" duration="3.326518" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1042" name="QuitInEditorExplainsHowToLeaveWithoutClosingTheEditor" fullname="Parallax.MainMenu.Tests.MainMenuPlayModeTests.QuitInEditorExplainsHowToLeaveWithoutClosingTheEditor" methodname="QuitInEditorExplainsHowToLeaveWithoutClosingTheEditor" classname="Parallax.MainMenu.Tests.MainMenuPlayModeTests" runstate="Runnable" seed="843931026" result="Passed" start-time="2026-10-08 19:27:26Z" end-time="2026-10-08 19:27:27Z" duration="0.199810" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1039" name="SettingsAndControlsShareThePersistentDocumentAndReturnFocus" fullname="Parallax.MainMenu.Tests.MainMenuPlayModeTests.SettingsAndControlsShareThePersistentDocumentAndReturnFocus" methodname="SettingsAndControlsShareThePersistentDocumentAndReturnFocus" classname="Parallax.MainMenu.Tests.MainMenuPlayModeTests" runstate="Runnable" seed="310008839" result="Passed" start-time="2026-10-08 19:27:27Z" end-time="2026-10-08 19:27:27Z" duration="0.207522" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+    <test-suite type="Assembly" id="1061" name="Parallax.Settings.PlayModeTests.dll" fullname="/private/tmp/IntroIntegrationVerification/Library/ScriptAssemblies/Parallax.Settings.PlayModeTests.dll" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-10-08 19:27:27Z" end-time="2026-10-08 19:27:31Z" duration="4.351561" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="19679" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1062" name="Parallax" fullname="Parallax" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-10-08 19:27:27Z" end-time="2026-10-08 19:27:31Z" duration="4.351251" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1063" name="Settings" fullname="Parallax.Settings" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-10-08 19:27:27Z" end-time="2026-10-08 19:27:31Z" duration="4.350966" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1064" name="Tests" fullname="Parallax.Settings.Tests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-10-08 19:27:27Z" end-time="2026-10-08 19:27:31Z" duration="4.350579" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1048" name="GameSettingsPlayModeTests" fullname="Parallax.Settings.Tests.GameSettingsPlayModeTests" classname="Parallax.Settings.Tests.GameSettingsPlayModeTests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-10-08 19:27:27Z" end-time="2026-10-08 19:27:31Z" duration="4.350126" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1051" name="DefaultsButtonRestoresSettingsAndRefreshesTheControls" fullname="Parallax.Settings.Tests.GameSettingsPlayModeTests.DefaultsButtonRestoresSettingsAndRefreshesTheControls" methodname="DefaultsButtonRestoresSettingsAndRefreshesTheControls" classname="Parallax.Settings.Tests.GameSettingsPlayModeTests" runstate="Runnable" seed="1122671907" result="Passed" start-time="2026-10-08 19:27:27Z" end-time="2026-10-08 19:27:27Z" duration="0.338767" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1058" name="DestroyingAnOpenMenuRestoresGameplay" fullname="Parallax.Settings.Tests.GameSettingsPlayModeTests.DestroyingAnOpenMenuRestoresGameplay" methodname="DestroyingAnOpenMenuRestoresGameplay" classname="Parallax.Settings.Tests.GameSettingsPlayModeTests" runstate="Runnable" seed="1734042083" result="Passed" start-time="2026-10-08 19:27:27Z" end-time="2026-10-08 19:27:27Z" duration="0.320680" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1055" name="DisablingAnOpenMenuRestoresGameplay" fullname="Parallax.Settings.Tests.GameSettingsPlayModeTests.DisablingAnOpenMenuRestoresGameplay" methodname="DisablingAnOpenMenuRestoresGameplay" classname="Parallax.Settings.Tests.GameSettingsPlayModeTests" runstate="Runnable" seed="134010065" result="Passed" start-time="2026-10-08 19:27:27Z" end-time="2026-10-08 19:27:28Z" duration="0.319054" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1050" name="EditingControlsAppliesAndPersistsThePlayersChoices" fullname="Parallax.Settings.Tests.GameSettingsPlayModeTests.EditingControlsAppliesAndPersistsThePlayersChoices" methodname="EditingControlsAppliesAndPersistsThePlayersChoices" classname="Parallax.Settings.Tests.GameSettingsPlayModeTests" runstate="Runnable" seed="311914330" result="Passed" start-time="2026-10-08 19:27:28Z" end-time="2026-10-08 19:27:28Z" duration="0.316488" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1059" name="EscapeOpensAndClosesTheMenuWhileTheGameIsPaused" fullname="Parallax.Settings.Tests.GameSettingsPlayModeTests.EscapeOpensAndClosesTheMenuWhileTheGameIsPaused" methodname="EscapeOpensAndClosesTheMenuWhileTheGameIsPaused" classname="Parallax.Settings.Tests.GameSettingsPlayModeTests" runstate="Runnable" seed="815576241" result="Passed" start-time="2026-10-08 19:27:28Z" end-time="2026-10-08 19:27:28Z" duration="0.324260" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1057" name="ReactivatingTheMenuGameObjectKeepsTheVisibleControlsWorking" fullname="Parallax.Settings.Tests.GameSettingsPlayModeTests.ReactivatingTheMenuGameObjectKeepsTheVisibleControlsWorking" methodname="ReactivatingTheMenuGameObjectKeepsTheVisibleControlsWorking" classname="Parallax.Settings.Tests.GameSettingsPlayModeTests" runstate="Runnable" seed="1212140451" result="Passed" start-time="2026-10-08 19:27:28Z" end-time="2026-10-08 19:27:29Z" duration="0.344470" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1056" name="ReloadingTheSceneKeepsOneMenuAndTheEditedSettings" fullname="Parallax.Settings.Tests.GameSettingsPlayModeTests.ReloadingTheSceneKeepsOneMenuAndTheEditedSettings" methodname="ReloadingTheSceneKeepsOneMenuAndTheEditedSettings" classname="Parallax.Settings.Tests.GameSettingsPlayModeTests" runstate="Runnable" seed="833358826" result="Passed" start-time="2026-10-08 19:27:29Z" end-time="2026-10-08 19:27:29Z" duration="0.645962" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1052" name="ReloadRecoversFromCorruptOrOutOfRangeSavedPreferences" fullname="Parallax.Settings.Tests.GameSettingsPlayModeTests.ReloadRecoversFromCorruptOrOutOfRangeSavedPreferences" methodname="ReloadRecoversFromCorruptOrOutOfRangeSavedPreferences" classname="Parallax.Settings.Tests.GameSettingsPlayModeTests" runstate="Runnable" seed="1943938191" result="Passed" start-time="2026-10-08 19:27:29Z" end-time="2026-10-08 19:27:30Z" duration="0.322079" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1054" name="RepeatedOpenAndCloseRestoresThePreviouslyPausedGameState" fullname="Parallax.Settings.Tests.GameSettingsPlayModeTests.RepeatedOpenAndCloseRestoresThePreviouslyPausedGameState" methodname="RepeatedOpenAndCloseRestoresThePreviouslyPausedGameState" classname="Parallax.Settings.Tests.GameSettingsPlayModeTests" runstate="Runnable" seed="104904762" result="Passed" start-time="2026-10-08 19:27:30Z" end-time="2026-10-08 19:27:30Z" duration="0.319708" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1049" name="SceneButtonsOpenAndResumeTheGame" fullname="Parallax.Settings.Tests.GameSettingsPlayModeTests.SceneButtonsOpenAndResumeTheGame" methodname="SceneButtonsOpenAndResumeTheGame" classname="Parallax.Settings.Tests.GameSettingsPlayModeTests" runstate="Runnable" seed="1541519503" result="Passed" start-time="2026-10-08 19:27:30Z" end-time="2026-10-08 19:27:30Z" duration="0.324496" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1053" name="SettingsApiSanitizesInvalidValuesAndPublishesChanges" fullname="Parallax.Settings.Tests.GameSettingsPlayModeTests.SettingsApiSanitizesInvalidValuesAndPublishesChanges" methodname="SettingsApiSanitizesInvalidValuesAndPublishesChanges" classname="Parallax.Settings.Tests.GameSettingsPlayModeTests" runstate="Runnable" seed="20056190" result="Passed" start-time="2026-10-08 19:27:30Z" end-time="2026-10-08 19:27:31Z" duration="0.324684" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1060" name="WheelAndTrackpadScrollingStaySmallAndControlsRemainReachable" fullname="Parallax.Settings.Tests.GameSettingsPlayModeTests.WheelAndTrackpadScrollingStaySmallAndControlsRemainReachable" methodname="WheelAndTrackpadScrollingStaySmallAndControlsRemainReachable" classname="Parallax.Settings.Tests.GameSettingsPlayModeTests" runstate="Runnable" seed="1109526714" result="Passed" start-time="2026-10-08 19:27:31Z" end-time="2026-10-08 19:27:31Z" duration="0.446635" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: /Users/soyuuuuu/Library/Application Support/DefaultCompany/Project-1-Game/TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

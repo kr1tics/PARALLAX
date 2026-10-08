@@ -27,7 +27,7 @@ namespace Parallax.Gameplay.Tests
         {
             var texts = Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None)
                 .Where(t => t.gameObject.scene.name == "StartScene").ToArray();
-            Assert.That(texts.Length, Is.EqualTo(14), "Nine authored labels and five generated HUD labels must all be audited.");
+            Assert.That(texts.Length, Is.EqualTo(16), "Nine authored labels and seven generated HUD labels must all be audited.");
             foreach (var text in texts)
             {
                 bool heading = new[] { "Sealed store label", "Main instructions", "Objective number", "Exit instructions",

@@ -8349,6 +8349,7 @@ GameObject:
   - component: {fileID: 1864023966}
   - component: {fileID: 2141915300}
   - component: {fileID: 2141915310}
+  - component: {fileID: 2141915320}
   m_Layer: 0
   m_Name: Level 1 - Engineering Access
   m_TagString: Untagged
@@ -11065,3 +11066,21 @@ MonoBehaviour:
   - {fileID: 1863731512}
   primaryColor: {r: 0.863, g: 0.894, b: 0.91, a: 1}
   secondaryColor: {r: 0.545, g: 0.573, b: 0.596, a: 1}
+--- !u!114 &2141915320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1864023965}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 577fba0485f2410ea87f2f7e559c07f5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Scene01Guidance
+  level: {fileID: 1864023966}
+  playerBody: {fileID: 1786953325}
+  playerGravity: {fileID: 1786953324}
+  supportingFont: {fileID: 11400000, guid: 5ab9449966a174634bb20e4c7e5bc291, type: 2}
+  hoverDelay: 8
+  stationarySpeed: 1.5

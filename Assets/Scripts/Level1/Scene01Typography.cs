@@ -26,11 +26,11 @@ public sealed class Scene01Typography : MonoBehaviour
         public StyleFontDefinition font;
         public StyleEnum<FontStyle> weight;
         public StyleColor color;
-        public StyleLength spacing;
+        public StyleLength spacing, top, bottom, height, size;
         public OriginalStyle(IStyle style)
-        { font = style.unityFontDefinition; weight = style.unityFontStyleAndWeight; color = style.color; spacing = style.letterSpacing; }
+        { font = style.unityFontDefinition; weight = style.unityFontStyleAndWeight; color = style.color; spacing = style.letterSpacing; top = style.top; bottom = style.bottom; height = style.height; size = style.fontSize; }
         public void Restore(IStyle style)
-        { style.unityFontDefinition = font; style.unityFontStyleAndWeight = weight; style.color = color; style.letterSpacing = spacing; }
+        { style.unityFontDefinition = font; style.unityFontStyleAndWeight = weight; style.color = color; style.letterSpacing = spacing; style.top = top; style.bottom = bottom; style.height = height; style.fontSize = size; }
     }
 
     void Start()
@@ -81,6 +81,14 @@ public sealed class Scene01Typography : MonoBehaviour
             bool heading = text is Button || text.ClassListContains("title") || text.ClassListContains("controls-title") ||
                 text.ClassListContains("unity-base-field__label");
             Configure(text, heading);
+        }
+        var launcher = document.rootVisualElement.Q<Button>("open-settings");
+        if (launcher != null)
+        {
+            launcher.style.top = StyleKeyword.Auto;
+            launcher.style.bottom = 24;
+            launcher.style.height = 32;
+            launcher.style.fontSize = 14;
         }
     }
     void Configure(VisualElement element, bool heading)
