@@ -7,6 +7,14 @@ public class GlobalState
 
     private static GlobalState gs = null;
 
+    // Preferences belong to GameSettings and intentionally survive a new game.
+    // Call before loading gameplay so scene objects register with the fresh state.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    public static void ResetForNewGame()
+    {
+        gs = new GlobalState();
+    }
+
     public static GlobalState get()
     {
         if (gs == null)

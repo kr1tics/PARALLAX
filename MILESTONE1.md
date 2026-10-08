@@ -26,7 +26,7 @@
 - [ ] Some Puzzle Design (see below)
 
 #### UI and Sound
-- [ ] Main Menu
+- [x] Main Menu (Play, shared settings/controls, platform-aware Quit)
 - [x] Pause Menu/Control UI
 - [x] Settings (volume, graphics quality, fullscreen, mouse sensitivity, inversion)
 - [ ] Interaction prompt

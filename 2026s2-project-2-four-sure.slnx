@@ -1,0 +1,7 @@
+﻿<Solution>
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Parallax.Settings.csproj" />
+  <Project Path="Parallax.Gameplay.PlayModeTests.csproj" />
+  <Project Path="Parallax.MainMenu.PlayModeTests.csproj" />
+  <Project Path="Parallax.Settings.PlayModeTests.csproj" />
+</Solution>

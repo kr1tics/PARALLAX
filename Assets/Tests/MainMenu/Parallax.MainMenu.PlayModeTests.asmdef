@@ -1,0 +1,8 @@
+{
+    "name": "Parallax.MainMenu.PlayModeTests",
+    "rootNamespace": "Parallax.MainMenu.Tests",
+    "references": ["Parallax.Settings", "Unity.InputSystem"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "optionalUnityReferences": ["TestAssemblies"]
+}
