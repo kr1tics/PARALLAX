@@ -181,7 +181,7 @@ The first-person perspective keeps interaction direct and makes changes between 
 | `F` | Switch between past and future |
 | `Space` | Jump / push away in low gravity |
 | `R` | Reset current puzzle |
-| `Esc` | Pause / settings |
+| `Esc` / `P` | Pause / settings |
 
 The final controls may be adjusted after playtesting.
 
@@ -983,6 +983,16 @@ A subtle musical layer can appear during:
 The UI is minimal and uses the visual language of station maintenance software.
 
 
+
+### Settings Menu
+
+The settings menu is available in `StartScene` through the top-right Settings button, `Esc`, or `P`. It pauses gameplay and audio, releases the cursor, and restores the previous pause and cursor state when resumed. The compact, single-column panel supports keyboard navigation and scrolls on smaller screens.
+
+Players can adjust master volume, graphics quality, fullscreen, mouse sensitivity, and vertical-look inversion, or restore defaults. Changes apply immediately and are saved locally on resume. Browser fullscreen requires a click; the visible Settings button and `P` remain available when the browser uses Escape to exit fullscreen.
+
+The menu uses UI Toolkit assets in `Assets/Resources/UI` and persists across scene changes. Future player controllers should skip movement/look input while `GameSettingsMenu.Instance.IsOpen` and read `GameSettings.MouseSensitivity` and `GameSettings.InvertLook` for camera input. The current prototype has no player controller yet. In the Editor, fullscreen stores the player preference without changing the Editor window.
+
+Play Mode regression tests are in `Assets/Tests/Settings` and can be run from Unity's Test Runner.
 
 ### HUD
 
