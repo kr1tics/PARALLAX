@@ -3243,7 +3243,6 @@ MonoBehaviour:
   body: {fileID: 1786953325}
   grav: {fileID: 1786953324}
   cam: {fileID: 1047493167}
-  floor: {fileID: 880741605}
   interactionDistance: 4
   feet: {fileID: 2028501664}
   groundMask:

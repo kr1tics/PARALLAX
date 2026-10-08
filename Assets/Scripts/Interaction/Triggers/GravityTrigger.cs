@@ -9,6 +9,6 @@ public class GravityTrigger : Trigger
 
     public override void onEndTrigger()
     {
-        GlobalState.get().gravity = 9.81f;
+        GlobalState.get().gravity = GlobalState.StationGravityStrength;
     }
 }

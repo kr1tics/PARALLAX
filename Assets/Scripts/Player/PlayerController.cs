@@ -1,4 +1,3 @@
-using System;
 using Parallax.Settings;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -14,19 +13,18 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Camera cam;
     private Look cameraLook = null;
     
-    [SerializeField]  private Collider floor;
-
     [SerializeField] private float interactionDistance = 4f;
 
     private bool isInJetpack = false;
 
     private Vector3 movementIntent = new Vector3();
     [SerializeField] private Transform feet;
-    [SerializeField] private LayerMask groundMask;
+    [SerializeField] private LayerMask groundMask = ~0;
     [SerializeField] private float speed = 7.5f;
     [SerializeField] private float jetpackDampening = 0.15f;
-    private float jumpForce = 0f;
-    private Vector3 lastIntent = new();
+    [SerializeField] private float jumpSpeed = 6f;
+    private bool jumpRequested;
+    private readonly RaycastHit[] groundHits = new RaycastHit[16];
 
     [SerializeField] private Interact interactionController;
     
@@ -37,6 +35,8 @@ public class PlayerController : MonoBehaviour
             body = GetComponent<Rigidbody>();
         }
         body.freezeRotation = true;
+        body.interpolation = RigidbodyInterpolation.Interpolate;
+        body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         
         
         if (grav == null)
@@ -53,8 +53,7 @@ public class PlayerController : MonoBehaviour
         if (GameSettingsMenu.GameplayInputBlocked)
         {
             movementIntent = Vector3.zero;
-            lastIntent = Vector3.zero;
-            jumpForce = 0f;
+            jumpRequested = false;
             return;
         }
         if (Keyboard.current == null || Mouse.current == null) return;
@@ -71,6 +70,7 @@ public class PlayerController : MonoBehaviour
         Look();
         
         DirectionIntent();
+        jumpRequested |= Keyboard.current.spaceKey.wasPressedThisFrame;
         
         
         // Temporary setup to allow for timetravel swap
@@ -110,8 +110,8 @@ public class PlayerController : MonoBehaviour
 
     void DirectionIntent()
     {
-        Vector3 direction = cam.transform.localPosition.normalized;
-        Vector3 perpendicular = Vector3.Cross(direction, Vector3.up).normalized;
+        Vector3 direction = cam.transform.forward;
+        Vector3 perpendicular = -cam.transform.right;
         movementIntent = new();
         
         if (Keyboard.current.wKey.isPressed)
@@ -136,7 +136,6 @@ public class PlayerController : MonoBehaviour
             movementIntent += Vector3.up;
         }
         
-        // TODO: Make crouching happen if we 
         if (Keyboard.current.ctrlKey.isPressed)
         {
             movementIntent += Vector3.down;
@@ -146,10 +145,11 @@ public class PlayerController : MonoBehaviour
     void FixedUpdate()
     {
         if (GameSettingsMenu.GameplayInputBlocked) return;
-        switch (isInJetpack)
+        switch (isInJetpack || !grav.IsGravityActive)
         {
             case true:
                 movePlayerJetpack();
+                jumpRequested = false;
                 break;
             case false:
                 movePlayerFeet();
@@ -172,26 +172,28 @@ public class PlayerController : MonoBehaviour
         }
     }
     
-    // The jetpack is off, the player feels gravity and must be touching the ground to walk.
+    // With station gravity and the jetpack off, the player must be grounded to walk.
     void movePlayerFeet()
     {
-        RaycastHit hit; 
-        bool groundCheck = Physics.Raycast(feet.position, Vector3.down, out hit, 0.5f, groundMask);
-        if (!groundCheck)
+        Vector3 origin = feet != null ? feet.position : body.position - Vector3.up * 0.85f;
+        int count = Physics.RaycastNonAlloc(origin + Vector3.up * 0.25f, Vector3.down,
+            groundHits, 0.65f, groundMask, QueryTriggerInteraction.Ignore);
+        bool grounded = false;
+        for (int i = 0; i < count; i++)
         {
-            jumpForce = 0f;
-            return;
+            if (groundHits[i].rigidbody == body || groundHits[i].normal.y < 0.6f) continue;
+            grounded = true;
+            break;
         }
-
-        if (jumpForce < 0.1f && groundCheck)
+        if (grounded && body.linearVelocity.y <= 0.5f)
         {
-            lastIntent = movementIntent;
+            Vector3 horizontal = Vector3.ProjectOnPlane(movementIntent, Vector3.up);
+            Vector3 velocity = horizontal.normalized * speed;
+            velocity.y = jumpRequested ? jumpSpeed : body.linearVelocity.y;
+            body.linearVelocity = velocity;
         }
-        
-        body.linearVelocity = (lastIntent - lastIntent.y * Vector3.up).normalized * speed;
-        
-        jumpForce = Mathf.Max((lastIntent.y * 10), jumpForce);
-        body.linearVelocity += (jumpForce * Vector3.up);
+        // A press gives one jump; holding Space does not repeatedly jump on landing.
+        jumpRequested = false;
     }
     private void TryDistortObject()
     {

@@ -21,7 +21,8 @@ public class GlobalState
     
     #region Physics
     
-    public float gravity = 9.81f;
+    public const float StationGravityStrength = 14.715f;
+    public float gravity = StationGravityStrength;
     
     #endregion
 
