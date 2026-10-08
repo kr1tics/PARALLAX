@@ -1,0 +1,34 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="SettingsMenu.uss" />
+    <ui:VisualElement name="settings-root" class="settings-root" picking-mode="Ignore">
+        <ui:Button name="open-settings" text="Settings" class="settings-button launcher" tooltip="Open settings (Esc / P)" />
+        <ui:VisualElement name="settings-overlay" class="overlay">
+            <ui:VisualElement class="settings-panel">
+                <ui:VisualElement class="header">
+                    <ui:Label text="Settings" class="title" />
+                    <ui:Button name="close-settings" text="×" class="settings-button close-button" tooltip="Save and resume" />
+                </ui:VisualElement>
+                <ui:ScrollView name="settings-scroll" class="settings-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden">
+                    <ui:VisualElement class="slider-setting">
+                        <ui:Slider name="volume" label="Master volume" low-value="0" high-value="1" class="setting-slider" tooltip="Volume of all game audio" />
+                        <ui:Label name="volume-value" text="100%" class="slider-value" />
+                    </ui:VisualElement>
+                    <ui:DropdownField name="quality" label="Graphics quality" class="quality-field" tooltip="Adjust rendering detail and performance" />
+                    <ui:Toggle name="fullscreen" label="Fullscreen" class="setting-toggle" tooltip="Switch between windowed and fullscreen display" />
+                    <ui:VisualElement class="slider-setting">
+                        <ui:Slider name="sensitivity" label="Mouse sensitivity" low-value="0.1" high-value="3" class="setting-slider" tooltip="Adjust mouse-look speed" />
+                        <ui:Label name="sensitivity-value" text="1.0x" class="slider-value" />
+                    </ui:VisualElement>
+                    <ui:Toggle name="invert" label="Invert vertical look" class="setting-toggle last-setting" tooltip="Moving the mouse up looks down" />
+                </ui:ScrollView>
+                <ui:VisualElement class="footer">
+                    <ui:Label name="settings-status" text="Saved on resume." class="save-status" />
+                    <ui:VisualElement class="footer-actions">
+                        <ui:Button name="defaults" text="Reset defaults" class="settings-button secondary-button" />
+                        <ui:Button name="resume" text="Resume" class="settings-button primary-button" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

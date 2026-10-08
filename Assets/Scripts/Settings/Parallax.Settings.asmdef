@@ -1,0 +1,6 @@
+{
+    "name": "Parallax.Settings",
+    "rootNamespace": "Parallax.Settings",
+    "references": ["Unity.InputSystem"],
+    "autoReferenced": true
+}
