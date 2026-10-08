@@ -48,7 +48,7 @@ namespace Parallax.Gameplay.Tests
             playerBody = player.GetComponent<Rigidbody>(); camera = Camera.main;
             var stateType = player.GetType().Assembly.GetType("GlobalState");
             var state = stateType.GetMethod("get").Invoke(null, null);
-            Set(state, "gravity", 9.81f);
+            Set(state, "gravity", (float)stateType.GetField("StationGravityStrength").GetRawConstantValue());
             yield return Keys();
         }
 
