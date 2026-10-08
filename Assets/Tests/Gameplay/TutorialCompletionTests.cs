@@ -83,7 +83,7 @@ namespace Parallax.Gameplay.Tests
             level = fresh; completion = root.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "TutorialCompletionScreen");
             yield return Complete(); // New scene supports a second completion cycle.
         }
-        [UnityTest] public IEnumerator F8ShortcutHonoursInputLockAndDoesNotSolvePuzzles()
+        [UnityTest] public IEnumerator ShiftKShortcutHonoursInputLockAndDoesNotSolvePuzzles()
         {
             var background = InputSystem.settings.backgroundBehavior;
             var editorInput = InputSystem.settings.editorInputBehaviorInPlayMode;
@@ -93,11 +93,11 @@ namespace Parallax.Gameplay.Tests
             try
             {
                 GameSettingsMenu.StartupInputBlocked = true;
-                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F8));
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.LeftShift, Key.K));
                 yield return null; Assert.That(Flag(completion, "IsOpen"), Is.False);
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null; yield return null;
                 GameSettingsMenu.StartupInputBlocked = false;
-                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F8));
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.LeftShift, Key.K));
                 yield return null; yield return null; Assert.That(Flag(completion, "IsOpen"), Is.True);
                 Assert.That(Flag(level, "Completed"), Is.False); Assert.That(Flag(level, "IntroSolved"), Is.False);
                 yield return new WaitForSecondsRealtime(2.7f); Assert.That(Flag(completion, "IsReady"), Is.True);

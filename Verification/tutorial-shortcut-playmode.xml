@@ -1,46 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<test-run id="2" testcasecount="4" result="Passed" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-08 20:34:07Z" end-time="2026-10-08 20:34:25Z" duration="17.7194857">
-  <test-suite type="TestSuite" id="1074" name="Project-1-Game" fullname="Project-1-Game" runstate="Runnable" testcasecount="49" result="Passed" start-time="2026-10-08 20:34:07Z" end-time="2026-10-08 20:34:25Z" duration="17.719486" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+<test-run id="2" testcasecount="4" result="Passed" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-08 20:37:23Z" end-time="2026-10-08 20:37:40Z" duration="17.8452178">
+  <test-suite type="TestSuite" id="1074" name="Project-1-Game" fullname="Project-1-Game" runstate="Runnable" testcasecount="49" result="Passed" start-time="2026-10-08 20:37:23Z" end-time="2026-10-08 20:37:40Z" duration="17.845218" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
     <properties>
       <property name="platform" value="PlayMode" />
     </properties>
-    <test-suite type="Assembly" id="1038" name="Parallax.Gameplay.PlayModeTests.dll" fullname="/private/tmp/IntroIntegrationVerification/Library/ScriptAssemblies/Parallax.Gameplay.PlayModeTests.dll" runstate="Runnable" testcasecount="30" result="Passed" start-time="2026-10-08 20:34:07Z" end-time="2026-10-08 20:34:25Z" duration="17.713425" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <test-suite type="Assembly" id="1038" name="Parallax.Gameplay.PlayModeTests.dll" fullname="/private/tmp/IntroIntegrationVerification/Library/ScriptAssemblies/Parallax.Gameplay.PlayModeTests.dll" runstate="Runnable" testcasecount="30" result="Passed" start-time="2026-10-08 20:37:23Z" end-time="2026-10-08 20:37:40Z" duration="17.826448" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
       <properties>
-        <property name="_PID" value="22009" />
+        <property name="_PID" value="22360" />
         <property name="_APPDOMAIN" value="Unity Child Domain" />
         <property name="platform" value="PlayMode" />
         <property name="EditorOnly" value="False" />
       </properties>
-      <test-suite type="TestSuite" id="1039" name="Parallax" fullname="Parallax" runstate="Runnable" testcasecount="27" result="Passed" start-time="2026-10-08 20:34:07Z" end-time="2026-10-08 20:34:25Z" duration="17.712561" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <test-suite type="TestSuite" id="1039" name="Parallax" fullname="Parallax" runstate="Runnable" testcasecount="27" result="Passed" start-time="2026-10-08 20:37:23Z" end-time="2026-10-08 20:37:40Z" duration="17.825635" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
         <properties />
-        <test-suite type="TestSuite" id="1040" name="Gameplay" fullname="Parallax.Gameplay" runstate="Runnable" testcasecount="27" result="Passed" start-time="2026-10-08 20:34:07Z" end-time="2026-10-08 20:34:25Z" duration="17.712099" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <test-suite type="TestSuite" id="1040" name="Gameplay" fullname="Parallax.Gameplay" runstate="Runnable" testcasecount="27" result="Passed" start-time="2026-10-08 20:37:23Z" end-time="2026-10-08 20:37:40Z" duration="17.825227" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
           <properties />
-          <test-suite type="TestSuite" id="1041" name="Tests" fullname="Parallax.Gameplay.Tests" runstate="Runnable" testcasecount="27" result="Passed" start-time="2026-10-08 20:34:07Z" end-time="2026-10-08 20:34:25Z" duration="17.711689" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <test-suite type="TestSuite" id="1041" name="Tests" fullname="Parallax.Gameplay.Tests" runstate="Runnable" testcasecount="27" result="Passed" start-time="2026-10-08 20:37:23Z" end-time="2026-10-08 20:37:40Z" duration="17.824722" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
             <properties />
-            <test-suite type="TestFixture" id="1033" name="TutorialCompletionTests" fullname="Parallax.Gameplay.Tests.TutorialCompletionTests" classname="Parallax.Gameplay.Tests.TutorialCompletionTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-08 20:34:07Z" end-time="2026-10-08 20:34:25Z" duration="17.710425" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <test-suite type="TestFixture" id="1033" name="TutorialCompletionTests" fullname="Parallax.Gameplay.Tests.TutorialCompletionTests" classname="Parallax.Gameplay.Tests.TutorialCompletionTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-08 20:37:23Z" end-time="2026-10-08 20:37:40Z" duration="17.823040" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
               <properties />
-              <test-case id="1037" name="ContinueSafelyReturnsToExistingMenu" fullname="Parallax.Gameplay.Tests.TutorialCompletionTests.ContinueSafelyReturnsToExistingMenu" methodname="ContinueSafelyReturnsToExistingMenu" classname="Parallax.Gameplay.Tests.TutorialCompletionTests" runstate="Runnable" seed="1254038582" result="Passed" start-time="2026-10-08 20:34:07Z" end-time="2026-10-08 20:34:11Z" duration="4.126569" asserts="0">
+              <test-case id="1037" name="ContinueSafelyReturnsToExistingMenu" fullname="Parallax.Gameplay.Tests.TutorialCompletionTests.ContinueSafelyReturnsToExistingMenu" methodname="ContinueSafelyReturnsToExistingMenu" classname="Parallax.Gameplay.Tests.TutorialCompletionTests" runstate="Runnable" seed="1000486346" result="Passed" start-time="2026-10-08 20:37:23Z" end-time="2026-10-08 20:37:27Z" duration="4.096968" asserts="0">
                 <properties>
                   <property name="_JOINTYPE" value="UnityCombinatorial" />
                   <property name="retryIteration" value="0" />
                   <property name="repeatIteration" value="0" />
                 </properties>
               </test-case>
-              <test-case id="1036" name="F8ShortcutHonoursInputLockAndDoesNotSolvePuzzles" fullname="Parallax.Gameplay.Tests.TutorialCompletionTests.F8ShortcutHonoursInputLockAndDoesNotSolvePuzzles" methodname="F8ShortcutHonoursInputLockAndDoesNotSolvePuzzles" classname="Parallax.Gameplay.Tests.TutorialCompletionTests" runstate="Runnable" seed="1691547158" result="Passed" start-time="2026-10-08 20:34:11Z" end-time="2026-10-08 20:34:14Z" duration="3.062345" asserts="0">
+              <test-case id="1035" name="ReplayReloadsInitialFutureStateWithoutIntro" fullname="Parallax.Gameplay.Tests.TutorialCompletionTests.ReplayReloadsInitialFutureStateWithoutIntro" methodname="ReplayReloadsInitialFutureStateWithoutIntro" classname="Parallax.Gameplay.Tests.TutorialCompletionTests" runstate="Runnable" seed="1035181868" result="Passed" start-time="2026-10-08 20:37:27Z" end-time="2026-10-08 20:37:33Z" duration="6.085077" asserts="0">
                 <properties>
                   <property name="_JOINTYPE" value="UnityCombinatorial" />
                   <property name="retryIteration" value="0" />
                   <property name="repeatIteration" value="0" />
                 </properties>
               </test-case>
-              <test-case id="1035" name="ReplayReloadsInitialFutureStateWithoutIntro" fullname="Parallax.Gameplay.Tests.TutorialCompletionTests.ReplayReloadsInitialFutureStateWithoutIntro" methodname="ReplayReloadsInitialFutureStateWithoutIntro" classname="Parallax.Gameplay.Tests.TutorialCompletionTests" runstate="Runnable" seed="1330878770" result="Passed" start-time="2026-10-08 20:34:14Z" end-time="2026-10-08 20:34:21Z" duration="6.085270" asserts="0">
+              <test-case id="1034" name="RequiresFinalObjectiveAndShowsExactCopyWithoutDuplicateOrSettings" fullname="Parallax.Gameplay.Tests.TutorialCompletionTests.RequiresFinalObjectiveAndShowsExactCopyWithoutDuplicateOrSettings" methodname="RequiresFinalObjectiveAndShowsExactCopyWithoutDuplicateOrSettings" classname="Parallax.Gameplay.Tests.TutorialCompletionTests" runstate="Runnable" seed="283185953" result="Passed" start-time="2026-10-08 20:37:33Z" end-time="2026-10-08 20:37:37Z" duration="4.542652" asserts="0">
                 <properties>
                   <property name="_JOINTYPE" value="UnityCombinatorial" />
                   <property name="retryIteration" value="0" />
                   <property name="repeatIteration" value="0" />
                 </properties>
               </test-case>
-              <test-case id="1034" name="RequiresFinalObjectiveAndShowsExactCopyWithoutDuplicateOrSettings" fullname="Parallax.Gameplay.Tests.TutorialCompletionTests.RequiresFinalObjectiveAndShowsExactCopyWithoutDuplicateOrSettings" methodname="RequiresFinalObjectiveAndShowsExactCopyWithoutDuplicateOrSettings" classname="Parallax.Gameplay.Tests.TutorialCompletionTests" runstate="Runnable" seed="921402518" result="Passed" start-time="2026-10-08 20:34:21Z" end-time="2026-10-08 20:34:25Z" duration="4.427099" asserts="0">
+              <test-case id="1036" name="ShiftKShortcutHonoursInputLockAndDoesNotSolvePuzzles" fullname="Parallax.Gameplay.Tests.TutorialCompletionTests.ShiftKShortcutHonoursInputLockAndDoesNotSolvePuzzles" methodname="ShiftKShortcutHonoursInputLockAndDoesNotSolvePuzzles" classname="Parallax.Gameplay.Tests.TutorialCompletionTests" runstate="Runnable" seed="572325265" result="Passed" start-time="2026-10-08 20:37:37Z" end-time="2026-10-08 20:37:40Z" duration="3.088974" asserts="0">
                 <properties>
                   <property name="_JOINTYPE" value="UnityCombinatorial" />
                   <property name="retryIteration" value="0" />

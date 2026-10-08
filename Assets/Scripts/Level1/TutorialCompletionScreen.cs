@@ -18,7 +18,7 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     [SerializeField, Min(0)] float completionDelay = 1f;
     [SerializeField, Min(.01f)] float fadeDuration = .8f;
     [Header("Tutorial shortcut")]
-    [Tooltip("F8 opens the completion screen without solving puzzles. Disable for submission if desired.")]
+    [Tooltip("Shift + K opens the completion screen without solving puzzles. Disable for submission if desired.")]
     [SerializeField] bool allowCompletionShortcut = true;
     CanvasGroup overlay, copy, actions;
     GameObject screen;
@@ -33,7 +33,7 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     void LateUpdate()
     {
         if (triggered || GameSettingsMenu.GameplayInputBlocked) return;
-        bool shortcut = allowCompletionShortcut && Keyboard.current != null && Keyboard.current.f8Key.wasPressedThisFrame;
+        bool shortcut = allowCompletionShortcut && Keyboard.current != null && Keyboard.current.shiftKey.isPressed && Keyboard.current.kKey.wasPressedThisFrame;
         if (!level.Completed && !shortcut) return;
         triggered = true;
         previousScale = Time.timeScale;
