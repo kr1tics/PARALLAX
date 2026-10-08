@@ -1303,3 +1303,5 @@ Some concept images in this document were generated using OpenAI's ChatGPT image
 ## Audio planning
 
 [PARALLAX — 第一版音效选型与处理清单](AUDIO_SELECTION_V1.md) records the current candidates, processing requirements and source paths. Direct listening and in-game mixing verification are still pending.
+
+[第一版 Unity 音频接入记录](AUDIO_INTEGRATION.md)：已分类接入工作副本，直接试听和游戏内混音验证仍待完成。

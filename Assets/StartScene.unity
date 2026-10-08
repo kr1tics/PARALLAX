@@ -8351,6 +8351,7 @@ GameObject:
   - component: {fileID: 2141915310}
   - component: {fileID: 2141915320}
   - component: {fileID: 2141915321}
+  - component: {fileID: 2141915340}
   m_Layer: 0
   m_Name: Level 1 - Engineering Access
   m_TagString: Untagged
@@ -11101,3 +11102,20 @@ MonoBehaviour:
   nextScene:
   completionDelay: 1
   fadeDuration: 0.8
+--- !u!114 &2141915340
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1864023965}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7eee3ec8a8b04518b1053c0bff8b103c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  palette: {fileID: 11400000, guid: a876d042e5284897a1121ce281dc2d7f, type: 2}
+  level: {fileID: 1864023966}
+  interaction: {fileID: 1786953326}
+  accessPlate: {fileID: 734993471}
+  engineeringPlate: {fileID: 1226439776}

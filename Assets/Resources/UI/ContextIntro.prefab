@@ -44,9 +44,9 @@ MonoBehaviour:
   displayDuration: 2
   revealDuration: 1.75
   blackHoldDuration: 0.5
-  openingHum: {fileID: 0}
-  mechanicalAmbience: {fileID: 0}
-  signalSound: {fileID: 0}
+  openingHum: {fileID: 8300000, guid: e8a9d3d2e0bb42cbb1b5e005fd291699, type: 3}
+  mechanicalAmbience: {fileID: 8300000, guid: f10ec176ac1e41a582aa9297279f3531, type: 3}
+  signalSound: {fileID: 8300000, guid: 7dfc65961aeb40588e7a4b496f142714, type: 3}
   futureAmbience: {fileID: 0}
   humVolume: 0.035
   mechanicalVolume: 0.07

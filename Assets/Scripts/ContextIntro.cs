@@ -42,6 +42,7 @@ public sealed class ContextIntro : MonoBehaviour
     public bool allowSkip = true;
     public bool showStartGameButton = true;
     public bool IsPlaying { get; private set; }
+    public float LaboratoryRevealBlend => revealing ? revealProgress : 0;
     private CanvasGroup curtain;
     private TextMeshProUGUI caption, archive, signal;
     private CanvasGroup skipGroup;

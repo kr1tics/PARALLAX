@@ -1,0 +1,182 @@
+[
+  {
+    "key": "menu",
+    "source": "/Users/soyuuuuu/Downloads/511493__the_toothpaste_vampires__ambient-space-noise-1-30bpm-6m-24s.wav",
+    "source_sha256": "bcdf7366bf1f672bc28e9bf3574b6bfa8cbaccc295b41a05cf714f8e4e46771e",
+    "output": "Assets/Audio/Processed/Ambience/Menu.wav",
+    "start_seconds": 15,
+    "duration_seconds": 29.0,
+    "removed_dc": [
+      -0.0031054771694376537,
+      -0.0053616051821661825
+    ],
+    "gain": 1,
+    "peak": 0.1838168616147088,
+    "loop_crossfade_seconds": 1,
+    "status": "technical candidate; listening and in-game mix pending",
+    "output_sha256": "283dfbb06ab0997edce4903a28545607bd7061736779fd5ee7ec4dfa93ebc7b2",
+    "output_dc_mean": 5.180746053584868e-06,
+    "loop_boundary_max_sample_delta": 0.0008544921875
+  },
+  {
+    "key": "past",
+    "source": "/Users/soyuuuuu/Downloads/715475__kvv_audio__ambtech_server-room-noise-01_kvv_free.wav",
+    "source_sha256": "be7262812820ce2572fcdc2413d9de03ca21e17cfbe8f998b74bae61db738a1f",
+    "output": "Assets/Audio/Processed/Ambience/Past.wav",
+    "start_seconds": 0,
+    "duration_seconds": 29.0,
+    "removed_dc": [
+      -0.00020251065785472174,
+      -0.00020370386517237104
+    ],
+    "gain": 0.7515881647594046,
+    "peak": 0.22,
+    "loop_crossfade_seconds": 1,
+    "status": "technical candidate; listening and in-game mix pending",
+    "output_sha256": "83d5b3e6c3ecce84ad887ebb54fcdfabbdbcdcc7e426170b0f80140e979067a8",
+    "output_dc_mean": 9.43556077244116e-06,
+    "loop_boundary_max_sample_delta": 0.00347900390625
+  },
+  {
+    "key": "future",
+    "source": "/Users/soyuuuuu/Downloads/864658__tommasomotteran__dark-sci-fi-laboratory-atmosphere-spaceship-interior-ambience-loop.wav",
+    "source_sha256": "40a4287cee639dd00971fab69a210c95d1e7527a33f2f1bc1d0e80a0751d4314",
+    "output": "Assets/Audio/Processed/Ambience/Future.wav",
+    "start_seconds": 0,
+    "duration_seconds": 29.0,
+    "removed_dc": [
+      -2.408189838435374e-07,
+      -1.2843679138321995e-07
+    ],
+    "gain": 1,
+    "peak": 0.09060656101633362,
+    "loop_crossfade_seconds": 1,
+    "status": "technical candidate; listening and in-game mix pending",
+    "output_sha256": "ebbe890a73a2047e9d843df76a37f121c6cb93252f9b36c6d778bc35ff74ca13",
+    "output_dc_mean": 4.130873596969319e-06,
+    "loop_boundary_max_sample_delta": 0.001312255859375
+  },
+  {
+    "key": "hum",
+    "source": "/Users/soyuuuuu/Downloads/571922__alex36917__electric_hum_ambiance.wav",
+    "source_sha256": "496cdac9ea461d84760bf5e71dd376cea5585be5b7a74de4adbb1536f458a1fc",
+    "output": "Assets/Audio/Processed/Ambience/DeviceHum.wav",
+    "start_seconds": 0,
+    "duration_seconds": 7.0,
+    "removed_dc": [
+      -1.3384051333749645e-05,
+      -1.7375383787955286e-05
+    ],
+    "gain": 0.8705325773802828,
+    "peak": 0.17334681753435388,
+    "loop_crossfade_seconds": 1,
+    "status": "technical candidate; listening and in-game mix pending",
+    "output_sha256": "3121179dc1ef7b3cb62380b830079626065d12ae87800451e38f39a12d5a9133",
+    "output_dc_mean": 1.0800968685465258e-05,
+    "loop_boundary_max_sample_delta": 0.005279541015625
+  },
+  {
+    "key": "switch",
+    "source": "/Users/soyuuuuu/Downloads/872647__signaturesoundsorg__tv_switch_off.wav",
+    "source_sha256": "d648b69a534879ea8d25b3f082a537b9f006e59a2e2f416207fb599732467198",
+    "output": "Assets/Audio/Processed/Systems/TimeSwitch.wav",
+    "start_seconds": 0,
+    "duration_seconds": 0.32,
+    "removed_dc": [
+      -0.0041978451129800875,
+      -0.0041968395380206115
+    ],
+    "gain": 0.41891245954808703,
+    "peak": 0.3,
+    "loop_crossfade_seconds": 0,
+    "status": "technical candidate; listening and in-game mix pending",
+    "output_sha256": "b481313d20b41df15c16d53ff6f7fd912751bf55f09a4460420f5ce0e1496db9",
+    "output_dc_mean": -3.0043984756988732e-05,
+    "loop_boundary_max_sample_delta": null
+  },
+  {
+    "key": "gravity",
+    "source": "/Users/soyuuuuu/Downloads/169994__peepholecircus__power-down.mp3",
+    "source_sha256": "ddb4e0e3df0f5aebc2932e5554c5ef321b8c549e904627facde20b694e70f278",
+    "output": "Assets/Audio/Processed/Systems/GravityOff.wav",
+    "start_seconds": 0,
+    "duration_seconds": 4.4,
+    "removed_dc": [
+      -1.97318381217307e-05,
+      -1.971076331515087e-05
+    ],
+    "gain": 0.7077650923643105,
+    "peak": 0.3,
+    "loop_crossfade_seconds": 0,
+    "status": "technical candidate; listening and in-game mix pending",
+    "output_sha256": "252c67811e8b55278c6e668c8e213d4a8b1db479f40587cf066cd3f3f6a614b8",
+    "output_dc_mean": -4.292812280570372e-07,
+    "loop_boundary_max_sample_delta": null
+  },
+  {
+    "key": "pickup",
+    "source": "/Users/soyuuuuu/Downloads/762911__ienba__game-pick-up.wav",
+    "source_sha256": "950a7a713272412946cd79a682c623e2d84a3075658ba871cc02c6dc0d57326a",
+    "output": "Assets/Audio/Processed/Interaction/PickupCandidate.wav",
+    "start_seconds": 0.17,
+    "duration_seconds": 0.47,
+    "removed_dc": [
+      -4.6865176422962805e-06,
+      -1.9759053333212717e-06
+    ],
+    "gain": 1,
+    "peak": 0.2640361100321667,
+    "loop_crossfade_seconds": 0,
+    "status": "technical candidate; listening and in-game mix pending",
+    "output_sha256": "85d662ab9d6d84ff4f248cebf57140e1e6d930d2165f0a68bb6372963be32df7",
+    "output_dc_mean": 1.1174466115679428e-05,
+    "loop_boundary_max_sample_delta": null
+  },
+  {
+    "key": "drop",
+    "source": "/Users/soyuuuuu/Downloads/810170__mokasza__heavy-object-drop.mp3",
+    "source_sha256": "83a21a28602d1e2bb29e996cdad88cba04b4ef912819804e3c7dd2738873d0b3",
+    "output": "Assets/Audio/Processed/Interaction/HeavyDrop.wav",
+    "start_seconds": 0.38639455782312926,
+    "duration_seconds": 0.5409297052154195,
+    "removed_dc": [
+      -0.0008752257187794749,
+      -0.0007661172214780707
+    ],
+    "gain": 0.3640274017294837,
+    "peak": 0.35,
+    "loop_crossfade_seconds": 0,
+    "status": "technical candidate; listening and in-game mix pending",
+    "output_sha256": "25e1276c61728ec3466cabc4c67bcf6f999c1780c575d4044a39559f78e7f62d",
+    "output_dc_mean": -2.217529655077552e-05,
+    "loop_boundary_max_sample_delta": null
+  },
+  {
+    "key": "blip",
+    "source": "/Users/soyuuuuu/Desktop/audio/843148__sadiquecat__795hz-monitor-blip.wav",
+    "source_sha256": "9252f0abbbec67d8659dbbc53625f65db88d2d40e422cba735df9cf370b4b478",
+    "output": "Assets/Audio/Processed/UI/Click.wav",
+    "start_seconds": 0,
+    "duration_seconds": 0.14798185941043085,
+    "removed_dc": [
+      0.00035676012147324164
+    ],
+    "gain": 0.2268963159747735,
+    "peak": 0.18,
+    "loop_crossfade_seconds": 0,
+    "status": "technical candidate; listening and in-game mix pending",
+    "output_sha256": "4ffbc985e3ec5921b06476c8ccaf531566fc229c1badc16f9071acf737703c71",
+    "output_dc_mean": -7.251548942451348e-05,
+    "loop_boundary_max_sample_delta": null
+  },
+  {
+    "key": "complete",
+    "output": "Assets/Audio/Processed/UI/CompleteCandidate.wav",
+    "duration_seconds": 0.3898185941043084,
+    "recipe": "843148; two notes, 110ms gap, second +2 semitones via resampling",
+    "status": "new unlistened synthetic candidate; no claimed validation",
+    "output_sha256": "c9ba68b4d19248fafe03d2c5438e09b5733d2e8e755a6a69710a3fdcd29f345b",
+    "output_dc_mean": -5.222480547143127e-05,
+    "loop_boundary_max_sample_delta": null
+  }
+]

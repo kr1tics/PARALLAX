@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a169e914c2ee40fdbfb1acd94ea11a47, type: 3}
+  m_Name: ParallaxAudioPalette
+  m_EditorClassIdentifier:
+  menu: {fileID: 8300000, guid: e8a9d3d2e0bb42cbb1b5e005fd291699, type: 3}
+  past: {fileID: 8300000, guid: f10ec176ac1e41a582aa9297279f3531, type: 3}
+  future: {fileID: 8300000, guid: 1dff84aebed641409a3b95421cf415e6, type: 3}
+  deviceHum: {fileID: 8300000, guid: d8a724171ccf44f08e82bd79df8b94c8, type: 3}
+  click: {fileID: 8300000, guid: 7dfc65961aeb40588e7a4b496f142714, type: 3}
+  timeSwitch: {fileID: 8300000, guid: 24f75e908e2e41708d2ed28e1356b919, type: 3}
+  gravityOff: {fileID: 8300000, guid: cd85ac658d614cf6b2072ae947038241, type: 3}
+  pickup: {fileID: 8300000, guid: 5df0cb75e01c4f2cba97b4da0d1b9907, type: 3}
+  drop: {fileID: 8300000, guid: 6ba5f5bba1f0452aab5b7d4bf2cad5bd, type: 3}
+  complete: {fileID: 8300000, guid: d12c5d581272495fbaa5dfecb64fe505, type: 3}
+  menuVolume: 0.12
+  pastVolume: 0.18
+  futureVolume: 0.18
+  humVolume: 0.1
+  crossfadeSeconds: 1.5
+  uiVolume: 0.45
+  systemVolume: 0.4
+  interactionVolume: 0.4
