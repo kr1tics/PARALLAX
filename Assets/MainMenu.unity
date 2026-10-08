@@ -330,6 +330,8 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Parallax.UI.MainMenuController
   gameplayScene: StartScene
+  primaryFont: {fileID: 11400000, guid: d006551d96cdf48d39739dfe3c748d6c, type: 2}
+  secondaryFont: {fileID: 11400000, guid: 5ab9449966a174634bb20e4c7e5bc291, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -73,6 +73,14 @@ namespace Parallax.MainMenu.Tests
             Assert.That(Path.GetFileNameWithoutExtension(SceneUtility.GetScenePathByBuildIndex(0)), Is.EqualTo("MainMenu"));
             Assert.That(Application.CanStreamedLevelBeLoaded("StartScene"), Is.True);
             Assert.That(GameObject.Find("Player"), Is.Null);
+            Assert.That(document.rootVisualElement.Q("orbital-art"), Is.Null, "No starfield or orbital art in the laboratory menu.");
+            foreach (var text in document.rootVisualElement.Query<TextElement>().ToList())
+            {
+                bool primary = text is Button || text.name == "game-title";
+                Assert.That(text.resolvedStyle.unityFontDefinition.font.name, Is.EqualTo(primary ? "Oxanium-Regular" : "SpaceMono-Regular"), text.name);
+                Assert.That(text.resolvedStyle.unityFontStyleAndWeight, Is.EqualTo(FontStyle.Normal));
+            }
+            Assert.That(Button("play").text, Is.EqualTo("START GAME"));
             Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.True);
             Assert.That(GameSettingsMenu.Instance.IsOpen, Is.False);
             Assert.That(Cursor.lockState, Is.EqualTo(CursorLockMode.None));
@@ -243,7 +251,9 @@ namespace Parallax.MainMenu.Tests
                 }
                 else
                 {
-                    var title = root.Q("game-title");
+                    var title = root.Q<Label>("game-title");
+                    Vector2 required = title.MeasureTextSize(title.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
+                    Assert.That(required.x, Is.LessThanOrEqualTo(title.contentRect.width + 2), "Title must not clip: " + size);
                     Assert.That(title.worldBound.xMax, Is.LessThanOrEqualTo(root.worldBound.xMax + 1));
                     var scroll = root.Q<ScrollView>("home-scroll");
                     scroll.scrollOffset = new Vector2(0, scroll.verticalScroller.highValue);

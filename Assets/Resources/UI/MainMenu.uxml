@@ -1,23 +1,22 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <Style src="MainMenu.uss" />
     <ui:VisualElement name="main-menu" class="main-menu">
-        <ui:VisualElement name="orbital-art" class="orbital-art" picking-mode="Ignore" />
         <ui:VisualElement name="menu-home" class="menu-home">
             <ui:VisualElement class="masthead">
-                <ui:Label text="P / STATION OPERATIONS" class="station-brand" />
-                <ui:VisualElement class="signal"><ui:VisualElement class="signal-dot" /><ui:Label text="SIGNAL LOST · 150 YEARS" class="signal-label" /></ui:VisualElement>
+                <ui:Label text="ARCHIVE_2176" class="station-brand" />
+                <ui:VisualElement class="signal"><ui:Label text="150 YEARS OF SILENCE" class="signal-label" /></ui:VisualElement>
             </ui:VisualElement>
             <ui:ScrollView name="home-scroll" class="home-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden">
                 <ui:VisualElement class="hero">
                     <ui:Label text="AN ECHO ACROSS TIME" class="eyebrow" />
                     <ui:Label name="game-title" text="PARALLAX" class="game-title" />
-                    <ui:Label text="One station. Two timelines." class="tagline" />
-                    <ui:Label text="Step into the past. Change what remains.&#10;Restore a station adrift in time." class="description" />
+                    <ui:Label text="One laboratory. Two timelines." class="tagline" />
+                    <ui:Label text="Explore an abandoned laboratory.&#10;Discover what changed across 150 years." class="description" />
                     <ui:VisualElement class="menu-actions">
-                        <ui:Button name="play" text="Play" class="menu-button play-button" tooltip="Start a new game" />
-                        <ui:Button name="settings" text="Settings" class="menu-button" />
-                        <ui:Button name="controls" text="Controls" class="menu-button" />
-                        <ui:Button name="quit" text="Quit" class="menu-button quit-button" />
+                        <ui:Button name="play" text="START GAME" class="menu-button play-button" tooltip="Start a new game" />
+                        <ui:Button name="settings" text="SETTINGS" class="menu-button" />
+                        <ui:Button name="controls" text="CONTROLS" class="menu-button" />
+                        <ui:Button name="quit" text="QUIT" class="menu-button quit-button" />
                     </ui:VisualElement>
                     <ui:Label name="menu-status" text="" class="menu-status" />
                 </ui:VisualElement>

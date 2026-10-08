@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using Parallax.Settings;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -11,6 +12,7 @@ namespace Parallax.UI
     public sealed class MainMenuController : MonoBehaviour
     {
         [SerializeField] private string gameplayScene = "StartScene";
+        [SerializeField] private TMP_FontAsset primaryFont, secondaryFont;
         private PanelSettings panel;
         private GameSettingsMenu settings;
         private VisualElement home;
@@ -50,8 +52,13 @@ namespace Parallax.UI
             document.panelSettings = panel;
             document.visualTreeAsset = tree;
             var root = document.rootVisualElement;
-            var backdrop = new OrbitalMenuBackdrop();
-            root.Q("orbital-art").Add(backdrop);
+            // UI Toolkit uses TextCore; reuse the source faces of our established TMP assets.
+            foreach (var text in root.Query<TextElement>().ToList())
+            {
+                var font = text is Button || text.name == "game-title" ? primaryFont : secondaryFont;
+                if (font != null && font.sourceFontFile != null)
+                    text.style.unityFontDefinition = FontDefinition.FromFont(font.sourceFontFile);
+            }
             home = root.Q("menu-home");
             status = root.Q<Label>("menu-status");
             play = root.Q<Button>("play");
@@ -117,7 +124,7 @@ namespace Parallax.UI
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
                 home.Query<Button>().ForEach(button => button.SetEnabled(true));
-                play.text = "Play";
+                play.text = "START GAME";
                 status.text = "Connection failed. Please try again.";
                 Debug.LogException(exception, this);
             }
