@@ -1,44 +1,43 @@
 using UnityEngine;
+using Parallax.Settings;
 
-// Read-only HUD: input and gravity remain owned by the existing player controller.
+// Input and gravity remain owned by the player controller.
 public sealed class FutureDecayControls : MonoBehaviour
 {
     [SerializeField] private ArtificialGravity playerGravity;
-    private GUIStyle title, key, label;
+    private GUIStyle title, label;
     public void Configure(ArtificialGravity gravity) { playerGravity = gravity; }
+
     private void OnGUI()
     {
+        if (GameSettingsMenu.GameplayInputBlocked) return;
         if (title == null)
         {
-            title = new GUIStyle(GUI.skin.label) { fontSize = 30, fontStyle = FontStyle.Bold };
-            key = new GUIStyle(GUI.skin.label) { fontSize = 28, fontStyle = FontStyle.Bold };
-            label = new GUIStyle(GUI.skin.label) { fontSize = 28 };
-            title.normal.textColor = key.normal.textColor = label.normal.textColor = new Color(0.92f,0.94f,0.95f);
+            title = new GUIStyle(GUI.skin.label) { fontSize = 22, fontStyle = FontStyle.Bold };
+            label = new GUIStyle(GUI.skin.label) { fontSize = 18 };
+            title.normal.textColor = label.normal.textColor = new Color(0.92f, 0.94f, 0.95f);
         }
-        // Large native font sizes; only shrink to fit genuinely small Game views.
-        float scale = Mathf.Min(1f, Mathf.Min(Screen.width / 590f, Screen.height / 470f));
+        float scale = Mathf.Min(1f, Mathf.Min(Screen.width / 370f, Screen.height / 340f));
         Matrix4x4 previousMatrix = GUI.matrix;
         GUI.matrix = previousMatrix * Matrix4x4.Scale(new Vector3(scale, scale, 1f));
-        float width = 550;
-        GUI.Box(new Rect(20,20,width,430),GUIContent.none);
-        GUI.Label(new Rect(40,36,width-40,44), GlobalState.get().now == TimeState.Future
-            ? "FUTURE · 150 YEARS LATER" : "Past - 2026",title);
-        GUI.Label(new Rect(85,94,40,40),"W",key);
-        GUI.Label(new Rect(40,132,40,40),"A",key);
-        GUI.Label(new Rect(85,132,40,40),"S",key);
-        GUI.Label(new Rect(130,132,40,40),"D",key);
-        GUI.Label(new Rect(185,113,365,40),"Move",label);
-        Row(198,"Mouse","Look");
-        Row(242,"T","Switch Time");
-        Row(286,"Q","Toggle Jetpack");
-        Row(330,"Space","Jump / Ascend");
+        GUI.Box(new Rect(16, 16, 330, 306), GUIContent.none);
+        GUI.Label(new Rect(30, 28, 300, 30), GlobalState.get().now == TimeState.Future
+            ? "FUTURE · 150 YEARS LATER" : "PAST · 2026", title);
+        Row(68, "WASD / Mouse", "Move / look");
+        Row(98, "F / T", "Switch time");
+        Row(128, "E / Left click", "Interact / grab");
+        Row(158, "Q", "Toggle jetpack");
+        Row(188, "Space / Ctrl", "Jump / ascend / descend");
+        Row(218, "G", "Distort object");
+        Row(248, "Esc / P", "Settings / resume");
         string gravity = playerGravity == null ? "—" : playerGravity.effective ? "ON" : "OFF";
-        GUI.Label(new Rect(40,396,width-40,42),"Gravity: " + gravity,label);
+        GUI.Label(new Rect(30, 284, 300, 26), "Gravity: " + gravity, label);
         GUI.matrix = previousMatrix;
     }
-    private void Row(float y,string binding,string action)
+
+    private void Row(float y, string binding, string action)
     {
-        GUI.Label(new Rect(40,y,135,40),binding,key);
-        GUI.Label(new Rect(185,y,365,40),action,label);
+        GUI.Label(new Rect(30, y, 135, 26), binding, label);
+        GUI.Label(new Rect(170, y, 170, 26), action, label);
     }
 }

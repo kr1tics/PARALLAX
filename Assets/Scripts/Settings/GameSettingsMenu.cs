@@ -8,11 +8,16 @@ using Cursor = UnityEngine.Cursor;
 namespace Parallax.Settings
 {
     /// <summary>Persistent pause/settings overlay. Player input should check IsOpen before moving or looking.</summary>
+    [DefaultExecutionOrder(-100)]
     [DisallowMultipleComponent]
     public sealed class GameSettingsMenu : MonoBehaviour
     {
         public static GameSettingsMenu Instance { get; private set; }
         public bool IsOpen { get; private set; }
+        // Ignore the click/key that resumes the game until the next frame.
+        public static bool GameplayInputBlocked => Instance != null &&
+            (Instance.IsOpen || Instance.lastClosedFrame == Time.frameCount);
+        private int lastClosedFrame = -1;
         public event Action<bool> OpenChanged;
 
         private PanelSettings panelSettings;
@@ -185,6 +190,7 @@ namespace Parallax.Settings
             if (!IsOpen) return;
 
             IsOpen = false;
+            lastClosedFrame = Time.frameCount;
             GameSettings.Save();
             Time.timeScale = previousTimeScale;
             AudioListener.pause = previousAudioPause;

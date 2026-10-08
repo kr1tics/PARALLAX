@@ -177,9 +177,12 @@ The first-person perspective keeps interaction direct and makes changes between 
 |---|---|
 | `W` `A` `S` `D` | Move |
 | Mouse | Look |
-| `E` | Interact |
+| `E` / Left click | Interact / grab or release an object |
 | `T` | Switch between past and future |
-| `Space` | Jump / push away in low gravity |
+| `Space` | Jump / ascend with jetpack |
+| `Ctrl` | Descend with jetpack |
+| `Q` | Toggle jetpack |
+| `G` | Activate object distortion effect |
 | `R` | Reset current puzzle |
 | `Esc` / `P` | Pause / settings |
 
@@ -990,7 +993,7 @@ The settings menu is available in `StartScene` through the top-right Settings bu
 
 Players can adjust master volume, graphics quality, fullscreen, mouse sensitivity, and vertical-look inversion, or restore defaults. Changes apply immediately and are saved locally on resume. Browser fullscreen requires a click; the visible Settings button and `P` remain available when the browser uses Escape to exit fullscreen.
 
-The menu uses UI Toolkit assets in `Assets/Resources/UI` and persists across scene changes. Future player controllers should skip movement/look input while `GameSettingsMenu.Instance.IsOpen` and read `GameSettings.MouseSensitivity` and `GameSettings.InvertLook` for camera input. The current prototype has no player controller yet. In the Editor, fullscreen stores the player preference without changing the Editor window.
+The menu uses UI Toolkit assets in `Assets/Resources/UI` and persists across scene changes. The prototype player controller reads `GameSettings.MouseSensitivity` and `GameSettings.InvertLook`. Movement, camera look, interactions, and time switching are blocked while settings are open and for the frame that resumes gameplay. In the Editor, fullscreen stores the player preference without changing the Editor window.
 
 Play Mode regression tests are in `Assets/Tests/Settings` and can be run from Unity's Test Runner.
 

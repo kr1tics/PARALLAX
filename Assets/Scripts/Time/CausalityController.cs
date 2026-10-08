@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class CausalityController : MonoBehaviour
 {
-    void Setup()
+    void Awake()
     {
         causalities = Array.ConvertAll<Causality.CausalityType, ICausality>(_backingCausalityTypes, it => it.toImplementation()).ToList<ICausality>();
     }

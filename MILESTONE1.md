@@ -27,8 +27,8 @@
 
 #### UI and Sound
 - [ ] Main Menu
-- [ ] Pause Menu/Control UI
-- [ ] Settings? (Volume/Mouse Sensitivity)
+- [x] Pause Menu/Control UI
+- [x] Settings (volume, graphics quality, fullscreen, mouse sensitivity, inversion)
 - [ ] Interaction prompt
 - [ ] Feedback for Puzzle completion/progress
 

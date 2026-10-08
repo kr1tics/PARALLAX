@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using Parallax.Settings;
 
 public class Interact : MonoBehaviour
 {
@@ -32,11 +33,12 @@ public class Interact : MonoBehaviour
 	}
 
 	void Update() {
-        interactIndicator.SetActive(fireInteractRay(true).Item1);
+        interactIndicator.SetActive(!GameSettingsMenu.GameplayInputBlocked && fireInteractRay(true).Item1);
 	}
 
     public void TryInteract()
     {
+        if (GameSettingsMenu.GameplayInputBlocked) return;
         Debug.DrawRay(rayOrigin.position, (rayOrigin.localPosition + rayOrigin.forward).normalized * reachDistance, Color.red, 10.0f);
 		var cast = fireInteractRay(true);
         if (cast.Item1)

@@ -1,4 +1,5 @@
 using System;
+using Parallax.Settings;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -49,8 +50,18 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (GameSettingsMenu.GameplayInputBlocked)
+        {
+            movementIntent = Vector3.zero;
+            lastIntent = Vector3.zero;
+            jumpForce = 0f;
+            return;
+        }
+        if (Keyboard.current == null || Mouse.current == null) return;
+
         Cursor.lockState = CursorLockMode.Locked;
-        if (Keyboard.current.qKey.wasReleasedThisFrame)
+        Cursor.visible = false;
+        if (Keyboard.current.qKey.wasPressedThisFrame)
         {
             Debug.Log("Toggling jetpack to " + (!isInJetpack).ToString());
             isInJetpack = !isInJetpack;
@@ -63,16 +74,16 @@ public class PlayerController : MonoBehaviour
         
         
         // Temporary setup to allow for timetravel swap
-        if (Keyboard.current.tKey.wasReleasedThisFrame)
+        if (Keyboard.current.fKey.wasPressedThisFrame || Keyboard.current.tKey.wasPressedThisFrame)
         {
             GlobalState.get().SwapTime();
         }
-        if (Keyboard.current.fKey.wasPressedThisFrame)
+        if (Keyboard.current.gKey.wasPressedThisFrame)
         {
             TryDistortObject();
         }
 
-        if (Mouse.current.leftButton.wasPressedThisFrame)
+        if (Keyboard.current.eKey.wasPressedThisFrame || Mouse.current.leftButton.wasPressedThisFrame)
         {
             interactionController.TryInteract();
         }
@@ -87,9 +98,11 @@ public class PlayerController : MonoBehaviour
 
         Vector2 oldView = cameraLook.currentAngles();
         Vector2 mouse = Mouse.current.delta.value;
-        float newX = oldView.x + mouse.x * -cameraSensitivity;
+        float sensitivity = cameraSensitivity * GameSettings.MouseSensitivity;
+        float verticalDirection = GameSettings.InvertLook ? -1f : 1f;
+        float newX = oldView.x + mouse.x * -sensitivity;
 
-        float newY = Mathf.Clamp(oldView.y + mouse.y * cameraSensitivity * 0.005f, -0.5f, 0.5f);
+        float newY = Mathf.Clamp(oldView.y + mouse.y * sensitivity * 0.005f * verticalDirection, -0.5f, 0.5f);
 
 
         cameraLook.Rotate(new Vector2(newX, newY));
@@ -132,6 +145,7 @@ public class PlayerController : MonoBehaviour
     
     void FixedUpdate()
     {
+        if (GameSettingsMenu.GameplayInputBlocked) return;
         switch (isInJetpack)
         {
             case true:

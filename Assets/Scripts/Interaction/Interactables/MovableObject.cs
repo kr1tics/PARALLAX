@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Parallax.Settings;
 
 public class MovableObject : Interactable
 {
@@ -11,6 +12,7 @@ public class MovableObject : Interactable
 
     public override void onInteract(Interact i)
     {
+        if (GameSettingsMenu.GameplayInputBlocked) return;
         carrying = i;
         var ray = i.fireInteractRay(true).Item2;
 		grabPoint = ray.point - transform.localPosition;
@@ -20,10 +22,12 @@ public class MovableObject : Interactable
 
     void Update()
     {
+        if (GameSettingsMenu.GameplayInputBlocked) return;
 	    if (carrying != null)
 	    {
 		    var ray = carrying.fireInteractRay(true);
-		    if (Mouse.current.leftButton.wasPressedThisFrame && !grabbedThisFrame)
+		    if (((Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) ||
+                (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)) && !grabbedThisFrame)
 		    {
 			    carrying = null;
 		    }
@@ -33,6 +37,7 @@ public class MovableObject : Interactable
     }
 
 	void FixedUpdate() {
+        if (GameSettingsMenu.GameplayInputBlocked) return;
 		if (carrying != null) {
 			Vector3 worldGrabPos = grabPoint + transform.localPosition;
 			var interactRay = carrying.rayOrigin.position + (carrying.rayOrigin.localPosition + carrying.rayOrigin.forward) * grabDistance;
