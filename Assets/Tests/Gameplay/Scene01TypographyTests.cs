@@ -47,7 +47,7 @@ namespace Parallax.Gameplay.Tests
             Object.Destroy(dynamic);
         }
 
-        [UnityTest] public IEnumerator SettingsUsesMatchingRegularFacesAtThreeResolutionsAndRestoresOnUnload()
+        [UnityTest] public IEnumerator SettingsUsesMatchingRegularFacesAtThreeResolutionsAndPreservesMenuTypography()
         {
             var menu = GameSettingsMenu.Instance; menu.Open();
             var document = menu.GetComponent<UIDocument>(); var root = document.rootVisualElement;
@@ -76,7 +76,19 @@ namespace Parallax.Gameplay.Tests
             }
             menu.Close();
             yield return SceneManager.LoadSceneAsync("MainMenu"); yield return null;
-            Assert.That(root.Q<Label>("settings-title").style.unityFontDefinition.keyword, Is.EqualTo(StyleKeyword.Null), "Scene-only overrides must be removed on returning to the menu.");
+            Assert.That(root.Q<Button>("open-settings").style.bottom.keyword, Is.EqualTo(StyleKeyword.Null),
+                "Tutorial-only launcher placement must be removed on returning to the menu.");
+            foreach (bool controls in new[] { false, true })
+            {
+                if (controls) menu.OpenControls(); else menu.Open();
+                yield return null;
+                Assert.That(root.Q<Label>("settings-title").resolvedStyle.unityFontDefinition.font.name, Is.EqualTo("Oxanium-Regular"));
+                Assert.That(root.Q<Button>("resume").resolvedStyle.unityFontDefinition.font.name, Is.EqualTo("Oxanium-Regular"));
+                Assert.That(root.Q<Label>("settings-status").resolvedStyle.unityFontDefinition.font.name, Is.EqualTo("SpaceMono-Regular"));
+                foreach (var label in root.Query<Label>(className: "control-action").ToList())
+                    Assert.That(label.resolvedStyle.unityFontDefinition.font.name, Is.EqualTo("SpaceMono-Regular"));
+                menu.Close();
+            }
         }
         static void Capture(RenderTexture target, string name)
         {
