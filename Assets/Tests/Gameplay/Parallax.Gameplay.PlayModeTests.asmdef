@@ -3,7 +3,8 @@
     "rootNamespace": "Parallax.Gameplay.Tests",
     "references": [
         "Parallax.Settings",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
