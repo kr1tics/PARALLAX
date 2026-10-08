@@ -122,7 +122,9 @@ namespace Parallax.Gameplay.Tests
             yield return Keys(); yield return Keys(Key.Q); yield return Keys(); yield return Ticks(100);
             Assert.That((bool)Get(player, "isInJetpack"), Is.False);
             yield return Keys(Key.W); yield return Ticks(8); Assert.That(playerBody.linearVelocity.z, Is.GreaterThan(5f));
-            GameSettingsMenu.Instance.Open(); Vector3 before = playerBody.position;
+            GameSettingsMenu.Instance.Open();
+            // Let the in-flight fixed step finish before measuring the paused body.
+            yield return null; Vector3 before = playerBody.position;
             yield return Keys(Key.W, Key.Q, Key.E); yield return null; yield return null;
             Assert.That(playerBody.position, Is.EqualTo(before));
             Assert.That((bool)Get(player, "isInJetpack"), Is.False);
@@ -239,10 +241,12 @@ namespace Parallax.Gameplay.Tests
             wall.SetActive(true); Physics.SyncTransforms(); camera.transform.position += Vector3.right * 1.1f;
             yield return Ticks(100);
             Assert.That(item.transform.position.x, Is.LessThan(30.3f), "The held cube must not cross the wall.");
-            GameSettingsMenu.Instance.Open(); Vector3 position = item.transform.position;
+            GameSettingsMenu.Instance.Open(); yield return null;
+            // Physics position is authoritative; render interpolation may still settle while paused.
+            Vector3 position = item.GetComponent<Rigidbody>().position;
             Call(interaction, "TryInteract"); yield return null; yield return null;
             Assert.That(Property(interaction, "HeldObject"), Is.SameAs(item));
-            Assert.That(item.transform.position, Is.EqualTo(position));
+            Assert.That(item.GetComponent<Rigidbody>().position, Is.EqualTo(position));
             GameSettingsMenu.Instance.Close(); yield return null; yield return null;
             item.gameObject.SetActive(false);
             Assert.That(Property(interaction, "HeldObject"), Is.Null, "Time-state deactivation releases a held item.");

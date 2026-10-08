@@ -320,7 +320,7 @@ namespace Parallax.Gameplay.Tests
         }
 
         [UnityTest]
-        public IEnumerator HologramFeedbackUsesOriginalShaderInBothTimelines()
+        public IEnumerator CompactStationSignsRetainSafeProjectionReferences()
         {
             var root = GameObject.Find("Holographic guidance");
             Assert.That(root.GetComponentsInChildren<Collider>(true), Is.Empty, "Projections must not block walking or interaction rays.");
@@ -339,7 +339,7 @@ namespace Parallax.Gameplay.Tests
             yield return null; Snapshot("hologram-console-future");
             Assert.That(Prop(text, "text").ToString(), Does.Contain("OFFLINE"));
             yield return Swap(); Snapshot("hologram-console-past");
-            Assert.That(Prop(text, "text").ToString(), Does.Contain("[E]"));
+            Assert.That(Prop(text, "text").ToString(), Does.Contain("GRAVITY CONTROL"));
             Aim(new Vector3(-6, 0.05f, 8.8f), new Vector3(-6, 1.35f, 12));
             yield return null; Snapshot("hologram-storage");
         }

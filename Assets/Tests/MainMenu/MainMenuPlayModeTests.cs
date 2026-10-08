@@ -130,7 +130,7 @@ namespace Parallax.MainMenu.Tests
             Assert.That(GameSettingsMenu.Instance, Is.SameAs(settings));
             Assert.That(root.Q<Label>("settings-title").text, Is.EqualTo("Controls"));
             Assert.That(root.Q("settings-fields").resolvedStyle.display, Is.EqualTo(DisplayStyle.None));
-            Assert.That(root.Query<VisualElement>(className: "control-row").ToList().Count, Is.EqualTo(9));
+            Assert.That(root.Query<VisualElement>(className: "control-row").ToList().Count, Is.EqualTo(10));
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Escape));
             yield return null; yield return null;
             Assert.That(settings.IsOpen, Is.False);

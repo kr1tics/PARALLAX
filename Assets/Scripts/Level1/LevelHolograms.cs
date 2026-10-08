@@ -18,11 +18,11 @@ public sealed class LevelHolograms : MonoBehaviour
 
     void LateUpdate()
     {
-        if (view != null && (objectiveText.transform.position - view.transform.position).sqrMagnitude > 0.001f)
-            objectiveText.transform.rotation = Quaternion.LookRotation(objectiveText.transform.position - view.transform.position);
-        string storage = interlock.ClosingDeferred ? "STORAGE / SAFETY HOLD\nClear the hatch to lock\nExit remains open while inside" :
-            interlock.IsOpen ? "STORAGE / DISENGAGED\nTake cube OUT before gravity ON" :
-            "STORAGE / LOCKED\nGravity OFF at the PAST console";
+        // Guidance now lives in the compact HUD; retain serialized references for compatibility.
+        objectiveMarker.gameObject.SetActive(false);
+        string storage = interlock.ClosingDeferred ? "STORAGE / SAFETY HOLD" :
+            interlock.IsOpen ? "STORAGE / OPEN" :
+            "STORAGE / LOCKED";
         if (storage != previousStorage)
         {
             storageText.text = previousStorage = storage;
@@ -30,8 +30,8 @@ public sealed class LevelHolograms : MonoBehaviour
         }
         bool past = GlobalState.get().now == TimeState.Past;
         bool gravityOn = GlobalState.get().gravity > 0.1f;
-        string console = (past ? "GRAVITY CONSOLE [E]" : "CONSOLE OFFLINE / USE PAST") +
-            "\nSTATION GRAVITY " + (gravityOn ? "ON" : "OFF") + "\nOFF opens storage / ON locks it";
+        string console = (past ? "GRAVITY CONTROL" : "CONTROL OFFLINE") +
+            "\nSTATION GRAVITY " + (gravityOn ? "ON" : "OFF");
         if (console != previousConsole)
         {
             consoleText.text = previousConsole = console;
@@ -40,7 +40,7 @@ public sealed class LevelHolograms : MonoBehaviour
         int stage = level.Completed ? 4 : level.MainSolved ? 3 : level.StorageAccessGranted ? 2 : level.IntroSolved ? 1 : 0;
         if (stage == previousStage) return;
         previousStage = stage;
-        objectiveMarker.gameObject.SetActive(stage != 4);
+        objectiveMarker.gameObject.SetActive(false);
         if (stage == 4) return;
         Vector3[] targets = { new Vector3(2.5f, 1.25f, 13.45f), new Vector3(-2, 1.65f, 10.5f),
             new Vector3(-5.5f, 1.25f, 5), new Vector3(-13.3f, 1.25f, 4.45f) };

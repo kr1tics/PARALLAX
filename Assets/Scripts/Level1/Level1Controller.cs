@@ -125,6 +125,8 @@ public sealed class Level1Controller : MonoBehaviour
 
     void OnGUI()
     {
+        var presentation = GetComponent<Level1Presentation>();
+        if (presentation != null && presentation.isActiveAndEnabled) return;
         if (GameSettingsMenu.GameplayInputBlocked) return;
         if (titleStyle == null)
         {

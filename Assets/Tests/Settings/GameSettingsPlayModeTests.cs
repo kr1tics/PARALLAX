@@ -428,7 +428,7 @@ namespace Parallax.Settings.Tests
             for (int i = 0; i < 10; i++) yield return null;
             var scroll = Field<ScrollView>("settings-scroll");
             Assert.That(root.Q("controls-list"), Is.Not.Null);
-            Assert.That(root.Query<VisualElement>(className: "control-row").ToList().Count, Is.EqualTo(9));
+            Assert.That(root.Query<VisualElement>(className: "control-row").ToList().Count, Is.EqualTo(10));
             foreach (float delta in new[] {3f, 120f, 0.25f})
             {
                 scroll.scrollOffset = Vector2.zero;
