@@ -7,6 +7,8 @@ using Parallax.Settings;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
@@ -80,6 +82,27 @@ namespace Parallax.Gameplay.Tests
             Assert.That(Vector3.Distance(GameObject.Find("Player").transform.position, new Vector3(3, .02f, 9)), Is.LessThan(.2f));
             level = fresh; completion = root.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "TutorialCompletionScreen");
             yield return Complete(); // New scene supports a second completion cycle.
+        }
+        [UnityTest] public IEnumerator F8ShortcutHonoursInputLockAndDoesNotSolvePuzzles()
+        {
+            var background = InputSystem.settings.backgroundBehavior;
+            var editorInput = InputSystem.settings.editorInputBehaviorInPlayMode;
+            InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+            InputSystem.settings.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+            var keyboard = InputSystem.AddDevice<Keyboard>(); keyboard.MakeCurrent();
+            try
+            {
+                GameSettingsMenu.StartupInputBlocked = true;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F8));
+                yield return null; Assert.That(Flag(completion, "IsOpen"), Is.False);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null; yield return null;
+                GameSettingsMenu.StartupInputBlocked = false;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F8));
+                yield return null; yield return null; Assert.That(Flag(completion, "IsOpen"), Is.True);
+                Assert.That(Flag(level, "Completed"), Is.False); Assert.That(Flag(level, "IntroSolved"), Is.False);
+                yield return new WaitForSecondsRealtime(2.7f); Assert.That(Flag(completion, "IsReady"), Is.True);
+            }
+            finally { InputSystem.RemoveDevice(keyboard); InputSystem.settings.backgroundBehavior = background; InputSystem.settings.editorInputBehaviorInPlayMode = editorInput; }
         }
         [UnityTest] public IEnumerator ContinueSafelyReturnsToExistingMenu()
         {

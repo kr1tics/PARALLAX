@@ -3,6 +3,7 @@ using Parallax.Settings;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -16,6 +17,9 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     [SerializeField] string nextScene;
     [SerializeField, Min(0)] float completionDelay = 1f;
     [SerializeField, Min(.01f)] float fadeDuration = .8f;
+    [Header("Tutorial shortcut")]
+    [Tooltip("F8 opens the completion screen without solving puzzles. Disable for submission if desired.")]
+    [SerializeField] bool allowCompletionShortcut = true;
     CanvasGroup overlay, copy, actions;
     GameObject screen;
     Button replayButton;
@@ -28,7 +32,9 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
 
     void LateUpdate()
     {
-        if (triggered || !level.Completed || GameSettingsMenu.GameplayInputBlocked) return;
+        if (triggered || GameSettingsMenu.GameplayInputBlocked) return;
+        bool shortcut = allowCompletionShortcut && Keyboard.current != null && Keyboard.current.f8Key.wasPressedThisFrame;
+        if (!level.Completed && !shortcut) return;
         triggered = true;
         previousScale = Time.timeScale;
         previousCursorVisible = Cursor.visible; previousCursorLock = Cursor.lockState;
