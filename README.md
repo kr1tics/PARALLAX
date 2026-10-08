@@ -1,5 +1,7 @@
 # Game Design Document (GDD)
 
+Current Level 1 implementation: [Engineering Access layout, puzzle walkthrough, validation and editing notes](LEVEL1.md). The playable level uses `Assets/StartScene.unity`; the design below also includes systems planned for later work.
+
 
 ### Table of contents
 
@@ -986,6 +988,12 @@ A subtle musical layer can appear during:
 The UI is minimal and uses the visual language of station maintenance software.
 
 
+
+### Main Menu
+
+The build opens in `Assets/MainMenu.unity`. **Play** starts a fresh game in `StartScene`, resetting the time period to Future, station gravity, time-switch cooldowns, pause state and cursor capture while keeping saved preferences. **Settings** and **Controls** reuse the existing settings document, with a Back to main menu action. **Quit** exits standalone players; in WebGL it explains that the player should close the browser tab.
+
+The UI Toolkit title screen uses a dark star chart and a procedural orbital-station diagram, with keyboard navigation, visible focus, responsive layout and scrollable overflow. No external visual assets or packages are required. Open `MainMenu` to test the full launch flow; opening `StartScene` directly still supports gameplay and pause/settings testing.
 
 ### Settings Menu
 

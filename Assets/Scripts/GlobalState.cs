@@ -7,6 +7,14 @@ public class GlobalState
 
     private static GlobalState gs = null;
 
+    // Preferences belong to GameSettings and intentionally survive a new game.
+    // Call before loading gameplay so scene objects register with the fresh state.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    public static void ResetForNewGame()
+    {
+        gs = new GlobalState();
+    }
+
     public static GlobalState get()
     {
         if (gs == null)
@@ -76,6 +84,15 @@ public class GlobalState
     {
 	    shader = _shader;
 	    shader.SetFloat("_StartTime", lastSwap);
+    }
+
+    public void ResetTimelineForCheckpoint()
+    {
+        now = TimeState.Future;
+        lastSwap = -999f;
+        actuallySwapped = true;
+        if (shader != null) shader.SetFloat("_StartTime", lastSwap);
+        foreach (var item in entangled) item.OnTimeChange();
     }
     public void Update()
     {

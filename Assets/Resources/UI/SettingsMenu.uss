@@ -141,3 +141,6 @@
 .control-key { width: 145px; flex-shrink: 0; color: rgb(221, 226, 232); font-size: 16px; }
 .control-action { flex-grow: 1; flex-shrink: 1; white-space: normal; color: rgb(165, 173, 184); font-size: 16px; }
 .controls-hint { margin-top: 12px; white-space: normal; color: rgb(143, 152, 164); font-size: 14px; }
+.controls-only .controls-list { margin-top: 0; padding-top: 0; border-top-width: 0; }
+.controls-only .controls-title { display: none; }
+.controls-only .footer-actions { justify-content: flex-end; }

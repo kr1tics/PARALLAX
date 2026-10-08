@@ -14,9 +14,11 @@ namespace Parallax.Settings
     {
         public static GameSettingsMenu Instance { get; private set; }
         public bool IsOpen { get; private set; }
+        public bool IsMainMenuContext { get; private set; }
+        private bool controlsOnly;
         // Ignore the click/key that resumes the game until the next frame.
         public static bool GameplayInputBlocked => Instance != null &&
-            (Instance.IsOpen || Instance.lastClosedFrame == Time.frameCount);
+            (Instance.IsMainMenuContext || Instance.IsOpen || Instance.lastClosedFrame == Time.frameCount);
         private int lastClosedFrame = -1;
         public event Action<bool> OpenChanged;
 
@@ -123,16 +125,38 @@ namespace Parallax.Settings
             fullscreen.RegisterValueChangedCallback(evt =>
             {
                 GameSettings.SetFullscreen(evt.newValue, true);
+                string saveMessage = IsMainMenuContext ? "Saved when you return." : "Saved on resume.";
                 status.text = Application.platform == RuntimePlatform.WebGLPlayer
-                    ? "Saved on resume. Fullscreen depends on your browser."
-                    : "Saved on resume.";
+                    ? saveMessage + " Fullscreen depends on your browser."
+                    : saveMessage;
             });
             root.RegisterCallback<GeometryChangedEvent>(evt =>
                 shell.EnableInClassList("compact", evt.newRect.width < 900));
             RefreshValues();
             overlay.style.display = IsOpen ? DisplayStyle.Flex : DisplayStyle.None;
-            launcher.style.display = IsOpen ? DisplayStyle.None : DisplayStyle.Flex;
+            RefreshPresentation();
             lastFullscreen = Screen.fullScreen;
+        }
+
+        // The same persistent document serves both the title screen and gameplay.
+        public void SetMainMenuContext(bool value)
+        {
+            if (IsMainMenuContext == value) return;
+            Close();
+            IsMainMenuContext = value;
+            controlsOnly = false;
+            if (boundRoot != null) RefreshPresentation();
+        }
+
+        private void RefreshPresentation()
+        {
+            shell.EnableInClassList("controls-only", controlsOnly);
+            boundRoot.Q<Label>("settings-title").text = controlsOnly ? "Controls" : "Settings";
+            boundRoot.Q("settings-fields").style.display = controlsOnly ? DisplayStyle.None : DisplayStyle.Flex;
+            boundRoot.Q<Button>("defaults").style.display = controlsOnly ? DisplayStyle.None : DisplayStyle.Flex;
+            boundRoot.Q<Button>("resume").text = IsMainMenuContext ? "Back to main menu" : "Resume";
+            closeButton.tooltip = IsMainMenuContext ? "Save and return to main menu" : "Save and resume";
+            launcher.style.display = IsOpen || IsMainMenuContext ? DisplayStyle.None : DisplayStyle.Flex;
         }
 
         private void ScrollSettings(WheelEvent evt)
@@ -164,7 +188,7 @@ namespace Parallax.Settings
         {
             EnsureInterface();
             var keyboard = Keyboard.current;
-            if (keyboard != null &&
+            if (keyboard != null && (IsOpen || !IsMainMenuContext) &&
                 (keyboard.escapeKey.wasPressedThisFrame || keyboard.pKey.wasPressedThisFrame))
             {
                 Toggle();
@@ -184,10 +208,16 @@ namespace Parallax.Settings
             else Open();
         }
 
-        public void Open()
+        public void Open() => Open(false);
+
+        public void OpenControls() => Open(true);
+
+        private void Open(bool showControlsOnly)
         {
             EnsureInterface();
             if (IsOpen || !isActiveAndEnabled || overlay == null) return;
+
+            controlsOnly = showControlsOnly;
 
             previousTimeScale = Time.timeScale;
             previousAudioPause = AudioListener.pause;
@@ -200,7 +230,8 @@ namespace Parallax.Settings
             Cursor.visible = true;
             launcher.style.display = DisplayStyle.None;
             overlay.style.display = DisplayStyle.Flex;
-            status.text = "Saved on resume.";
+            status.text = IsMainMenuContext ? "Changes are saved when you return." : "Saved on resume.";
+            RefreshPresentation();
             RefreshValues();
             settingsScroll.scrollOffset = Vector2.zero;
             closeButton.schedule.Execute(() => { if (IsOpen) closeButton.Focus(); });
@@ -219,9 +250,9 @@ namespace Parallax.Settings
             Cursor.lockState = previousCursorLock;
             Cursor.visible = previousCursorVisible;
             overlay.style.display = DisplayStyle.None;
-            launcher.style.display = DisplayStyle.Flex;
+            RefreshPresentation();
             // Moving focus also dismisses any quality popup before returning to gameplay.
-            launcher.Focus();
+            if (!IsMainMenuContext) launcher.Focus();
             OpenChanged?.Invoke(false);
         }
 
