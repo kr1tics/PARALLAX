@@ -24,6 +24,9 @@ public class Entangler : MonoBehaviour
         pastOrigObject.SetActive(false);
     }
 
+    // Checkpoint recovery restores both authored objects before resetting this baseline.
+    public void RebaseAfterReset() => UpdatePastOrigObject();
+
     [SerializeField]
     private GameObject pastObject;
     private GameObject pastOrigObject = null;

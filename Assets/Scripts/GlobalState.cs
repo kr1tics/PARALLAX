@@ -85,6 +85,15 @@ public class GlobalState
 	    shader = _shader;
 	    shader.SetFloat("_StartTime", lastSwap);
     }
+
+    public void ResetTimelineForCheckpoint()
+    {
+        now = TimeState.Future;
+        lastSwap = -999f;
+        actuallySwapped = true;
+        if (shader != null) shader.SetFloat("_StartTime", lastSwap);
+        foreach (var item in entangled) item.OnTimeChange();
+    }
     public void Update()
     {
 	    float time = Time.timeSinceLevelLoad;

@@ -13,24 +13,24 @@
 #### Game Environment
 - [ ] story lore dump at start (can be a wall of text at the start for now)
 - [ ] General like puzzle element design
-- [ ] Placement for base puzzles at least
+- [x] Placement for base puzzles at least (StartScene access and engineering relays; see LEVEL1.md)
 - [ ] Camera and Player feel good
-- [ ] General Room Layout even if not all rooms have puzzles yet
+- [x] General Room Layout even if not all rooms have puzzles yet (seven original sections retained)
 #### Gameplay Mechanics
 - [x] Player Movement
 - [ ] Pick up / Move / Interact with objects
 - [x] Physics (incl. Gravity)
 - [x] Time Travel (Done but needs fixing)
-- [ ] Buttons to open/close doors
+- [x] Buttons to open/close doors (weighted cube plates; solved Level 1 doors remain open)
 - [ ] Power Switching (Maybe de-scope?)
-- [ ] Some Puzzle Design (see below)
+- [x] Some Puzzle Design (two playable Level 1 puzzles; participant evaluation still required)
 
 #### UI and Sound
 - [x] Main Menu (Play, shared settings/controls, platform-aware Quit)
 - [x] Pause Menu/Control UI
 - [x] Settings (volume, graphics quality, fullscreen, mouse sensitivity, inversion)
 - [ ] Interaction prompt
-- [ ] Feedback for Puzzle completion/progress
+- [x] Feedback for Puzzle completion/progress (objective HUD, route guides and Level 1 completion)
 
 #### Puzzle Design
 One idea of a intro puzzle would be making the player travel back in time, 

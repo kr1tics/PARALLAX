@@ -26,6 +26,18 @@ public class PlayerController : MonoBehaviour
     private bool jumpRequested;
     private readonly RaycastHit[] groundHits = new RaycastHit[16];
 
+    public void ResetForCheckpoint(Vector3 position)
+    {
+        interactionController.DropHeldObject();
+        isInJetpack = false;
+        grav.effective = true;
+        movementIntent = Vector3.zero;
+        jumpRequested = false;
+        body.position = position;
+        body.linearVelocity = Vector3.zero;
+        body.angularVelocity = Vector3.zero;
+    }
+
     [SerializeField] private Interact interactionController;
     
     void Start()

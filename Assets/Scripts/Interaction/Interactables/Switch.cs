@@ -8,6 +8,11 @@ public class Switch : Interactable
     
     [SerializeField] private bool on = false;
 
+    public void ResetSwitch()
+    {
+        if (on) onInteract(null);
+    }
+
     void Start()
     {
         if (on)

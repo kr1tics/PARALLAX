@@ -77,7 +77,8 @@ namespace Parallax.Gameplay.Tests
         }
         private IEnumerator StandOnDeck()
         {
-            playerBody.position = new Vector3(1.5f, 0.06f, 9f);
+            // The Level 1 access bulkhead now occupies x=0; leave room for the lateral carry test.
+            playerBody.position = new Vector3(3f, 0.06f, 9f);
             playerBody.linearVelocity = Vector3.zero;
             var look = Component(camera.gameObject, "Look");
             look.GetType().GetMethod("Rotate").Invoke(look, new object[] { new Vector2(90f, 0f) });
@@ -147,7 +148,7 @@ namespace Parallax.Gameplay.Tests
             InputSystem.QueueStateEvent(mouse, new MouseState { buttons = 1 }); yield return null;
             Assert.That(Property(interaction, "HeldObject"), Is.Null, "A click drops exactly once.");
             InputSystem.QueueStateEvent(mouse, new MouseState()); yield return null;
-            playerBody.position = new Vector3(1.5f, 0.06f, 9f); playerBody.linearVelocity = Vector3.zero;
+            playerBody.position = new Vector3(3f, 0.06f, 9f); playerBody.linearVelocity = Vector3.zero;
             yield return Ticks(5);
             item.GetComponent<Rigidbody>().position = camera.transform.position + camera.transform.forward * 2f;
             item.GetComponent<Rigidbody>().linearVelocity = Vector3.zero; Physics.SyncTransforms();

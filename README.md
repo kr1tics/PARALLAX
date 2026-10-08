@@ -1,5 +1,7 @@
 # Game Design Document (GDD)
 
+Current Level 1 implementation: [Engineering Access layout, puzzle walkthrough, validation and editing notes](LEVEL1.md). The playable level uses `Assets/StartScene.unity`; the design below also includes systems planned for later work.
+
 
 ### Table of contents
 
