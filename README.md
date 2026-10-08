@@ -918,9 +918,9 @@ An overheating shader or particle effect may use:
 
 ### Space / Exterior Effects
 
-Windows may show a simple space skybox.
+`StartScene` uses a black starfield and a distant Earth backdrop. Earth is blue, green, and cloud-covered in the past; in the future its oceans and vegetation are gone, leaving a gray-brown surface and a thin dusty atmospheric rim. The planet changes with the existing time switch (`F` / `T`).
 
-Exterior rendering should remain lightweight because the main gameplay is inside the station.
+The backdrop follows camera position to remain distant while the player moves. `SpaceEnvironment` generates a small star mesh and low-resolution planet textures using built-in Unity materials. The station uses its modular floors for both visuals and collision; the old support plane is disabled. `StationHull` adds reversed exterior faces to the readable kit meshes, preserving both time-state materials, and fills missing wall/roof collision. `StationGravity` derives gravity regions from the actual floor tiles: gravity applies above station decks, while open space is weightless. Gravity switches and the Q jetpack override still apply.
 
 ---
 

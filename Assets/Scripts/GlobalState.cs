@@ -21,7 +21,7 @@ public class GlobalState
     
     #region Physics
     
-    public float gravity = 0.0f;
+    public float gravity = 9.81f;
     
     #endregion
 

@@ -30,7 +30,7 @@ public sealed class FutureDecayControls : MonoBehaviour
         Row(188, "Space / Ctrl", "Jump / ascend / descend");
         Row(218, "G", "Distort object");
         Row(248, "Esc / P", "Settings / resume");
-        string gravity = playerGravity == null ? "—" : playerGravity.effective ? "ON" : "OFF";
+        string gravity = playerGravity == null ? "—" : playerGravity.IsGravityActive ? "ON" : "OFF";
         GUI.Label(new Rect(30, 284, 300, 26), "Gravity: " + gravity, label);
         GUI.matrix = previousMatrix;
     }
