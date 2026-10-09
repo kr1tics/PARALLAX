@@ -63,7 +63,7 @@ The questionnaire will include 1–5 rating-scale questions covering:
 This method will allow us to compare feedback across participants and identify areas for improvement, particularly regarding usability, difficulty and player engagement.    
 
 
-**3. Evaluation Tasks**. 
+**3. Evaluation Tasks** 
 
   Give both groups the task prompts. Keep the success checks on the evaluator's sheet so participants work out the solutions themselves.
 
@@ -199,7 +199,7 @@ Recordings and collected data will only be accessible to team members.
   
   We will analyse quantitative and qualitative results separately to identify usability problems and prioritise improvements.  
   
-**1. Quantitative Analysis**. 
+**1. Quantitative Analysis** 
 
 For each group of five participants, we will analyse the following metrics: 
 
@@ -212,7 +212,7 @@ For each group of five participants, we will analyse the following metrics:
 
   We will pay particular attention to tasks with low completion rates, longer completion times or frequent requests for assistance, as these may indicate usability issues.
   
-**2.Qualitative Analysis** 
+**2. Qualitative Analysis** 
 
 Player comments and observations will be grouped into the following categories:  
 
