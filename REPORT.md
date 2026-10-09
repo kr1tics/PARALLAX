@@ -275,4 +275,4 @@ TODO - see specification for details
 
 ## References and External Resources
 
-- **OpenAI Codex:** used to implement the prototype settings menu, integrate it with player input and camera preferences, implement the space backdrop and procedural Earth textures using built-in Unity materials, repair exterior station faces and collision, scope artificial gravity to station decks, repair walking/jumping and object interactions, fix scene teardown, add the settings controls reference, and limit menu scrolling. Automated regression tests were added for these gameplay and settings paths. The team specified the living-past / barren-future Earth appearance.
+- **OpenAI Codex:** Used as a development assistant to support the implementation, debugging and refinement of various game features, including the settings menu, player controls, gravity mechanics, object interactions and environmental visuals. It also assisted with fixing gameplay issues and improving the overall stability of the prototype. The team guided the development process, reviewed the implementations and tested the resulting features.
