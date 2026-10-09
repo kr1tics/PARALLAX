@@ -21,7 +21,9 @@ placeholder for it [here](README.md).
 
 ### Goals
 
-Evaluate how effectively players understand and interact with PARALLAX's core gameplay mechanics. Players should be able to navigate the station, interact with objects, switch between past and future, and complete puzzles without excessive assistance. Testing will identify issues with controls, puzzle difficulty, visual feedback and overall gameplay clarity.
+Evaluate how effectively players understand and interact with PARALLAX's core gameplay mechanics. Players should be able to navigate the station, interact with objects, switch between past and future, and complete puzzles without excessive assistance.  
+
+Testing will identify issues with controls, puzzle difficulty, visual feedback and overall gameplay clarity.
 
   
 ### Evaluation techniques
@@ -31,7 +33,7 @@ We will use two evaluation techniques to assess the usability and overall player
 
 **1. Observational Technique: Think Aloud (5 participants)**  
 
-We will use the Think Aloud method to observe how players interact with the game and identify any difficulties they encounter. Participants will be asked to share and explain their thoughts and decisions while playing, without receiving instructions or assistance unless necessary.  
+We will use the Think Aloud method to observe how players interact with the game and identify any difficulties they encounter. Participants will be asked to share and explain their thoughts and decisions while playing, without receiving instructions or assistance share their thoughts and explain their decisions while playing, without receiving immediate assistance.
 
 Participants will complete the following tasks:  
 
@@ -58,73 +60,206 @@ The questionnaire will include 1–5 rating-scale questions covering:
     - Enjoyment of the gameplay.
     - Overall satisfaction with the experience.
   
-  We will also include open-ended questions:  
-  
-    1. Which part of the game did you find most confusing?
-    2. Which part of the game did you find most interesting?
-    3. What would you improve about the game?
-  
 This method will allow us to compare feedback across participants and identify areas for improvement, particularly regarding usability, difficulty and player engagement.    
 
 
-**Evaluation Tasks**
+**3. Evaluation Tasks**. 
+
   Give both groups the task prompts. Keep the success checks on the evaluator's sheet so participants work out the solutions themselves.
 
   | Task prompt (in order) | Observable success check |
   |---|---|
-  | Explore the arrival area, find the first relay and compare the two time periods. | Reach plate 01, switch between Past and Future, and identify the current period when asked once after switching. |
-  | Restore the access relay and enter engineering. | Grab, move and release the cube onto plate 01 in the Past; return to the Future with gravity on and pass through the opened access door. |
-  | Release the engineering cube and restore the engineering relay. | Turn station gravity off using the Past console, move the cube out of storage to plate 02, restore gravity and activate the relay in the Future. |
-  | Find and reach the level exit. | Follow the available route and reach the exit in the Future after both relays are solved, triggering tutorial completion. |
+  | **Task 1:** Explore the arrival area, find the first relay and compare the two time periods. | Reach plate 01, switch between Past and Future, and identify the current period when asked once after switching. |
+  | **Task 2:** Restore the access relay and enter engineering. | Grab, move and release the cube onto plate 01 in the Past; return to the Future with gravity on and pass through the opened access door. |
+  | **Task 3:** Release the engineering cube and restore the engineering relay. | Turn station gravity off using the Past console, move the cube out of storage to plate 02, restore gravity and activate the relay in the Future. |
+  | **Task 4:** Find and reach the level exit. | Follow the available route and reach the exit in the Future after both relays are solved, triggering tutorial completion. |
 
-#### Participants
-Ten participants will be recruited through classmates, friends and gaming communities, with five assigned to each technique. Participants should have basic experience with first-person PC games and an interest in puzzle-solving or exploration, matching the GDD's target audience. Both casual and experienced players will be included to provide varied perspectives. Participation will be voluntary, with no financial incentives.
+These tasks will help us evaluate whether players can understand and apply the game's core mechanics to complete the tutorial.
 
-- Procedure: Use the same WebGL build, computer, browser and default settings for all sessions. Log any settings adjusted for comfort. Verify the complete route and disable the developer completion shortcut before testing. Start each session by selecting Play from the Main Menu, with fresh puzzle state and the same intro and in-game guidance.
-  - Allow approximately 30 minutes: 5 for consent, experience questions and controls; up to 20 for play; 5 for feedback. Read the same brief: “Restore access and engineering, then reach the exit. We are testing the game; you may stop at any time.” Supply the in-game controls reference without demonstrating solutions. Only the observational group receives the request to explain what they are trying and expecting, with neutral reminders to keep talking.
-  - If a player asks for help or makes no progress for two minutes, say: “Check the current objective and time/gravity indicators.” If they are still stuck two minutes later, give a task-specific hint prepared during the pilot. After two further minutes, record the task as incomplete and demonstrate only what is needed to attempt the next task. Log when each hint was given and mark later attempts that followed a demonstration.
-  - Stop when the player finishes, reaches the play limit or chooses to withdraw. For bugs or soft locks, note the action, time period and symptom; pause timing and try `R` or a fresh launch. Record recovery time and lost progress separately, and distinguish restarted attempts from first attempts. If recovery fails, end play and collect feedback on what the player experienced.
-- Questionnaire: Use **1 = strongly disagree, 2 = disagree, 3 = neutral, 4 = agree, 5 = strongly agree**, plus **not experienced** where appropriate. Ask participants to rate:
-  - “Movement and looking responded as I expected.”
-  - “Grabbing, moving and releasing cubes was easy.”
-  - “I could tell whether I was in the Past or Future.”
-  - “I understood how moving a cube in the Past affected the Future.”
-  - “The gravity and storage-door feedback helped me solve the engineering puzzle.”
-  - “I could tell where to go next.”
-  - “The puzzles were challenging but manageable.”
-  - “I enjoyed playing this level.”
-  - Open-ended: “Where did you get stuck, and what did you expect to happen?”; “What helped you understand time switching or gravity?”; “What one change would most improve the experience, and why?”
+**4. Testing Procedure** 
 
-#### Data Collection
-Use a stopwatch and shared spreadsheet, with one row for each participant's attempt at a task. Record their ID, technique, build, gaming experience, start and end times, outcome (independent, assisted, incomplete or unreached), hints, resets and issue notes. Independent success means completing a task without facilitator hints or demonstrations; normal in-game guidance is allowed. Time each task from its prompt until success or stopping. Include player resets and hints, but exclude technical recovery and breaks.
-  - During think-aloud sessions, count unsuccessful attempts to grab or use objects and note what happened and what the player said. Distinguish control problems from attempts to work out a puzzle. Store questionnaire answers by participant ID. With consent, we may record gameplay using OBS Studio; written notes are enough if a participant declines. Use anonymous IDs O1 to O5 and Q1 to Q5 in reports and restrict recordings to the team.
-- Analysis: For each group of five, count independent and assisted completions separately and include tasks left incomplete or unreached. Report the median and range of successful task times, with assisted times and time spent on incomplete attempts reported separately. For each questionnaire item, report the median, the number choosing each rating and the total valid responses. Exclude “not experienced” answers.
-  - Our initial targets are for four of five players in each group to complete each task independently, and for four of five questionnaire players to finish within the local milestone's ten-minute playtime goal. The first six rating items should have medians of at least 4. The 20-minute limit gives us time to observe difficulties. Think-aloud and silent-play times should not be compared directly.
-  - Group comments under controls, navigation, time switching, puzzle clarity and visual feedback, and link them to tasks and ratings. Fix problems that block completion first, then recurring issues. Record how many players each issue affected and whether it blocked completion, required help or caused a minor difficulty. Use these findings to choose changes to mechanics, the interface and level design. Compare themes across the two groups while keeping their results separate. These small samples of available volunteers cannot represent all players.
-  - 
-#### Participants
-Ten participants will be recruited through classmates, friends and gaming communities, with five assigned to each technique. Participants should have basic experience with first-person PC games and an interest in puzzle-solving or exploration, matching the GDD's target audience. Both casual and experienced players will be included to provide varied perspectives. Participation will be voluntary, with no financial incentives.
+All participants will use the same WebGL build, computer, browser and default settings. Any adjustments made for accessibility or comfort will be recorded.  
 
+Before testing, we will verify that the complete level is playable and disable developer shortcuts. Each participant will begin from the Main Menu with a fresh puzzle state.  
 
-#### Data Collection
-Quantitative data will include task completion times, success rates, incorrect interactions, puzzle resets and questionnaire ratings. Qualitative data will include player comments, observed difficulties and improvement suggestions. Gameplay may be recorded using OBS Studio with participant consent. Results will be organised in a shared spreadsheet, with participants identified anonymously.
+Each session will last approximately 30 minutes:  
+
+- **5 minutes:** Consent, gaming experience questions and control information.
+- **Up to 20 minutes:** Gameplay and task completion.
+- **5 minutes:** Questionnaire or post-test feedback.
+
+Participants will receive the same initial instructions:   
+    Restore access and engineering, then reach the exit. We are testing the game; you may stop at any time.
+
+The in-game controls reference will be available, but solutions will not be demonstrated.  
+
+Only participants in the Think Aloud group will be asked to explain their thoughts and expectations while playing.  
+
+**Assistance Rules**  
+
+To ensure consistency across sessions:  
+
+    1. If a participant requests help or makes no progress for two minutes, the evaluator will remind them to check the current objective and time/gravity indicators.
+    2. If they remain stuck for another two minutes, a task-specific hint will be provided.
+    3. After another two minutes without progress, the task will be recorded as incomplete. The evaluator may then demonstrate the minimum necessary steps to continue.
+   
+All hints and assistance will be recorded.  
+
+If a bug or soft lock occurs, the evaluator will record the issue, pause the timer and attempt recovery through a reset or restart. Recovery time and lost progress will be recorded separately.  
+
+**5.Questionnaire Design** 
+
+Participants in the querying group will complete a short questionnaire after gameplay.  
+
+Ratings will use a five-point Likert scale:
+    **1 = Strongly Disagree | 2 = Disagree | 3 = Neutral | 4 = Agree | 5 = Strongly Agree**
+  
+A "Not Experienced" option will be available where appropriate.
+  
+**Rating Questions** 
+
+    1. Movement and looking responded as I expected.
+    2. Grabbing, moving and releasing cubes was easy.
+    3. I could tell whether I was in the Past or Future.
+    4. I understood how moving a cube in the Past affected the Future.
+    5. The gravity and storage-door feedback helped me solve the engineering puzzle.
+    6. I could tell where to go next.
+    7. The puzzles were challenging but manageable.
+    8. I enjoyed playing this level.
+
+**Open-ended Questions** 
+
+    1. Which part of the game did you find most interesting?
+    2. Where did you get stuck, and what did you expect to happen?
+    3. What helped you understand time switching or gravity?
+    4. What one change would most improve the experience, and why?
+
+  
+### Participants
+Ten participants will be recruited through classmates, friends and gaming communities, with five assigned to each evaluation technique.  
+
+Participants should have basic experience with first-person PC games and an interest in puzzle-solving or exploration, matching the GDD's target audience.  
+
+Both casual and experienced players will be included to provide varied perspectives.  
+
+Participation will be voluntary, with no financial incentives.
+
+### Data Collection
+We will collect both quantitative and qualitative data during the evaluation sessions.  
+
+**1. Quantitative Data** 
+
+We will record:  
+
+    - Task completion: Whether participants complete each task independently, with assistance or not at all.
+    - Completion time: Time taken to complete each task.
+    - Hints required: Number of hints provided during gameplay.
+    - Failed interactions: Unsuccessful attempts to interact with objects or use mechanics.
+    - Resets: Number of puzzle resets or restarts.
+    - Questionnaire ratings: Numerical responses to the post-game questionnaire.
+  
+  Task outcomes will be classified as:  
+  
+    - Independent: Completed without facilitator hints or demonstrations.
+    - Assisted: Completed with facilitator assistance.
+    - Incomplete: Attempted but not completed.
+    - Unreached: Participant did not reach the task.
+    Normal in-game guidance will not count as facilitator assistance.
+
+**2. Qualitative Data**   
+
+We will collect:  
+
+    - Player comments made during Think Aloud sessions.
+    - Observations of confusion, hesitation or unexpected behaviour.
+    - Difficulties understanding controls, instructions or puzzle mechanics.
+    - Open-ended questionnaire responses and improvement suggestions.
+Observations will distinguish between difficulties with controls and difficulties understanding the puzzle solutions.  
+
+**3. Collection Tools and Methods** 
+
+A stopwatch and shared spreadsheet will be used to record task performance.  
+
+Each task attempt will have a separate row containing the participant ID, evaluation technique, build version, gaming experience, start and end times, task outcome, hints, resets and observations.  
+
+Task timing will begin when the prompt is given and end when the task is completed or stopped. Time spent on hints and player-initiated resets will be included, while technical recovery time and breaks will be excluded.  
+
+With participant consent, gameplay may also be recorded using OBS Studio to support observation and review. Written notes will be sufficient if participants decline recording.  
+
+Questionnaire responses will be collected through Google Forms and organised in the shared spreadsheet.  
+
+Participants will be identified using anonymous IDs:
+    - O1–O5: Think Aloud group.
+    - Q1–Q5: Questionnaire group.
+
+Recordings and collected data will only be accessible to team members.
 
 
 #### Data Analysis
-Completion times, success rates and questionnaire ratings will be averaged to identify overall usability trends. Qualitative feedback will be grouped into categories such as controls, navigation, time switching, puzzle clarity and visual feedback. Recurring problems will be prioritised based on their frequency and impact on gameplay. Findings will guide improvements to the game's mechanics, interface and level design.
+  
+  We will analyse quantitative and qualitative results separately to identify usability problems and prioritise improvements.  
+  
+**1. Quantitative Analysis**. 
+
+For each group of five participants, we will calculate:  
+
+    - Number of independent and assisted task completions.
+    - Number of incomplete or unreached tasks.
+    - Median and range of successful task completion times.
+    - Number of hints, unsuccessful interactions and resets.
+    - Median questionnaire ratings and response distributions.
+  
+  Assisted completion times and incomplete attempts will be reported separately.
+  
+  "Not Experienced" questionnaire responses will be excluded from rating calculations.
+  
+  Think Aloud and questionnaire-group completion times will not be compared directly, as verbalising thoughts may influence gameplay speed.
+  
+  Initial Evaluation Targets. 
+  
+    - At least 4 out of 5 participants in each group should complete each task independently.
+    - At least 4 out of 5 questionnaire participants should complete the level within the ten-minute target.
+    - The first six questionnaire items should have median ratings of at least 4.
+  
+  The 20-minute testing limit will allow additional time to observe difficulties beyond the intended gameplay duration.
+  
+**2.Qualitative Analysis** 
+
+Player comments and observations will be grouped into the following categories:  
+
+    - Controls and interactions.
+    - Navigation and objectives.
+    - Time switching.
+    - Puzzle clarity.
+    - Visual feedback.
+  
+  Issues will be prioritised based on their frequency and impact on gameplay.
+   
+  Problems preventing task completion will receive the highest priority, followed by recurring difficulties requiring assistance and minor usability issues.  
+  
+  The findings will guide improvements to gameplay mechanics, interface design and level structure.  
+
+  Results from both groups will be considered together when identifying common issues, while recognising that the small sample size cannot represent all potential players.
 
 
 #### Timeline
-  - 12–14 October 2026: Prepare testing materials, conduct a pilot test and recruit participants.
-  - 15–18 October: Conduct five observational and five questionnaire-based sessions.
-  - 19–20 October: Analyse results and identify priority usability issues.
-  - 21–23 October: Implement improvements to gameplay, controls and puzzle clarity.
-  - 24–25 October: Retest updated gameplay and assess improvements.
-  - 26 October: Finalise evaluation findings and documentation ahead of submission.
- 
 
+| Date | Activity |
+  |---|---|
+  | **12–14 October 2026** | Prepare testing materials, conduct a pilot test and recruit participants. |
+  | **15–18 October** | Conduct five observational and five questionnaire-based sessions. |
+  | **19–20 October** | Analyse results and identify priority usability issues. |
+  | **21–23 October** | Implement improvements to gameplay, controls and puzzle clarity. |
+  | **24–25 October** | Retest updated gameplay and assess improvements. |
+  | **26 October** | Finalise evaluation findings and documentation ahead of submission. |
+ 
 #### Responsibilities
-All team members will contribute to recruitment, testing, data collection and analysis. Members will rotate between facilitating sessions, observing gameplay and recording feedback to distribute the workload fairly. Improvements will be assigned according to existing development responsibilities, including programming, level design and user interface development. GitHub Issues will be used to track tasks, progress and individual contributions.
+All team members will contribute to participant recruitment, testing, data collection and analysis.  
+
+Members will rotate between facilitating sessions, observing gameplay and recording feedback to distribute the workload fairly.  
+
+Improvements will be assigned according to existing development responsibilities, including programming, level design and user interface development.
+GitHub Issues will be used to track tasks, progress and individual contributions.
 
 ## Evaluation Report
 
