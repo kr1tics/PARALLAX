@@ -44,14 +44,33 @@ public class Interact : MonoBehaviour
     public void TryInteract()
     {
         if (GameSettingsMenu.GameplayInputBlocked) return;
-        if (HeldObject != null) { DropHeldObject(); return; }
+        if (HeldObject != null)
+        {
+            DropHeldObject();
+            return;
+        }
         var cast = fireInteractRay(true);
         if (cast.Item1)
-            cast.Item2.collider.GetComponentInParent<Interactable>().onInteract(this);
+        {
+            var target = cast.Item2.collider.GetComponentInParent<Interactable>();
+            target.onInteract(this);
+            // Carrying controls the effect for movable objects; switches get a brief pulse.
+            if (target != null && !(target is MovableObject))
+                InteractionDistortion.Play(target.gameObject);
+        }
     }
 
-    internal void Hold(MovableObject value) => HeldObject = value;
-    internal void Release(MovableObject value) { if (HeldObject == value) HeldObject = null; }
+    internal void Hold(MovableObject value)
+    {
+        HeldObject = value;
+        InteractionDistortion.BeginHolding(value.gameObject);
+    }
+    internal void Release(MovableObject value)
+    {
+        if (HeldObject != value) return;
+        HeldObject = null;
+        InteractionDistortion.EndHolding(value.gameObject);
+    }
     public void DropHeldObject() { if (HeldObject != null) HeldObject.Drop(); }
     private void OnDisable() => DropHeldObject();
 }
