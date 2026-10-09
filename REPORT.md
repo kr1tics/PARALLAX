@@ -195,7 +195,7 @@ Participants will be identified using anonymous IDs:
 Recordings and collected data will only be accessible to team members.
 
 
-#### Data Analysis
+### Data Analysis
   
   We will analyse quantitative and qualitative results separately to identify usability problems and prioritise improvements.  
   
@@ -229,7 +229,7 @@ Issues will be prioritised based on how frequently they occur and how significan
 The findings will guide improvements to game mechanics, user interface and level design, with a focus on improving the overall player experience.
 
 
-#### Timeline
+### Timeline
 
 | Date | Activity |
   |---|---|
@@ -240,7 +240,7 @@ The findings will guide improvements to game mechanics, user interface and level
   | **24–25 October** | Retest updated gameplay and assess improvements. |
   | **26 October** | Finalise evaluation findings and documentation ahead of submission. |
  
-#### Responsibilities
+### Responsibilities
 All team members will contribute to participant recruitment, testing, data collection and analysis.  
 
 Members will rotate between facilitating sessions, observing gameplay and recording feedback to distribute the workload fairly.  
