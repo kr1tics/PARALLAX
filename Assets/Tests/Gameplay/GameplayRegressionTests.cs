@@ -143,6 +143,8 @@ namespace Parallax.Gameplay.Tests
             var item = Cube(camera.transform.position + camera.transform.forward * 2f);
             yield return Keys(Key.E); yield return Keys();
             Assert.That(Property(interaction, "HeldObject"), Is.SameAs(item));
+            Assert.That(item.GetComponent<Renderer>().sharedMaterial.shader.name,
+                Is.EqualTo("COMP30019/DistortableObject"), "E applies the interaction shader.");
             Vector3 before = item.transform.position;
             yield return Keys(Key.A); yield return Ticks(12); yield return Keys(); yield return Ticks(30);
             Assert.That(item.transform.position.x, Is.LessThan(before.x - 1f), "Carried objects follow walking.");

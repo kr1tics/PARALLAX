@@ -19,7 +19,21 @@ placeholder for it [here](README.md).
 
 ## Evaluation Plan
 
-TODO - see specification for details
+- Goals: Evaluate how effectively players understand and interact with PARALLAX's core gameplay mechanics. Players should be able to navigate the station, interact with objects, switch between past and future, and complete puzzles without excessive assistance. Testing will identify issues with controls, puzzle difficulty, visual feedback and overall gameplay clarity.
+- Techniques and tasks:
+  - Observational – Think-Aloud Playtesting: Five participants will play the Engineering Access level while explaining their thoughts and decisions. They will be tasked with exploring the environment, interacting with objects, switching time periods and completing puzzles. Observers will record confusion, incorrect interactions, completion times and instances where assistance is needed. This technique helps identify usability problems as they occur.
+  - Querying – Post-Play Questionnaire: Five different participants will complete the same level before answering a questionnaire. Questions will assess control responsiveness, puzzle difficulty, time-switching clarity, environmental navigation and overall enjoyment. Participants will provide ratings from 1–5 and written suggestions. This technique provides measurable feedback and allows players to explain their experiences.
+- Participants: Ten participants will be recruited through classmates, friends and gaming communities, with five assigned to each technique. Participants should have basic experience with first-person PC games and an interest in puzzle-solving or exploration, matching the GDD's target audience. Both casual and experienced players will be included to provide varied perspectives. Participation will be voluntary, with no financial incentives.
+- Collection: Quantitative data will include task completion times, success rates, incorrect interactions, puzzle resets and questionnaire ratings. Qualitative data will include player comments, observed difficulties and improvement suggestions. Gameplay may be recorded using OBS Studio with participant consent. Results will be organised in a shared spreadsheet, with participants identified anonymously.
+- Analysis: Completion times, success rates and questionnaire ratings will be averaged to identify overall usability trends. Qualitative feedback will be grouped into categories such as controls, navigation, time switching, puzzle clarity and visual feedback. Recurring problems will be prioritised based on their frequency and impact on gameplay. Findings will guide improvements to the game's mechanics, interface and level design.
+- Timeline:
+  - 12–14 October 2026: Prepare testing materials, conduct a pilot test and recruit participants.
+  - 15–18 October: Conduct five observational and five questionnaire-based sessions.
+  - 19–20 October: Analyse results and identify priority usability issues.
+  - 21–23 October: Implement improvements to gameplay, controls and puzzle clarity.
+  - 24–25 October: Retest updated gameplay and assess improvements.
+  - 26 October: Finalise evaluation findings and documentation ahead of submission.
+- Responsibilities: All team members will contribute to recruitment, testing, data collection and analysis. Members will rotate between facilitating sessions, observing gameplay and recording feedback to distribute the workload fairly. Improvements will be assigned according to existing development responsibilities, including programming, level design and user interface development. GitHub Issues will be used to track tasks, progress and individual contributions.
 
 ## Evaluation Report
 
