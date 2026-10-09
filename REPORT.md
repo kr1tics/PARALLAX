@@ -201,27 +201,16 @@ Recordings and collected data will only be accessible to team members.
   
 **1. Quantitative Analysis**. 
 
-For each group of five participants, we will calculate:  
+For each group of five participants, we will analyse the following metrics: 
 
-    - Number of independent and assisted task completions.
-    - Number of incomplete or unreached tasks.
-    - Median and range of successful task completion times.
-    - Number of hints, unsuccessful interactions and resets.
-    - Median questionnaire ratings and response distributions.
-  
-  Assisted completion times and incomplete attempts will be reported separately.
-  
-  "Not Experienced" questionnaire responses will be excluded from rating calculations.
-  
-  Think Aloud and questionnaire-group completion times will not be compared directly, as verbalising thoughts may influence gameplay speed.
-  
-  Initial Evaluation Targets. 
-  
-    - At least 4 out of 5 participants in each group should complete each task independently.
-    - At least 4 out of 5 questionnaire participants should complete the level within the ten-minute target.
-    - The first six questionnaire items should have median ratings of at least 4.
-  
-  The 20-minute testing limit will allow additional time to observe difficulties beyond the intended gameplay duration.
+    - Task completion rates: How many participants complete each task independently or with assistance.
+    - Completion times: How long participants take to complete each task.
+    - Hints and failed attempts: How often participants need assistance or struggle with controls and interactions.
+    - Questionnaire ratings: How participants rate the clarity of instructions, ease of controls, puzzle difficulty and overall enjoyment.
+
+  We will summarise task completion results and calculate the median completion times and questionnaire ratings to identify common patterns.
+
+  We will pay particular attention to tasks with low completion rates, longer completion times or frequent requests for assistance, as these may indicate usability issues.
   
 **2.Qualitative Analysis** 
 
@@ -233,13 +222,11 @@ Player comments and observations will be grouped into the following categories:
     - Puzzle clarity.
     - Visual feedback.
   
-  Issues will be prioritised based on their frequency and impact on gameplay.
-   
-  Problems preventing task completion will receive the highest priority, followed by recurring difficulties requiring assistance and minor usability issues.  
+  We will identify recurring problems and compare feedback from both evaluation groups.  
   
-  The findings will guide improvements to gameplay mechanics, interface design and level structure.  
+Issues will be prioritised based on how frequently they occur and how significantly they affect gameplay. Problems that prevent players from progressing will be addressed first, followed by difficulties that cause confusion or reduce enjoyment.  
 
-  Results from both groups will be considered together when identifying common issues, while recognising that the small sample size cannot represent all potential players.
+The findings will guide improvements to game mechanics, user interface and level design, with a focus on improving the overall player experience.
 
 
 #### Timeline
