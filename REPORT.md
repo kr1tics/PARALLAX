@@ -107,7 +107,7 @@ All hints and assistance will be recorded.
 
 If a bug or soft lock occurs, the evaluator will record the issue, pause the timer and attempt recovery through a reset or restart. Recovery time and lost progress will be recorded separately.  
 
-**5.Questionnaire Design** 
+**5. Questionnaire Design** 
 
 Participants in the querying group will complete a short questionnaire after gameplay.  
 
