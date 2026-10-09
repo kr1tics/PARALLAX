@@ -327,9 +327,9 @@ namespace Parallax.Settings.Tests
             Assert.That(GameSettingsMenu.Instance, Is.SameAs(persistentMenu));
             Assert.That(UnityEngine.Object.FindObjectsByType<GameSettingsMenu>(FindObjectsSortMode.None),
                 Has.Length.EqualTo(1), "Loading another scene must not duplicate the persistent menu.");
-            Assert.That(menu.IsOpen, Is.True);
-            Assert.That(Time.timeScale, Is.Zero);
-            Assert.That(AudioListener.pause, Is.True);
+            Assert.That(menu.IsOpen, Is.False, "A new scene must not inherit the pause overlay.");
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
+            Assert.That(AudioListener.pause, Is.False);
             Assert.That(GameSettings.MasterVolume, Is.EqualTo(0.46f).Within(0.001f));
             Assert.That(PlayerPrefs.GetFloat(VolumeKey), Is.EqualTo(0.46f).Within(0.001f));
             Assert.That(Field<Slider>("volume").value, Is.EqualTo(0.46f).Within(0.001f));
@@ -337,7 +337,7 @@ namespace Parallax.Settings.Tests
             Submit(Field<Button>("resume"));
             yield return null;
             Assert.That(menu.IsOpen, Is.False);
-            Assert.That(Time.timeScale, Is.EqualTo(0.42f));
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
             Assert.That(AudioListener.pause, Is.False);
         }
 

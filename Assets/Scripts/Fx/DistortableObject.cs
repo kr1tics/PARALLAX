@@ -110,6 +110,14 @@ private bool isActive;
     }
 
 
+    private void OnDisable()
+    {
+        if (activeRoutine != null) StopCoroutine(activeRoutine);
+        activeRoutine = null;
+        // A stopped temporary pulse cannot finish its fade after a timeline deactivates it.
+        if (!permanentToggleMode) SetEffectAmount(startActive ? 1f : 0f);
+    }
+
     private void SetEffectAmount(float amount)
     {
         targetRenderer.GetPropertyBlock(properties);

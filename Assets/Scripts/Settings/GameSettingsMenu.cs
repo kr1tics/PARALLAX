@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 using Cursor = UnityEngine.Cursor;
 
@@ -40,6 +41,7 @@ namespace Parallax.Settings
         private Label sensitivityValue;
         private Label status;
         private float previousTimeScale;
+        private int pausedSceneHandle;
         private bool previousAudioPause;
         private bool previousCursorVisible;
         private CursorLockMode previousCursorLock;
@@ -57,6 +59,7 @@ namespace Parallax.Settings
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
             GameSettings.Initialize();
             BuildInterface();
         }
@@ -223,6 +226,7 @@ namespace Parallax.Settings
             controlsOnly = showControlsOnly;
 
             previousTimeScale = Time.timeScale;
+            pausedSceneHandle = SceneManager.GetActiveScene().handle;
             previousAudioPause = AudioListener.pause;
             previousCursorVisible = Cursor.visible;
             previousCursorLock = Cursor.lockState;
@@ -257,6 +261,15 @@ namespace Parallax.Settings
             // Moving focus also dismisses any quality popup before returning to gameplay.
             if (!IsMainMenuContext) launcher.Focus();
             OpenChanged?.Invoke(false);
+        }
+
+        private void OnSceneUnloaded(Scene scene)
+        {
+            if (!IsOpen || scene.handle != pausedSceneHandle) return;
+            Close();
+            // Preferences persist, but a fresh scene starts with normal gameplay time/audio.
+            Time.timeScale = 1f;
+            AudioListener.pause = false;
         }
 
         private void RefreshValues()
@@ -304,6 +317,7 @@ namespace Parallax.Settings
             if (Instance != this) return;
             Close();
             GameSettings.Changed -= RefreshValues;
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
             Instance = null;
             if (panelSettings != null) Destroy(panelSettings);
         }

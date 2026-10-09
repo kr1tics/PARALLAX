@@ -126,6 +126,122 @@ namespace Parallax.Gameplay.Tests
         }
 
         [UnityTest]
+        public IEnumerator TimelineWipeRendersAfterSceneReload()
+        {
+            // Ensure the clocks differ enough to detect an application-time timestamp.
+            yield return new WaitForSeconds(1.2f);
+            yield return SceneManager.LoadSceneAsync("StartScene"); yield return null;
+            state = state.GetType().GetMethod("get").Invoke(null, null);
+            var material = (Material)Get(state, "shader");
+            var target = new RenderTexture(64, 64, 24);
+            var image = new Texture2D(64, 64, TextureFormat.RGB24, false);
+            var previous = RenderTexture.active;
+            var cameraObject = new GameObject("Wipe render camera");
+            var camera = cameraObject.AddComponent<Camera>();
+            camera.enabled = false; camera.orthographic = true; camera.orthographicSize = .5f;
+            camera.clearFlags = CameraClearFlags.SolidColor; camera.backgroundColor = Color.white;
+            camera.cullingMask = 1 << 31; camera.targetTexture = target;
+            camera.transform.position = new Vector3(1000, 0, 0);
+            var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            quad.layer = 31; quad.GetComponent<Collider>().enabled = false;
+            quad.transform.position = new Vector3(1000, 0, 2);
+            quad.GetComponent<Renderer>().sharedMaterial = material;
+            int DarkPixels()
+            {
+                // Camera.Render supplies Unity's built-in clock; a bare Blit does not.
+                camera.Render(); RenderTexture.active = target;
+                image.ReadPixels(new Rect(0, 0, 64, 64), 0, 0); image.Apply();
+                return image.GetPixels().Count(c => c.grayscale < .5f);
+            }
+            try
+            {
+                Assert.That(DarkPixels(), Is.Zero, "No wipe before a transition.");
+                Call(state, "SwapTime");
+                yield return new WaitForSeconds(.55f);
+                Assert.That(DarkPixels(), Is.GreaterThan(1000),
+                    "The transition must cover the frame around the actual timeline swap, including after menu/replay loads.");
+                yield return new WaitForSeconds(.6f);
+                Assert.That(DarkPixels(), Is.Zero, "The wipe must clear at the end of the transition.");
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                Object.Destroy(quad); Object.Destroy(cameraObject);
+                target.Release(); Object.Destroy(target); Object.Destroy(image);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator GravityConsoleColourTracksEveryToggleAndCheckpointReset()
+        {
+            yield return Swap();
+            var console = (Component)Get(level, "gravitySwitch");
+            var colours = Component(console.gameObject, "ColourSwapper");
+            var renderer = console.GetComponent<Renderer>();
+            var initial = renderer.sharedMaterial;
+            for (int cycle = 0; cycle < 3; cycle++)
+            {
+                Call(console, "onInteract", interaction);
+                Assert.That((float)Get(state, "gravity"), Is.Zero);
+                Assert.That(renderer.sharedMaterial, Is.EqualTo(Get(colours, "mat2")));
+                Call(console, "onInteract", interaction);
+                Assert.That(renderer.sharedMaterial, Is.EqualTo(initial));
+            }
+            Call(console, "onInteract", interaction);
+            Call(level, "ResetCurrentPuzzle");
+            Assert.That(renderer.sharedMaterial, Is.EqualTo(initial));
+            Assert.That((float)Get(state, "gravity"), Is.EqualTo(14.715f));
+        }
+
+        [UnityTest]
+        public IEnumerator RapidTimelineRequestsAndPauseDoNotDuplicateOrLoseTransitions()
+        {
+            for (int cycle = 0; cycle < 4; cycle++)
+            {
+                string before = Get(state, "now").ToString();
+                Call(state, "SwapTime");
+                for (int request = 0; request < 8; request++) Call(state, "SwapTime");
+                GameSettingsMenu.Instance.Open();
+                yield return new WaitForSecondsRealtime(.6f);
+                Assert.That(Get(state, "now").ToString(), Is.EqualTo(before));
+                GameSettingsMenu.Instance.Close();
+                yield return new WaitForSeconds(.65f);
+                Assert.That(Get(state, "now").ToString(), Is.Not.EqualTo(before));
+                var cubes = Cubes("introCubes");
+                Assert.That(cubes[0].gameObject.activeSelf, Is.EqualTo(before == "Future"));
+                Assert.That(cubes[1].gameObject.activeSelf, Is.EqualTo(before == "Past"));
+                yield return new WaitForSeconds(.45f);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator LooseCubeSafetyHoldClearsThroughRapidGravityRequests()
+        {
+            yield return SolveIntro(); yield return ReleaseStorage();
+            var interlock = Get(level, "storageInterlock");
+            var cube = Cubes("mainCubes")[0];
+            Place(cube, new Vector3(-6, -.48f, 12));
+            var holograms = Component(GameObject.Find("Holographic guidance"), "LevelHolograms");
+            for (int cycle = 0; cycle < 6; cycle++)
+            {
+                Call(Get(level, "gravitySwitch"), "onInteract", interaction);
+                yield return null; yield return null;
+                Assert.That((bool)Prop(interlock, "ClosingDeferred"), Is.True);
+                Assert.That(Door("storageDoor").enabled, Is.False);
+                Assert.That(Prop(Get(holograms, "storageText"), "text"), Does.Contain("SAFETY HOLD"));
+                Call(Get(level, "gravitySwitch"), "onInteract", interaction);
+                yield return null; yield return null;
+                Assert.That((bool)Prop(interlock, "ClosingDeferred"), Is.False);
+                Assert.That(Door("storageDoor").enabled, Is.False);
+            }
+            Call(Get(level, "gravitySwitch"), "onInteract", interaction);
+            Place(cube, new Vector3(-5.5f, -.25f, 5));
+            yield return Ticks(5);
+            Assert.That(Door("storageDoor").enabled, Is.True);
+            Assert.That(Prop(Get(holograms, "storageText"), "text"), Does.Not.Contain("SAFETY HOLD"));
+        }
+
+        [UnityTest]
         public IEnumerator SpawnDecksSealedStoreAndLockedRoutesAreValid()
         {
             Assert.That(playerBody.position.x, Is.EqualTo(3).Within(0.1f));
@@ -172,6 +288,7 @@ namespace Parallax.Gameplay.Tests
             yield return new WaitForSecondsRealtime(.15f); Assert.That(Flag("Completed"), Is.True);
             // This physics test exercises checkpoint reset independently of the completion modal.
             Component(level.gameObject, "TutorialCompletionScreen").enabled = false;
+            playerBody.isKinematic = false; // Restore real player physics after Aim's fixture override.
             Call(level, "ResetCurrentPuzzle"); yield return null;
             Assert.That(Flag("Completed"), Is.False); Assert.That(Flag("IntroSolved"), Is.False);
             Assert.That(Door("introDoor").enabled, Is.True); Assert.That(Door("exitDoor").enabled, Is.True);
@@ -187,6 +304,7 @@ namespace Parallax.Gameplay.Tests
             Call(interaction, "TryInteract");
             Assert.That(Prop(interaction, "HeldObject"), Is.Not.Null);
             yield return new WaitForSeconds(1.05f); Call(state, "SwapTime");
+            playerBody.isKinematic = false;
             Call(level, "ResetCurrentPuzzle"); yield return new WaitForSeconds(0.7f);
             Assert.That(Prop(interaction, "HeldObject"), Is.Null);
             Assert.That(Flag("IntroSolved"), Is.True); Assert.That(Door("introDoor").enabled, Is.False);

@@ -10,7 +10,7 @@ public class ColourSwapper : MonoBehaviour
     {
         List<Material> mats = new();
 
-        mats.Add(currentIs2 ? mat2 : mat1);
+        mats.Add(currentIs2 ? mat1 : mat2);
 
         GetComponent<Renderer>().SetMaterials(mats);
         currentIs2 = !currentIs2;

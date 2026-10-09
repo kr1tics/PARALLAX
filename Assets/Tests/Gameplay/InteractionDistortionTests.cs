@@ -35,6 +35,27 @@ namespace Parallax.Gameplay.Tests
         }
 
         [UnityTest]
+        public IEnumerator TimedDistortionClearsWhenObjectIsDisabledAndCanRestart()
+        {
+            var cube = Cube();
+            var effect = cube.AddComponent(RuntimeType("DistortableObject"));
+            var renderer = cube.GetComponent<Renderer>();
+            var block = new MaterialPropertyBlock();
+            effect.GetType().GetMethod("ActivateDistortion").Invoke(effect, null);
+            yield return new WaitForSeconds(.3f);
+            renderer.GetPropertyBlock(block);
+            Assert.That(block.GetFloat("_EffectAmount"), Is.GreaterThan(.9f));
+            cube.SetActive(false);
+            cube.SetActive(true);
+            renderer.GetPropertyBlock(block);
+            Assert.That(block.GetFloat("_EffectAmount"), Is.Zero, "Deactivation stops the coroutine; its temporary effect must not remain stuck.");
+            effect.GetType().GetMethod("ActivateDistortion").Invoke(effect, null);
+            yield return new WaitForSeconds(1.9f);
+            renderer.GetPropertyBlock(block);
+            Assert.That(block.GetFloat("_EffectAmount"), Is.Zero);
+        }
+
+        [UnityTest]
         public IEnumerator ChildMeshesPulseThenRestoreWithoutChangingColliderOrSource()
         {
             var cube = Cube();
