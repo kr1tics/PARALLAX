@@ -27,6 +27,11 @@ public sealed class Level1Presentation : MonoBehaviour
     [Header("Optional audio — unassigned clips stay silent")]
     [SerializeField] AudioClip pickup, placement, plateActivation, timelineSwitch, relayRestoration, doorUnlock;
     [SerializeField, Range(0, 1)] float interactionVolume = .25f, systemVolume = .2f;
+    [Header("Holographic placement cues")]
+    [SerializeField] Material hologramAmber;
+    readonly List<Renderer>[] hologramEdges = { new(), new() };
+    readonly List<Mesh> hologramMeshes = new();
+    readonly float[] hologramOpacity = { 1f, 1f };
     CanvasGroup hud;
     Canvas hudCanvas;
     TMP_Text number, heading, instruction, status, prompt;
@@ -51,6 +56,7 @@ public sealed class Level1Presentation : MonoBehaviour
         audioSource.playOnAwake = false; audioSource.spatialBlend = 0;
         DecorateCubes(accessCubes); DecorateCubes(engineeringCubes);
         DecoratePlate(accessPlate, accessDetails); DecoratePlate(engineeringPlate, engineeringDetails);
+        BuildHolograms();
         // Local pools of light reveal the placement zones without flooding the room.
         AddLight(accessPlate.transform.position + Vector3.up * 3.8f);
         AddLight(engineeringPlate.transform.position + Vector3.up * 3.8f);
@@ -63,6 +69,7 @@ public sealed class Level1Presentation : MonoBehaviour
 
     void LateUpdate()
     {
+        UpdateHolograms();
         if (hud == null) return;
         // Keep the supporting copy readable at the smallest supported desktop resolution.
         hudCanvas.scaleFactor = Mathf.Max(.75f, hudCanvas.scaleFactor);
@@ -132,6 +139,116 @@ public sealed class Level1Presentation : MonoBehaviour
         // Observation only. Actual activation still belongs to PressureButton's contact/gravity checks.
         return Mathf.Abs(p.x - b.center.x) < b.extents.x && Mathf.Abs(p.z - b.center.z) < b.extents.z &&
             p.y > b.max.y && p.y < b.max.y + 1.25f;
+    }
+
+    void BuildHolograms()
+    {
+        if (hologramAmber == null) return;
+        var plates = new[] { accessPlate, engineeringPlate };
+        var cubes = new[] { accessCubes[0], engineeringCubes[0] };
+        for (int i = 0; i < plates.Length; i++)
+        {
+            var zone = new GameObject("Relay target hologram " + (i + 1)).transform;
+            zone.SetParent(transform, false);
+            Bounds plate = plates[i].GetComponent<Collider>().bounds;
+            // Collider world bounds are empty for the inactive Past cube at Future startup.
+            var cubeBox = cubes[i].GetComponent<BoxCollider>();
+            Vector3 cubeScale = cubes[i].transform.lossyScale;
+            Vector3 size = Vector3.Scale(cubeBox.size, new Vector3(Mathf.Abs(cubeScale.x), Mathf.Abs(cubeScale.y), Mathf.Abs(cubeScale.z)));
+            zone.position = new Vector3(plate.center.x, plate.max.y + size.y * .5f + .015f, plate.center.z);
+            var corners = new[] {
+                new Vector3(-.5f,-.5f,-.5f), new Vector3(.5f,-.5f,-.5f),
+                new Vector3(.5f,.5f,-.5f), new Vector3(-.5f,.5f,-.5f),
+                new Vector3(-.5f,-.5f,.5f), new Vector3(.5f,-.5f,.5f),
+                new Vector3(.5f,.5f,.5f), new Vector3(-.5f,.5f,.5f) };
+            int[][] faces = { new[]{0,3,2,1}, new[]{4,5,6,7}, new[]{0,4,7,3},
+                new[]{1,2,6,5}, new[]{3,7,6,2}, new[]{0,1,5,4} };
+            var vertices = new List<Vector3>(); var uv = new List<Vector2>(); var triangles = new List<int>();
+            foreach (var face in faces)
+            {
+                int start = vertices.Count;
+                foreach (int c in face)
+                {
+                    Vector3 v = corners[c]; vertices.Add(Vector3.Scale(v, size));
+                    // Side faces share height-based scans; horizontal faces scan along depth.
+                    uv.Add(new Vector2(v.x + .5f, Mathf.Abs(corners[face[0]].y - corners[face[2]].y) > .1f ? v.y + .5f : v.z + .5f));
+                }
+                triangles.AddRange(new[]{start,start+1,start+2,start,start+2,start+3});
+            }
+            hologramEdges[i].Add(HologramSurface(zone, "Hologram surface", vertices.ToArray(), uv.ToArray(), triangles.ToArray()));
+            const float thickness = .008f;
+            for (int axis = 0; axis < 3; axis++)
+            for (int a = -1; a <= 1; a += 2)
+            for (int b = -1; b <= 1; b += 2)
+            {
+                int u = (axis + 1) % 3, v = (axis + 2) % 3;
+                Vector3 position = Vector3.zero, scale = Vector3.one * thickness;
+                position[u] = a * size[u] * .5f; position[v] = b * size[v] * .5f;
+                scale[axis] = size[axis];
+                hologramEdges[i].Add(HologramBar(zone, position, scale));
+            }
+            // Two local approach chevrons supplement the existing green route.
+            var marker = new GameObject("Relay approach hologram " + (i + 1)).transform;
+            marker.SetParent(transform, false);
+            marker.position = new Vector3(plate.center.x + (i == 0 ? -1.35f : 1.35f), -.945f, plate.center.z);
+            marker.rotation = Quaternion.Euler(0, i == 0 ? 90 : -90, 0);
+            var arrow = new[] {
+                new Vector3(-.14f, .025f, -.18f), new Vector3(0, .025f, .06f),
+                new Vector3(.14f, .025f, -.18f) };
+            var arrowUV = new[] { new Vector2(0, 0), new Vector2(.5f, 1), new Vector2(1, 0) };
+            hologramEdges[i].Add(HologramSurface(marker, "Hologram direction", arrow, arrowUV, new[]{0,1,2}));
+        }
+    }
+
+    Renderer HologramSurface(Transform parent, string name, Vector3[] vertices, Vector2[] uv, int[] triangles)
+    {
+        var mesh = new Mesh { name = name }; mesh.vertices = vertices; mesh.uv = uv;
+        hologramMeshes.Add(mesh);
+        mesh.triangles = triangles; mesh.RecalculateBounds(); mesh.RecalculateNormals();
+        var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
+        go.transform.SetParent(parent, false); go.GetComponent<MeshFilter>().sharedMesh = mesh;
+        var renderer = go.GetComponent<MeshRenderer>(); renderer.sharedMaterial = hologramAmber;
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+        return renderer;
+    }
+
+    void OnDestroy()
+    {
+        foreach (var mesh in hologramMeshes) if (mesh != null) Destroy(mesh);
+    }
+
+    Renderer HologramBar(Transform parent, Vector3 position, Vector3 scale)
+    {
+        // Reuse built-in cube geometry without adding physics components.
+        var go = new GameObject("Hologram edge", typeof(MeshFilter), typeof(MeshRenderer));
+        go.transform.SetParent(parent, false); go.transform.localPosition = position; go.transform.localScale = scale;
+        go.GetComponent<MeshFilter>().sharedMesh = accessPlate.GetComponent<MeshFilter>().sharedMesh;
+        var renderer = go.GetComponent<MeshRenderer>(); renderer.sharedMaterial = hologramAmber;
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        renderer.receiveShadows = false; return renderer;
+    }
+
+    void UpdateHolograms()
+    {
+        if (hologramAmber == null || properties == null) return;
+        bool past = GlobalState.get().now == TimeState.Past;
+        var cubes = new[] { accessCubes[past ? 0 : 1], engineeringCubes[past ? 0 : 1] };
+        var plates = new[] { accessPlate, engineeringPlate };
+        var solved = new[] { level.IntroSolved, level.MainSolved };
+        for (int i = 0; i < 2; i++)
+        {
+            bool placed = interaction.HeldObject != cubes[i].GetComponent<MovableObject>() && CubeOnPlate(cubes[i], plates[i]);
+            float target = solved[i] || placed ? 0 : 1;
+            hologramOpacity[i] = Mathf.MoveTowards(hologramOpacity[i], target, Time.deltaTime / .6f);
+            foreach (var edge in hologramEdges[i])
+            {
+                edge.enabled = hologramOpacity[i] > .001f;
+                properties.Clear(); properties.SetFloat("_Alpha", hologramAmber.GetFloat("_Alpha") * hologramOpacity[i] * (edge.name == "Hologram edge" ? 1.15f : edge.name == "Hologram direction" ? .75f : 1f));
+                if (edge.name == "Hologram direction") properties.SetFloat("_ScanDensity", 4f);
+                edge.SetPropertyBlock(properties);
+            }
+        }
     }
 
     void SetObjective(string id, string title, string detail)

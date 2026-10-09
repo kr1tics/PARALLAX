@@ -10892,6 +10892,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Level1Presentation
   level: {fileID: 1864023966}
   interaction: {fileID: 1786953326}
+  hologramAmber: {fileID: 2100000, guid: f35d418d68494ca7bef59291bf12e265, type: 2}
   accessPlate: {fileID: 734993471}
   engineeringPlate: {fileID: 1226439776}
   accessCubes:
