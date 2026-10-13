@@ -3,27 +3,25 @@
   "teamMembers": [
     {
       "name": "Cache Luk",
-      "github": "kr1tics",
-      "email": "cachechihiml@student.unimelb.edu.au"
+      "email": "cachechihiml@student.unimelb.edu.au",
+      "github": "kr1tics"
     },
     {
       "name": "Sabrina Sun",
-      "github": "Soyuuuuu",
-      "email": "sunjs4@student.unimelb.edu.au"
+      "email": "sunjs4@student.unimelb.edu.au",
+      "github": "Soyuuuuu"
     },
     {
       "name": "Amy Mauseth",
-      "github": "Siri-chan",
-      "email": "rmauseth@student.unimelb.edu.au"
+      "email": "rmauseth@student.unimelb.edu.au",
+      "github": "Siri-chan"
     },
     {
       "name": "William Ames",
-      "github": "SoapOnToast",
-      "email": "wames@student.unimelb.edu.au"
-    },
-    {
-      "gameTitle": "PARALLAX",
-      "gameBlurb": "Explore an abandoned laboratory in 2176. In the year 2176, you discover an abandoned space-time research station that mysteriously shut down 150 years ago. Explore its decaying corridors, manipulate gravity, and switch between different timelines to solve puzzles and uncover what happened.Every shift in time reveals something new. Can you piece together the past and discover the truth behind the station's disappearance?"
+      "email": "wames@student.unimelb.edu.au",
+      "github": "SoapOnToast"
     }
-  ]
+  ],
+  "gameTitle": "PARALLAX",
+  "gameBlurb": "Explore an abandoned laboratory in 2176. In the year 2176, you discover an abandoned space-time research station that mysteriously shut down 150 years ago. Explore its decaying corridors, manipulate gravity, and switch between different timelines to solve puzzles and uncover what happened.Every shift in time reveals something new. Can you piece together the past and discover the truth behind the station's disappearance?"
 }
