@@ -5,7 +5,6 @@ using UnityEngine;
 public sealed class PowerModuleA : MovableObject
 {
     [SerializeField] Interact player;
-    [SerializeField] PowerRestorationPresentation presentation;
     [SerializeField] TextMesh socketLabel;
     [SerializeField] GameObject alignmentMarker;
     [SerializeField] Vector3 alignmentPosition = new Vector3(-6, 3.05f, 3);
@@ -16,8 +15,8 @@ public sealed class PowerModuleA : MovableObject
     Vector3 initialPosition;
     Quaternion initialRotation;
     bool wasPast;
-    string previousInstruction;
     readonly Collider[] overlaps = new Collider[16];
+    // Both timelines share this object; the repair lasts until this scene is unloaded.
     public bool IsRepaired { get; private set; }
     bool Past => GlobalState.get().now == TimeState.Past;
     bool ZeroG => !playerGravity.effective;
@@ -51,29 +50,30 @@ public sealed class PowerModuleA : MovableObject
         initialPosition = transform.position; initialRotation = transform.rotation;
         wasPast = Past;
         moduleBody.isKinematic = !Past;
+        RefreshFeedback();
     }
 
     void Update()
     {
-        if (Past != wasPast)
+        if (Past == wasPast) return;
+        wasPast = Past;
+        if (!IsRepaired)
         {
-            // Stage 2 deliberately has no cross-timeline repair state. Stage 3 owns that integration.
+            // An unfinished carry still resets safely; an installed module stays seated and kinematic.
             Drop();
             if (!moduleBody.isKinematic) { moduleBody.linearVelocity = Vector3.zero; moduleBody.angularVelocity = Vector3.zero; }
             moduleBody.isKinematic = !Past;
             moduleBody.position = initialPosition; moduleBody.rotation = initialRotation;
             transform.SetPositionAndRotation(initialPosition, initialRotation);
-            IsRepaired = false; wasPast = Past;
         }
+        RefreshFeedback();
+    }
+
+    void RefreshFeedback()
+    {
         alignmentMarker.SetActive(Past && !IsRepaired);
         socketLabel.text = IsRepaired ? "A / REPAIRED" : "A / INSTALLATION SLOT";
         socketLabel.color = IsRepaired ? new Color(.35f, 1f, .65f) : Color.white;
-        string instruction = IsRepaired ? "Module A repaired.\nModule B repair is not available yet." :
-            !Past ? "Switch to the Past to install Module A." : !ZeroG ? "Activate Zero-G with Q.\nPick up Module A with E." :
-            "Carry Module A up to the marker.\nAlign, then press E to install.";
-        if (instruction == previousInstruction) return;
-        previousInstruction = instruction;
-        presentation.SetObjective("OBJECTIVE 01", "Power Restoration", instruction);
     }
 
     public override void onInteract(Interact owner)
@@ -87,6 +87,7 @@ public sealed class PowerModuleA : MovableObject
             moduleBody.position = installationPosition; moduleBody.rotation = initialRotation;
             transform.SetPositionAndRotation(installationPosition, initialRotation);
             IsRepaired = true;
+            RefreshFeedback();
         }
         else if (player.HeldObject == this || ZeroG) base.onInteract(owner);
     }

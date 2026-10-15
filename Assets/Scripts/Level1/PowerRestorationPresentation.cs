@@ -11,9 +11,15 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
     [SerializeField] private Light[] roomLights;
     [SerializeField] private Interact interaction;
     [SerializeField] private TMP_FontAsset titleFont, supportingFont;
+    [SerializeField] private PowerModuleA moduleA;
+    [SerializeField] private PowerModuleB moduleB;
+    private string previousObjective;
     private TimeState? displayedTime;
     private GameplayHud hud;
     private TMP_Text controls;
+
+    // Read-only scene state for the HUD and reactor: the modules own the repair flags.
+    public bool ReactorReady => moduleA.IsRepaired && moduleB.IsRepaired;
 
     private void Awake()
     {
@@ -38,6 +44,7 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
     private void LateUpdate()
     {
         var time = GlobalState.get().now;
+        UpdateObjective(time);
         hud.SetVisible(!GameSettingsMenu.GameplayInputBlocked);
         hud.Status.text = (time == TimeState.Past ? "2026 / PAST" : "2176 / FUTURE") +
             (playerGravity.IsGravityActive ? "  ·  GRAVITY ON" : "  ·  GRAVITY OFF");
@@ -46,6 +53,7 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
         var target = cast.Item1 ? cast.Item2.collider.GetComponentInParent<Interactable>() : null;
         var module = interaction.HeldObject as PowerModuleA ?? target as PowerModuleA;
         hud.Prompt.text = module != null ? module.InteractionHint : interaction.HeldObject != null ? "E — Place" :
+            target is PowerModuleB repair ? repair.InteractionHint :
             target is MovableObject movable && !movable.GetComponent<Rigidbody>().isKinematic ? "E — Pick up" :
             target is Switch ? (time == TimeState.Past ? "E — Toggle gravity" : "F — Switch Timeline") : "";
         if (displayedTime == time) return;
@@ -54,4 +62,21 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
         displayedTime = time;
     }
 
+    private void UpdateObjective(TimeState time)
+    {
+        string progress = (moduleA.IsRepaired ? "A repaired" : "A pending") + " · " +
+            (moduleB.IsRepaired ? "B repaired" : "B pending");
+        string next = ReactorReady ? (time == TimeState.Future ? "Past repairs preserved. Reactor ready." :
+            "Reactor ready. F — View in Future.") :
+            time != TimeState.Past ? (moduleA.IsRepaired || moduleB.IsRepaired ?
+                "Repair preserved. F — Finish in Past." : "F — Switch to the Past to repair.") :
+            playerGravity.effective ? "Q — Activate Zero-G to reach modules." :
+            moduleA.IsRepaired ? "Float to B. E — Repair within reach." :
+            moduleB.IsRepaired ? "Align A above its socket. E — Install." :
+            "Carry A to its marker, or float to B.";
+        string instruction = progress + "\n" + next;
+        if (instruction == previousObjective) return;
+        previousObjective = instruction;
+        SetObjective("OBJECTIVE 01", "Power Restoration", instruction);
+    }
 }

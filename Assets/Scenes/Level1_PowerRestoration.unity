@@ -6828,7 +6828,8 @@ GameObject:
   - component: {fileID: 10298}
   - component: {fileID: 10299}
   - component: {fileID: 10300}
-  m_Layer: 3
+  - component: {fileID: 2100200020}
+  m_Layer: 7
   m_Name: Repair panel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10924,6 +10925,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 826e811664e464ce4aeb5aa053cd3c8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PowerRestorationPresentation
+  moduleA: {fileID: 2100200003}
+  moduleB: {fileID: 2100200020}
   interaction: {fileID: 1786953326}
   titleFont: {fileID: 11400000, guid: d006551d96cdf48d39739dfe3c748d6c, type: 2}
   supportingFont: {fileID: 11400000, guid: 5ab9449966a174634bb20e4c7e5bc291, type: 2}
@@ -11907,7 +11910,6 @@ MonoBehaviour:
   damping: 12
   maxAcceleration: 60
   player: {fileID: 1786953326}
-  presentation: {fileID: 10459}
   socketLabel: {fileID: 10251}
   alignmentMarker: {fileID: 2100200010}
   alignmentPosition: {x: -6, y: 3.05, z: 3}
@@ -12003,6 +12005,21 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &2100200020
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10296}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c041fe5ae41b4de78337e82bbad90631, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PowerModuleB
+  player: {fileID: 1786953326}
+  repairLabel: {fileID: 10307}
+  connectionLabel: {fileID: 10311}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -42,6 +42,10 @@ namespace Parallax.Gameplay.Tests
             if (GameSettingsMenu.Instance != null) { Object.Destroy(GameSettingsMenu.Instance.gameObject); yield return null; }
             GameSettingsMenu.StartupInputBlocked = false; Time.timeScale = 1;
             yield return SceneManager.LoadSceneAsync("Level1_PowerRestoration"); yield return null;
+            FindLevelComponents();
+        }
+        void FindLevelComponents()
+        {
             module = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "PowerModuleA");
             body = module.GetComponent<Rigidbody>(); player = GameObject.Find("Player").GetComponent<Rigidbody>();
             interaction = Component(player.gameObject, "Interact"); controller = Component(player.gameObject, "PlayerController");
@@ -74,9 +78,12 @@ namespace Parallax.Gameplay.Tests
 
         IEnumerator CarryToMarker()
         {
-            yield return Past();
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Q)); yield return null; yield return null;
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            if (Get(state, "now").ToString() != "Past") yield return Past();
+            if ((bool)Get(gravity, "effective"))
+            {
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Q)); yield return null; yield return null;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            }
             Assert.That((bool)Get(gravity, "effective"), Is.False, "Use the actual Q binding.");
             Assert.That((bool)Get(Component(module.gameObject, "ArtificialGravity"), "effective"), Is.True,
                 "Q must not change the module's artificial gravity.");
@@ -109,9 +116,121 @@ namespace Parallax.Gameplay.Tests
             var installed = body.position;
             Call(module, "onInteract", interaction); Interact(); yield return null;
             Assert.That(body.position, Is.EqualTo(installed)); Assert.That(Repaired, Is.True);
-            Call(state, "SwapTime"); yield return new WaitForSeconds(.7f);
-            Assert.That(Repaired, Is.False, "Cross-timeline persistence is deferred to Stage 3.");
-            Assert.That(body.isKinematic, Is.True); Assert.That(Prop(interaction, "HeldObject"), Is.Null);
+            yield return CycleTimelines(true, false);
+        }
+
+        void RepairB()
+        {
+            var panel = GameObject.Find("Repair panel");
+            Aim(panel.transform.position + Vector3.left * 1.6f, Vector3.right);
+            Interact();
+            Assert.That((bool)Prop(Component(panel, "PowerModuleB"), "IsRepaired"), Is.True);
+        }
+
+        MonoBehaviour Presentation => Component(GameObject.Find("08 / Scene presentation"), "PowerRestorationPresentation");
+
+        void CheckRepairState(bool repairedA, bool repairedB)
+        {
+            var modules = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+            Assert.That(modules.Count(x => x.GetType().Name == "PowerModuleA"), Is.EqualTo(1));
+            Assert.That(modules.Count(x => x.GetType().Name == "PowerModuleB"), Is.EqualTo(1));
+            Assert.That(modules.Count(x => x.GetType().Name == "PlayerController"), Is.EqualTo(1));
+            Assert.That(modules.Count(x => x.GetType().Name == "GlobalStateCompanion"), Is.EqualTo(1));
+            Assert.That(Object.FindObjectsByType<GameSettingsMenu>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
+            var moduleB = Component(GameObject.Find("Repair panel"), "PowerModuleB");
+            Assert.That(Repaired, Is.EqualTo(repairedA));
+            Assert.That((bool)Prop(moduleB, "IsRepaired"), Is.EqualTo(repairedB));
+            Assert.That((bool)Prop(Presentation, "ReactorReady"), Is.EqualTo(repairedA && repairedB));
+            bool past = Get(state, "now").ToString() == "Past";
+            Assert.That(body.isKinematic, Is.EqualTo(repairedA || !past));
+            Assert.That(Prop(interaction, "HeldObject"), Is.Null);
+            Assert.That(((GameObject)Get(module, "alignmentMarker")).activeSelf, Is.EqualTo(past && !repairedA));
+            Assert.That(GameObject.Find("A / INSTALLATION SLOT").GetComponent<TextMesh>().text,
+                Is.EqualTo(repairedA ? "A / REPAIRED" : "A / INSTALLATION SLOT"));
+            Assert.That(GameObject.Find("B / REPAIR").GetComponent<TextMesh>().text,
+                Is.EqualTo(repairedB ? "B / REPAIRED" : "B / REPAIR"));
+            Assert.That(GameObject.Find("CONNECTION LOST").GetComponent<TextMesh>().text,
+                Is.EqualTo(repairedB ? "REPAIR COMPLETE" : "CONNECTION LOST"));
+            Assert.That(GameObject.Find("REACTOR / OFFLINE").GetComponent<TextMesh>().text, Is.EqualTo("REACTOR / OFFLINE"));
+            Assert.That(GameObject.Find("RESTART / LOCKED").GetComponent<TextMesh>().text, Is.EqualTo("RESTART / LOCKED"));
+            if (repairedA)
+            {
+                Assert.That(Vector3.Distance(body.position, (Vector3)Get(module, "installationPosition")), Is.LessThan(.01f));
+                Assert.That(Quaternion.Angle(body.rotation, (Quaternion)Get(module, "initialRotation")), Is.LessThan(.01f));
+                Assert.That(Ready, Is.False);
+                Assert.That((Color32)GameObject.Find("A / INSTALLATION SLOT").GetComponent<TextMesh>().color,
+                    Is.EqualTo((Color32)new Color(.35f, 1, .65f)));
+            }
+            var instruction = GameObject.Find("Current instruction").GetComponent<TMPro.TMP_Text>();
+            Assert.That(instruction.text, Does.Contain((repairedA ? "A repaired" : "A pending") + " · " +
+                (repairedB ? "B repaired" : "B pending")));
+            if (repairedA && repairedB) Assert.That(instruction.text, Does.Contain("Reactor ready"));
+            else Assert.That(instruction.text, Does.Not.Contain("Reactor ready"));
+            if (!past && (repairedA || repairedB)) Assert.That(instruction.text, Does.Contain("preserved"));
+            instruction.ForceMeshUpdate(); Assert.That(instruction.isTextOverflowing, Is.False, instruction.text);
+        }
+
+        IEnumerator CycleTimelines(bool repairedA, bool repairedB)
+        {
+            for (int cycle = 0; cycle < 4; cycle++)
+            {
+                yield return new WaitForSeconds(.4f); // Finish the existing wipe's cooldown.
+                string expected = Get(state, "now").ToString() == "Past" ? "Future" : "Past";
+                Call(state, "SwapTime"); Call(state, "SwapTime"); // Repeated input must produce one swap.
+                Assert.That((bool)Prop(Presentation, "ReactorReady"), Is.EqualTo(repairedA && repairedB));
+                yield return new WaitForSeconds(.7f);
+                Assert.That(Get(state, "now").ToString(), Is.EqualTo(expected));
+                if (repairedA) Call(module, "onInteract", interaction);
+                if (repairedB) Call(Component(GameObject.Find("Repair panel"), "PowerModuleB"), "onInteract", interaction);
+                yield return null;
+                CheckRepairState(repairedA, repairedB);
+            }
+        }
+
+        IEnumerator CheckBothRepairedAcrossTimelines()
+        {
+            Assert.That((bool)Prop(Presentation, "ReactorReady"), Is.True, "Readiness changes immediately with the second repair.");
+            yield return null;
+            CheckRepairState(true, true);
+            GameSettingsMenu.Instance.Open(); yield return null;
+            CheckRepairState(true, true);
+            GameSettingsMenu.Instance.Close(); yield return null; yield return null;
+            yield return CycleTimelines(true, true);
+        }
+
+        [UnityTest] public IEnumerator ModuleBCanBeRepairedAfterInstallingModuleA()
+        {
+            yield return CarryToMarker(); Interact();
+            Assert.That(Repaired, Is.True);
+            yield return null;
+            Assert.That(GameObject.Find("Current instruction").GetComponent<TMPro.TMP_Text>().text,
+                Does.Contain("A repaired · B pending").And.Contain("Float to B"));
+            Assert.That((bool)Prop(Presentation, "ReactorReady"), Is.False);
+            RepairB(); yield return CheckBothRepairedAcrossTimelines();
+            // Repairs belong to this playthrough, not a singleton or save file.
+            yield return SceneManager.LoadSceneAsync("Level1_PowerRestoration"); yield return null;
+            FindLevelComponents();
+            Assert.That(Get(state, "now").ToString(), Is.EqualTo("Future"));
+            CheckRepairState(false, false);
+            Assert.That(controller.enabled, Is.True); Assert.That(player.isKinematic, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1)); Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
+        }
+
+        [UnityTest] public IEnumerator ModuleACanBeCarriedAndInstalledAfterRepairingModuleB()
+        {
+            yield return Past();
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Q)); yield return null; yield return null;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            RepairB(); yield return null;
+            Assert.That(GameObject.Find("Current instruction").GetComponent<TMPro.TMP_Text>().text,
+                Does.Contain("A pending · B repaired").And.Contain("Align A"));
+            Assert.That((bool)Prop(Presentation, "ReactorReady"), Is.False);
+            yield return CarryToMarker(); Interact(); yield return CheckBothRepairedAcrossTimelines();
+        }
+
+        [UnityTest] public IEnumerator UnrepairedModulesRemainPendingAcrossTimelineCycles()
+        {
+            yield return CycleTimelines(false, false);
         }
 
         [UnityTest] public IEnumerator InstallationRejectsGroundedMisalignedBlockedAndPausedAttempts()
