@@ -198,12 +198,13 @@ public static class PowerRestorationValidation
                     var camera = Camera.main;
                     Require(Physics.Raycast(camera.transform.position, camera.transform.forward, out var hit, 4f)
                         && hit.collider.GetComponent<DistortableObject>() != null, "Play: settled camera targets diagnostic display");
-                    Keys(Key.G, Key.E); Advance(0.25f); break;
+                    Keys(Key.G); Advance(0.25f); break;
                 case 18:
                     var props = new MaterialPropertyBlock();
                     GameObject.Find("Diagnostic distortion display").GetComponent<Renderer>().GetPropertyBlock(props);
-                    Require(props.GetFloat("_EffectAmount") > 0,"Play: existing G raycast activates diagnostic distortion");
-                    Keys(); Finish(true,"Movement, collisions, Q gravity, Zero-G ascent, T time travel and G distortion passed."); break;
+                    Require(props.GetFloat("_EffectAmount") == 0,"Play: G cannot activate diagnostic distortion in Level 1");
+                    Require(GameObject.Find("MAINTENANCE / G SCAN") == null,"Play: maintenance scan control hidden");
+                    Keys(); Finish(true,"Movement, collisions, Q gravity, Zero-G ascent, T time travel and disabled G distortion passed."); break;
             }
         }
         catch (Exception e) { Finish(false,e.ToString()); }

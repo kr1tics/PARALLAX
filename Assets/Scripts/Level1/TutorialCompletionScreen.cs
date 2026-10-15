@@ -13,7 +13,7 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
 {
     [SerializeField] Level1Controller level;
     [SerializeField] TMP_FontAsset primaryFont, secondaryFont;
-    [Tooltip("Leave empty until a next gameplay scene exists. Continue returns to MainMenu meanwhile.")]
+    [Tooltip("Next scene name or path from Build Settings. Empty/unavailable destinations return to MainMenu.")]
     [SerializeField] string nextScene;
     [SerializeField, Min(0)] float completionDelay = 1f;
     [SerializeField, Min(.01f)] float fadeDuration = .8f;
@@ -114,7 +114,6 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     public void Continue()
     {
         if (!IsReady || navigating) return;
-        // No unimplemented level is created. The existing menu is the safe prototype destination.
         string destination = !string.IsNullOrWhiteSpace(nextScene) && Application.CanStreamedLevelBeLoaded(nextScene) ? nextScene : "MainMenu";
         Navigate(destination);
     }
@@ -124,6 +123,8 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
         navigating = true; actions.interactable = false;
         ContextIntroFlow.Cancel();
         Release();
+        Time.timeScale = 1f;
+        AudioListener.pause = false;
         SceneManager.LoadScene(destination);
     }
     void Release()

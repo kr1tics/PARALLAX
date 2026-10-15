@@ -9855,7 +9855,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &10429
 Transform:
   m_ObjectHideFlags: 0
@@ -10600,6 +10600,7 @@ GameObject:
   - component: {fileID: 10457}
   - component: {fileID: 10458}
   - component: {fileID: 10459}
+  - component: {fileID: 2141915310}
   m_Layer: 0
   m_Name: 08 / Scene presentation
   m_TagString: Untagged
@@ -10890,6 +10891,23 @@ MonoBehaviour:
     - {fileID: 2100000, guid: 34e48a3ce50b34c339d8fc61e309e31d, type: 2}
     future:
     - {fileID: 2100000, guid: a6aba2b3336bd46fd8177ab4cd04b041, type: 2}
+--- !u!114 &2141915310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b859c80e28ed49b5955e22e5b820feef, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Scene01Typography
+  headingFont: {fileID: 11400000, guid: d006551d96cdf48d39739dfe3c748d6c, type: 2}
+  supportingFont: {fileID: 11400000, guid: 5ab9449966a174634bb20e4c7e5bc291, type: 2}
+  environmentalHeadings: []
+  primaryColor: {r: 0.863, g: 0.894, b: 0.91, a: 1}
+  secondaryColor: {r: 0.545, g: 0.573, b: 0.596, a: 1}
 --- !u!114 &10459
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10902,6 +10920,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 826e811664e464ce4aeb5aa053cd3c8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PowerRestorationPresentation
+  interaction: {fileID: 1786953326}
+  titleFont: {fileID: 11400000, guid: d006551d96cdf48d39739dfe3c748d6c, type: 2}
+  supportingFont: {fileID: 11400000, guid: 5ab9449966a174634bb20e4c7e5bc291, type: 2}
   playerLook: {fileID: 1047493169}
   playerGravity: {fileID: 1786953324}
   roomLights:
@@ -11499,6 +11520,7 @@ MonoBehaviour:
   grav: {fileID: 1786953324}
   cam: {fileID: 1047493167}
   interactionDistance: 4
+  allowManualDistortion: 0
   feet: {fileID: 2028501664}
   groundMask:
     serializedVersion: 2
@@ -11779,10 +11801,55 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1740000000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1740000001}
+  - component: {fileID: 1740000002}
+  m_Layer: 0
+  m_Name: Settings Menu
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1740000001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1740000000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1740000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1740000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b5f319e90d84a86b181a1a941f312d0, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
+  - {fileID: 1740000001}
   - {fileID: 1786953322}
   - {fileID: 1361935574}
   - {fileID: 2048653878}

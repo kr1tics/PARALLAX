@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Parallax.Settings;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>Scene-only observer. Never changes physics, puzzle state, or time travel.</summary>
 [DefaultExecutionOrder(300)]
@@ -32,9 +31,8 @@ public sealed class Level1Presentation : MonoBehaviour
     readonly List<Renderer>[] hologramEdges = { new(), new() };
     readonly List<Mesh> hologramMeshes = new();
     readonly float[] hologramOpacity = { 1f, 1f };
-    CanvasGroup hud;
-    Canvas hudCanvas;
-    TMP_Text number, heading, instruction, status, prompt;
+    GameplayHud hud;
+    TMP_Text instruction, status, prompt;
     AudioSource audioSource;
     MovableObject previousHeld;
     TimeState previousTime;
@@ -43,7 +41,6 @@ public sealed class Level1Presentation : MonoBehaviour
     readonly Dictionary<MovableObject, List<Renderer>> cubeDetails = new();
     readonly Dictionary<Renderer, bool> detailStates = new();
     MaterialPropertyBlock properties;
-    GameObject uiRoot;
     readonly List<Light> localLights = new();
     public string CurrentInstruction => instruction == null ? "" : instruction.text;
     public string CurrentPrompt => prompt == null ? "" : prompt.text;
@@ -71,10 +68,8 @@ public sealed class Level1Presentation : MonoBehaviour
     {
         UpdateHolograms();
         if (hud == null) return;
-        // Keep the supporting copy readable at the smallest supported desktop resolution.
-        hudCanvas.scaleFactor = Mathf.Max(.75f, hudCanvas.scaleFactor);
         bool blocked = GameSettingsMenu.GameplayInputBlocked;
-        hud.alpha = blocked ? 0 : 1;
+        hud.SetVisible(!blocked);
         if (blocked) return;
         var state = GlobalState.get();
         if (state.now != previousTime)
@@ -252,7 +247,7 @@ public sealed class Level1Presentation : MonoBehaviour
     }
 
     void SetObjective(string id, string title, string detail)
-    { number.text = id; heading.text = title; instruction.text = detail; }
+    { hud.SetObjective(id, title, detail); }
     void Play(AudioClip clip, float volume) { if (clip != null) audioSource.PlayOneShot(clip, volume); }
 
     void ApplyTimeline()
@@ -335,31 +330,7 @@ public sealed class Level1Presentation : MonoBehaviour
 
     void BuildHud()
     {
-        uiRoot = new GameObject("Scene 01 Objective UI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(CanvasGroup));
-        uiRoot.transform.SetParent(transform, false);
-        var canvas = uiRoot.GetComponent<Canvas>(); hudCanvas = canvas; canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = 10;
-        var scaler = uiRoot.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080); scaler.matchWidthOrHeight = .5f;
-        hud = uiRoot.GetComponent<CanvasGroup>(); hud.blocksRaycasts = false; hud.interactable = false;
-        var panel = new GameObject("Objective panel", typeof(RectTransform), typeof(Image)); panel.transform.SetParent(uiRoot.transform, false);
-        var rect = panel.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = new Vector2(0, 1); rect.pivot = new Vector2(0, 1);
-        rect.anchoredPosition = new Vector2(28, -28); rect.sizeDelta = new Vector2(470, 148);
-        panel.GetComponent<Image>().color = new Color(.035f, .044f, .05f, .82f); panel.GetComponent<Image>().raycastTarget = false;
-        number = Label(panel.transform, "Objective number", titleFont, 14, new Vector2(16, -12), new Vector2(438, 22));
-        number.color = new Color(.56f, .59f, .60f);
-        heading = Label(panel.transform, "Objective title", titleFont, titleSize, new Vector2(16, -38), new Vector2(438, 32));
-        instruction = Label(panel.transform, "Current instruction", supportingFont, instructionSize, new Vector2(16, -78), new Vector2(438, 64));
-        status = Label(uiRoot.transform, "Timeline status", supportingFont, 16, new Vector2(-28, -28), new Vector2(450, 28));
-        var sr = status.rectTransform; sr.anchorMin = sr.anchorMax = new Vector2(1, 1); sr.pivot = new Vector2(1, 1); status.alignment = TextAlignmentOptions.TopRight;
-        prompt = Label(uiRoot.transform, "Contextual interaction prompt", supportingFont, 19, new Vector2(0, -90), new Vector2(600, 36));
-        var pr = prompt.rectTransform; pr.anchorMin = pr.anchorMax = new Vector2(.5f, .5f); pr.pivot = new Vector2(.5f, .5f); prompt.alignment = TextAlignmentOptions.Center;
-    }
-    static TMP_Text Label(Transform parent, string name, TMP_FontAsset font, float size, Vector2 position, Vector2 dimensions)
-    {
-        var root = new GameObject(name, typeof(RectTransform)); root.transform.SetParent(parent, false);
-        var text = root.AddComponent<TextMeshProUGUI>(); text.font = font; text.fontSize = size; text.color = new Color(.86f, .89f, .91f);
-        text.raycastTarget = false; text.textWrappingMode = TextWrappingModes.Normal;
-        var rect = text.rectTransform; rect.anchorMin = rect.anchorMax = new Vector2(0, 1); rect.pivot = new Vector2(0, 1);
-        rect.anchoredPosition = position; rect.sizeDelta = dimensions; return text;
+        hud = new GameplayHud(transform, "Scene 01 Objective UI", titleFont, supportingFont, titleSize, instructionSize);
+        instruction = hud.Instruction; status = hud.Status; prompt = hud.Prompt;
     }
 }

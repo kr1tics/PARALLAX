@@ -20,7 +20,7 @@ public sealed class Scene01Guidance : MonoBehaviour
     void Start()
     {
         var hud = transform.Find("Scene 01 Objective UI");
-        controls = Label(hud, "Contextual control hints", new Vector2(28, 24), new Vector2(1000, 32), 16);
+        controls = GameplayHud.CreateControlHint(hud, supportingFont);
         recoveryPanel = new GameObject("Objective 02 flight help", typeof(RectTransform), typeof(Image));
         recoveryPanel.transform.SetParent(hud, false);
         var panelRect = recoveryPanel.GetComponent<RectTransform>();

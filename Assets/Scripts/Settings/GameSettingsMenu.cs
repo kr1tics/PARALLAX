@@ -17,6 +17,7 @@ namespace Parallax.Settings
         public bool IsOpen { get; private set; }
         public bool IsMainMenuContext { get; private set; }
         private bool controlsOnly;
+        private bool manualDistortionControl = true, checkpointControl = true;
         // Ignore the click/key that resumes the game until the next frame.
         public static bool StartupInputBlocked { get; set; }
         public static bool GameplayInputBlocked => StartupInputBlocked || (Instance != null &&
@@ -154,6 +155,8 @@ namespace Parallax.Settings
 
         private void RefreshPresentation()
         {
+            boundRoot.Q("manual-distortion-control").style.display = manualDistortionControl ? DisplayStyle.Flex : DisplayStyle.None;
+            boundRoot.Q("checkpoint-control").style.display = checkpointControl ? DisplayStyle.Flex : DisplayStyle.None;
             shell.EnableInClassList("controls-only", controlsOnly);
             boundRoot.Q<Label>("settings-title").text = controlsOnly ? "Controls" : "Settings";
             boundRoot.Q("settings-fields").style.display = controlsOnly ? DisplayStyle.None : DisplayStyle.Flex;
@@ -161,6 +164,13 @@ namespace Parallax.Settings
             boundRoot.Q<Button>("resume").text = IsMainMenuContext ? "Back to main menu" : "Resume";
             closeButton.tooltip = IsMainMenuContext ? "Save and return to main menu" : "Save and resume";
             launcher.style.display = IsOpen || IsMainMenuContext ? DisplayStyle.None : DisplayStyle.Flex;
+        }
+
+        public void SetGameplayControls(bool manualDistortion, bool checkpoint)
+        {
+            manualDistortionControl = manualDistortion;
+            checkpointControl = checkpoint;
+            if (boundRoot != null) RefreshPresentation();
         }
 
         private void ScrollSettings(WheelEvent evt)
@@ -265,6 +275,7 @@ namespace Parallax.Settings
 
         private void OnSceneUnloaded(Scene scene)
         {
+            SetGameplayControls(true, true);
             if (!IsOpen || scene.handle != pausedSceneHandle) return;
             Close();
             // Preferences persist, but a fresh scene starts with normal gameplay time/audio.

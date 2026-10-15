@@ -31,9 +31,9 @@
                         <ui:VisualElement class="control-row"><ui:Label text="Q" class="control-key" /><ui:Label text="Toggle jetpack" class="control-action" /></ui:VisualElement>
                         <ui:VisualElement class="control-row"><ui:Label text="E / Left click" class="control-key" /><ui:Label text="Interact / grab" class="control-action" /></ui:VisualElement>
                         <ui:VisualElement class="control-row"><ui:Label text="F / T" class="control-key" /><ui:Label text="Switch past / future" class="control-action" /></ui:VisualElement>
-                        <ui:VisualElement class="control-row"><ui:Label text="G" class="control-key" /><ui:Label text="Distort the object you are looking at" class="control-action" /></ui:VisualElement>
+                        <ui:VisualElement name="manual-distortion-control" class="control-row"><ui:Label text="G" class="control-key" /><ui:Label text="Distort the object you are looking at" class="control-action" /></ui:VisualElement>
                         <ui:VisualElement class="control-row"><ui:Label text="Esc / P" class="control-key" /><ui:Label text="Settings / resume" class="control-action" /></ui:VisualElement>
-                        <ui:VisualElement class="control-row"><ui:Label text="R" class="control-key" /><ui:Label text="Reset checkpoint / replay tutorial" class="control-action" /></ui:VisualElement>
+                        <ui:VisualElement name="checkpoint-control" class="control-row"><ui:Label text="R" class="control-key" /><ui:Label text="Reset checkpoint / replay tutorial" class="control-action" /></ui:VisualElement>
                         <ui:Label text="Gravity applies on station decks. In open space, use WASD, Space and Ctrl to fly." class="controls-hint" />
                     </ui:VisualElement>
                 </ui:ScrollView>

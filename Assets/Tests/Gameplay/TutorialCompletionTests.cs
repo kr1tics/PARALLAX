@@ -104,8 +104,28 @@ namespace Parallax.Gameplay.Tests
             }
             finally { InputSystem.RemoveDevice(keyboard); InputSystem.settings.backgroundBehavior = background; InputSystem.settings.editorInputBehaviorInPlayMode = editorInput; }
         }
-        [UnityTest] public IEnumerator ContinueSafelyReturnsToExistingMenu()
+        [UnityTest] public IEnumerator ContinueLoadsPowerRestorationWithOnePlayerAndPersistentSettings()
         {
+            var menu = GameSettingsMenu.Instance;
+            yield return Complete();
+            GameObject.Find("CONTINUE").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            yield return null; yield return null;
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level1_PowerRestoration"));
+            Assert.That(GameSettingsMenu.StartupInputBlocked, Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
+            Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
+            Assert.That(GameSettingsMenu.Instance, Is.SameAs(menu));
+            Assert.That(Object.FindObjectsByType<GameSettingsMenu>(FindObjectsSortMode.None), Has.Length.EqualTo(1));
+            Assert.That(Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Count(x => x.GetType().Name == "PlayerController"), Is.EqualTo(1));
+            Assert.That(GameObject.Find("Tutorial Completion Screen"), Is.Null);
+            Assert.That(GameObject.Find("Scene 01 Objective UI"), Is.Null);
+            Assert.That(GameObject.Find("Power Restoration Objective UI"), Is.Not.Null);
+            Assert.That(Vector3.Distance(GameObject.Find("Player").transform.position, new Vector3(0, 1.05f, -8.2f)), Is.LessThan(.25f));
+            Assert.That(Camera.main.transform.forward.z, Is.GreaterThan(.9f));
+            menu.Open(); Assert.That(menu.IsOpen, Is.True); menu.Close();
+        }
+        [UnityTest] public IEnumerator UnavailableDestinationStillReturnsToMainMenu()
+        {
+            Set(completion, "nextScene", "");
             yield return Complete(); Call(completion, "Continue"); yield return null; yield return null;
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("MainMenu"));
             Assert.That(GameSettingsMenu.StartupInputBlocked, Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
