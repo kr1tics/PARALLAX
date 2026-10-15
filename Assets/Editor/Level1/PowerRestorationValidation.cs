@@ -76,7 +76,8 @@ public static class PowerRestorationValidation
             "Every renderer has materials");
         Require(objects.Single(g => g.name == "Activation effects anchor — reserved").GetComponent<Light>().enabled == false,
             "Reactor activation light disabled");
-        Require(!objects.Any(g => g.GetComponent<Rigidbody>() != null && g != player), "Modules are static Stage 1 placeholders");
+        Require(objects.Where(g => g.GetComponent<Rigidbody>() != null && g != player).All(g => g.GetComponent<PowerModuleA>() != null),
+            "Only Module A adds a gameplay rigidbody; Module B remains a placeholder");
         Debug.Log("STAGE1 EDIT VALIDATION PASSED: " + objects.Length + " objects; scene opened; references and geometry checked.");
     }
 

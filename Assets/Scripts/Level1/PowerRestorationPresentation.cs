@@ -44,7 +44,8 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
         controls.text = "ESC / P — Settings / Resume" + (!playerGravity.IsGravityActive ? "    ·    Q — Toggle jetpack" : "");
         var cast = interaction.fireInteractRay(true);
         var target = cast.Item1 ? cast.Item2.collider.GetComponentInParent<Interactable>() : null;
-        hud.Prompt.text = interaction.HeldObject != null ? "E — Place" :
+        var module = interaction.HeldObject as PowerModuleA ?? target as PowerModuleA;
+        hud.Prompt.text = module != null ? module.InteractionHint : interaction.HeldObject != null ? "E — Place" :
             target is MovableObject movable && !movable.GetComponent<Rigidbody>().isKinematic ? "E — Pick up" :
             target is Switch ? (time == TimeState.Past ? "E — Toggle gravity" : "F — Switch Timeline") : "";
         if (displayedTime == time) return;
