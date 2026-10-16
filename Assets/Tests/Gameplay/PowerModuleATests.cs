@@ -233,6 +233,35 @@ namespace Parallax.Gameplay.Tests
             yield return CarryToMarker(); Interact(); yield return CheckBothRepairedAcrossTimelines();
         }
 
+        [UnityTest] public IEnumerator MisalignedDropBesideSocketRemainsRecoverable()
+        {
+            yield return CarryToMarker();
+            Aim(Alignment + Vector3.left * 1.6f + Vector3.back * 1.8f, Vector3.forward);
+            yield return new WaitForSeconds(.8f); // The normal grab spring carries it beside the socket.
+            Assert.That(Ready, Is.False); Interact();
+            Assert.That(Prop(interaction, "HeldObject"), Is.Null);
+            yield return new WaitForSeconds(1);
+            Assert.That(Repaired, Is.False);
+            Assert.That(Vector3.Distance(body.position, (Vector3)Get(module, "initialPosition")), Is.GreaterThan(2));
+            yield return CycleTimelines(false, false);
+            Assert.That(Vector3.Distance(body.position, (Vector3)Get(module, "initialPosition")), Is.LessThan(.15f));
+            Aim(body.position + Vector3.back * 1.8f, Vector3.forward); Interact();
+            Assert.That(Prop(interaction, "HeldObject"), Is.SameAs(module));
+        }
+
+        [UnityTest] public IEnumerator SceneReloadClearsUntouchedAndPartialRepairProgress()
+        {
+            yield return SceneManager.LoadSceneAsync("Level1_PowerRestoration"); yield return null;
+            FindLevelComponents(); CheckRepairState(false, false);
+            yield return CarryToMarker(); Interact(); yield return null;
+            CheckRepairState(true, false);
+            yield return SceneManager.LoadSceneAsync("Level1_PowerRestoration"); yield return null;
+            FindLevelComponents(); CheckRepairState(false, false);
+            CheckObjective("01", "Restore Power Modules");
+            Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1));
+        }
+
         [UnityTest] public IEnumerator UnrepairedModulesRemainPendingAcrossTimelineCycles()
         {
             yield return CycleTimelines(false, false);
@@ -416,6 +445,9 @@ namespace Parallax.Gameplay.Tests
             yield return new WaitForSeconds(.5f); Call(state, "SwapTime"); yield return new WaitForSeconds(.7f);
             Assert.That(Prop(interaction, "HeldObject"), Is.Null); Assert.That(body.isKinematic, Is.True);
             Assert.That(Repaired, Is.False);
+            yield return new WaitForSeconds(.4f); Call(state, "SwapTime"); yield return new WaitForSeconds(.7f);
+            Aim(body.position + Vector3.back * 1.8f, Vector3.forward); Interact();
+            Assert.That(Prop(interaction, "HeldObject"), Is.SameAs(module), "A dropped by time travel remains recoverable in the Past.");
         }
     }
 }

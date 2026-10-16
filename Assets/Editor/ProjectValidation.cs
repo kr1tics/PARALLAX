@@ -11,6 +11,12 @@ using UnityEngine;
 public static class ProjectValidation
 {
     public static void AuditAndBuild()
+        => Build("Builds/Review/Parallax.exe", BuildOptions.Development);
+
+    public static void BuildFinal()
+        => Build("Builds/Final/Parallax.exe", BuildOptions.None);
+
+    static void Build(string output, BuildOptions options)
     {
         var findings = new List<string>();
         var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
@@ -45,9 +51,9 @@ public static class ProjectValidation
         var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {
             scenes = scenes,
-            locationPathName = "Builds/Review/Parallax.exe",
+            locationPathName = output,
             target = BuildTarget.StandaloneWindows64,
-            options = BuildOptions.Development
+            options = options
         });
         File.WriteAllText("Logs/review-build-summary.txt",
             $"{report.summary.result}: {report.summary.totalErrors} errors, {report.summary.totalWarnings} warnings, {report.summary.totalSize} bytes\n");

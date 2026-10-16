@@ -19,7 +19,7 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     [SerializeField, Min(0)] float completionDelay = 1f;
     [SerializeField, Min(.01f)] float fadeDuration = .8f;
     [Header("Tutorial shortcut")]
-    [Tooltip("Shift + K opens the completion screen without solving puzzles. Disable for submission if desired.")]
+    [Tooltip("Editor/development builds only: Shift + K previews completion without solving puzzles.")]
     [SerializeField] bool allowCompletionShortcut = true;
     CanvasGroup overlay, copy, actions;
     GameObject screen;
@@ -36,7 +36,7 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     public void TryShow()
     {
         if (triggered || GameSettingsMenu.GameplayInputBlocked) return;
-        bool shortcut = reactor == null && allowCompletionShortcut && Keyboard.current != null && Keyboard.current.shiftKey.isPressed && Keyboard.current.kKey.wasPressedThisFrame;
+        bool shortcut = Debug.isDebugBuild && reactor == null && allowCompletionShortcut && Keyboard.current != null && Keyboard.current.shiftKey.isPressed && Keyboard.current.kKey.wasPressedThisFrame;
         bool completed = reactor != null ? reactor.IsOnline : level != null && level.Completed;
         if (!completed && !shortcut) return;
         triggered = true;
