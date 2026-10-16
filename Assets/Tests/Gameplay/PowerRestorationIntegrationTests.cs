@@ -144,7 +144,7 @@ namespace Parallax.Gameplay.Tests
             var hud = GameObject.Find("Power Restoration Objective UI").GetComponent<Canvas>();
             Assert.That(Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None).Count(c => c.name.Contains("Objective UI")), Is.EqualTo(1));
             Assert.That(hud.GetComponent<CanvasGroup>().blocksRaycasts, Is.False);
-            Assert.That(Label("Objective title").text, Is.EqualTo("Power Restoration"));
+            Assert.That(Label("Objective title").text, Is.EqualTo("Restore Power Modules"));
             Assert.That(GameObject.Find("A / INSTALLATION SLOT"), Is.Not.Null);
             Assert.That(GameObject.Find("B / REPAIR"), Is.Not.Null);
             Assert.That(GameObject.Find("REACTOR / OFFLINE"), Is.Not.Null);

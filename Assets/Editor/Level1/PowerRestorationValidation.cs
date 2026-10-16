@@ -76,6 +76,12 @@ public static class PowerRestorationValidation
             "Every renderer has materials");
         Require(objects.Single(g => g.name == "Activation effects anchor — reserved").GetComponent<Light>().enabled == false,
             "Reactor activation light disabled");
+        var powerReactor = GameObject.Find("Console housing").GetComponent<PowerReactor>();
+        Require(powerReactor != null && !powerReactor.IsOnline && powerReactor.gameObject.layer == LayerMask.NameToLayer("Interactable"),
+            "Reactor console starts offline and uses the interaction layer");
+        var reactorReferences = new SerializedObject(powerReactor);
+        foreach (string field in new[] { "player", "presentation", "completion", "reactorLabel", "consoleLabel", "poweredLight" })
+            Require(reactorReferences.FindProperty(field).objectReferenceValue != null, "Reactor reference: " + field);
         Require(objects.Where(g => g.GetComponent<Rigidbody>() != null && g != player).All(g => g.GetComponent<PowerModuleA>() != null),
             "Only Module A adds a gameplay rigidbody; Module B uses its existing static panel");
         Debug.Log("STAGE1 EDIT VALIDATION PASSED: " + objects.Length + " objects; scene opened; references and geometry checked.");

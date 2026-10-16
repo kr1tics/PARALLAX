@@ -54,6 +54,8 @@ namespace Parallax.Gameplay.Tests
         }
         [UnityTearDown] public IEnumerator Cleanup()
         {
+            var completion = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).FirstOrDefault(x => x.GetType().Name == "TutorialCompletionScreen");
+            if (completion != null) completion.enabled = false;
             if (interaction != null) Call(interaction, "DropHeldObject");
             if (GameSettingsMenu.Instance != null) { GameSettingsMenu.Instance.Close(); Object.Destroy(GameSettingsMenu.Instance.gameObject); }
             InputSystem.RemoveDevice(keyboard); InputSystem.RemoveDevice(mouse);
@@ -152,7 +154,8 @@ namespace Parallax.Gameplay.Tests
             Assert.That(GameObject.Find("CONNECTION LOST").GetComponent<TextMesh>().text,
                 Is.EqualTo(repairedB ? "REPAIR COMPLETE" : "CONNECTION LOST"));
             Assert.That(GameObject.Find("REACTOR / OFFLINE").GetComponent<TextMesh>().text, Is.EqualTo("REACTOR / OFFLINE"));
-            Assert.That(GameObject.Find("RESTART / LOCKED").GetComponent<TextMesh>().text, Is.EqualTo("RESTART / LOCKED"));
+            Assert.That(GameObject.Find("RESTART / LOCKED").GetComponent<TextMesh>().text,
+                Is.EqualTo(repairedA && repairedB && !past ? "RESTART / READY" : "RESTART / LOCKED"));
             if (repairedA)
             {
                 Assert.That(Vector3.Distance(body.position, (Vector3)Get(module, "installationPosition")), Is.LessThan(.01f));
@@ -166,7 +169,9 @@ namespace Parallax.Gameplay.Tests
                 (repairedB ? "B repaired" : "B pending")));
             if (repairedA && repairedB) Assert.That(instruction.text, Does.Contain("Reactor ready"));
             else Assert.That(instruction.text, Does.Not.Contain("Reactor ready"));
-            if (!past && (repairedA || repairedB)) Assert.That(instruction.text, Does.Contain("preserved"));
+            if (!past && (repairedA ^ repairedB)) Assert.That(instruction.text, Does.Contain("preserved"));
+            Assert.That(GameObject.Find("Objective number").GetComponent<TMPro.TMP_Text>().text,
+                Is.EqualTo("OBJECTIVE " + (repairedA && repairedB ? past ? "02" : "03" : "01")));
             instruction.ForceMeshUpdate(); Assert.That(instruction.isTextOverflowing, Is.False, instruction.text);
         }
 
@@ -231,6 +236,144 @@ namespace Parallax.Gameplay.Tests
         [UnityTest] public IEnumerator UnrepairedModulesRemainPendingAcrossTimelineCycles()
         {
             yield return CycleTimelines(false, false);
+        }
+
+        MonoBehaviour Reactor => Component(GameObject.Find("Console housing"), "PowerReactor");
+        MonoBehaviour Completion => Component(GameObject.Find("08 / Scene presentation"), "TutorialCompletionScreen");
+        void AimAtReactor(float distance = 1.8f) => Aim(Reactor.transform.position + Vector3.back * distance, Vector3.forward);
+        void RejectReactor()
+        {
+            Assert.That((bool)Prop(Reactor, "CanActivate"), Is.False);
+            Interact(); Call(Reactor, "onInteract", interaction); Call(Completion, "TryShow");
+            Assert.That((bool)Prop(Reactor, "IsOnline"), Is.False);
+            Assert.That((bool)Prop(Completion, "IsOpen"), Is.False);
+        }
+        void CheckObjective(string number, string title)
+        {
+            Assert.That(GameObject.Find("Objective number").GetComponent<TMPro.TMP_Text>().text, Is.EqualTo("OBJECTIVE " + number));
+            Assert.That(GameObject.Find("Objective title").GetComponent<TMPro.TMP_Text>().text, Is.EqualTo(title));
+            var instruction = GameObject.Find("Current instruction").GetComponent<TMPro.TMP_Text>();
+            instruction.ForceMeshUpdate(); Assert.That(instruction.isTextOverflowing, Is.False, instruction.text);
+        }
+        IEnumerator ActivateAndCheckCompletion(bool click = false)
+        {
+            player.isKinematic = false;
+            player.position = new Vector3(3.5f, 1.05f, 1.2f); player.transform.position = player.position;
+            player.linearVelocity = Vector3.zero;
+            Call(Component(Camera.main.gameObject, "Look"), "Rotate", new Vector2(90, 0));
+            Physics.SyncTransforms();
+            controller.enabled = true; // Exercise the real E / click bindings at the console.
+            yield return null; yield return null; // Let cursor locking settle before injecting the click.
+            Assert.That((bool)Prop(Reactor, "CanActivate"), Is.True, "The normal player camera must reach the console.");
+            if (click) InputSystem.QueueStateEvent(mouse, new MouseState().WithButton(MouseButton.Left));
+            else InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E));
+            yield return null; yield return null;
+            InputSystem.QueueStateEvent(mouse, new MouseState());
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            Assert.That((bool)Prop(Reactor, "IsOnline"), Is.True);
+            Assert.That((bool)Prop(Completion, "IsOpen"), Is.True);
+            Assert.That(Time.timeScale, Is.Zero); Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.True);
+            Assert.That(Cursor.visible, Is.True); Assert.That(Cursor.lockState, Is.EqualTo(CursorLockMode.None));
+            Assert.That(GameObject.Find("REACTOR / OFFLINE").GetComponent<TextMesh>().text, Is.EqualTo("REACTOR / ONLINE"));
+            Assert.That(GameObject.Find("RESTART / LOCKED").GetComponent<TextMesh>().text, Is.EqualTo("POWER / RESTORED"));
+            Assert.That(((Light)Get(Reactor, "poweredLight")).enabled, Is.True);
+            Assert.That(((Light)Get(Reactor, "poweredLight")).intensity, Is.GreaterThan(0));
+            CheckObjective("04", "Power Restored");
+            // Modal input cannot move/look, change time/gravity, open Settings or activate again.
+            var position = player.position; var rotation = Camera.main.transform.rotation;
+            bool gravityBefore = (bool)Get(gravity, "effective");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.W, Key.Space, Key.Q, Key.F, Key.Escape, Key.E));
+            InputSystem.QueueDeltaStateEvent(mouse.delta, new Vector2(100, 30));
+            GameSettingsMenu.Instance.Open(); Call(Reactor, "onInteract", interaction); Call(Completion, "TryShow");
+            yield return new WaitForSecondsRealtime(2.7f);
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            Assert.That(GameSettingsMenu.Instance.IsOpen, Is.False);
+            Assert.That(player.position, Is.EqualTo(position)); Assert.That(Camera.main.transform.rotation, Is.EqualTo(rotation));
+            Assert.That((bool)Get(gravity, "effective"), Is.EqualTo(gravityBefore));
+            Assert.That(Get(state, "now").ToString(), Is.EqualTo("Future"));
+            Assert.That((bool)Prop(Completion, "IsReady"), Is.True, "UI animates on unscaled time.");
+            Assert.That((bool)Prop(Reactor, "CanActivate"), Is.False);
+            var screen = GameObject.Find("Power Restoration Completion Screen");
+            Assert.That(Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None).Count(x => x.name == screen.name), Is.EqualTo(1));
+            CollectionAssert.AreEquivalent(new[] { "RESTART LEVEL", "MAIN MENU" },
+                screen.GetComponentsInChildren<UnityEngine.UI.Button>().Select(x => x.name));
+            foreach (var label in screen.GetComponentsInChildren<TMPro.TMP_Text>())
+            {
+                label.ForceMeshUpdate(); Assert.That(label.isTextOverflowing, Is.False, label.name);
+                Assert.That(label.font.name, Is.EqualTo(label.name.Contains("description") || label.name.Contains("final message") ?
+                    "SpaceMono-Regular SDF" : "Oxanium-Regular SDF"));
+            }
+        }
+
+        [UnityTest] public IEnumerator ReactorGatesRealRepairsRangeOcclusionAndPauseThenRestartsCleanly()
+        {
+            CheckObjective("01", "Restore Power Modules"); AimAtReactor(); RejectReactor();
+            Assert.That((string)Prop(Reactor, "InteractionHint"), Is.EqualTo("Power modules incomplete"));
+            controller.enabled = true; player.isKinematic = false;
+            yield return CarryToMarker(); Interact(); yield return null;
+            CheckObjective("01", "Restore Power Modules"); AimAtReactor(); RejectReactor(); // Only A.
+            Call(state, "SwapTime"); yield return new WaitForSeconds(1.1f);
+            AimAtReactor(); RejectReactor(); CheckObjective("01", "Restore Power Modules"); // Only A in Future.
+            Call(state, "SwapTime"); yield return new WaitForSeconds(1.1f);
+            RepairB(); yield return null;
+            CheckObjective("02", "Return to the Future"); AimAtReactor(); RejectReactor();
+            Assert.That((bool)Prop(Presentation, "ReactorReady"), Is.True);
+            Assert.That((string)Prop(Reactor, "InteractionHint"), Does.Contain("Return to the Future"));
+            Call(state, "SwapTime"); yield return new WaitForSeconds(1.1f);
+            CheckObjective("03", "Activate the Reactor");
+            AimAtReactor(4); RejectReactor();
+            AimAtReactor(); var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            wall.transform.position = (Camera.main.transform.position + Reactor.transform.position) * .5f;
+            Physics.SyncTransforms(); RejectReactor(); Object.Destroy(wall); yield return null;
+            Physics.SyncTransforms(); Assert.That((bool)Prop(Reactor, "CanActivate"), Is.True);
+            GameSettingsMenu.Instance.Open(); RejectReactor(); GameSettingsMenu.Instance.Close(); yield return null; yield return null;
+            GameSettingsMenu.StartupInputBlocked = true; RejectReactor(); GameSettingsMenu.StartupInputBlocked = false;
+            yield return ActivateAndCheckCompletion();
+            GameObject.Find("RESTART LEVEL").GetComponent<UnityEngine.UI.Button>().onClick.Invoke(); yield return null; yield return null;
+            FindLevelComponents(); CheckRepairState(false, false); CheckObjective("01", "Restore Power Modules");
+            Assert.That((bool)Prop(Reactor, "IsOnline"), Is.False); Assert.That((bool)Prop(Completion, "IsOpen"), Is.False);
+            Assert.That(((Light)Get(Reactor, "poweredLight")).enabled, Is.False);
+            Assert.That(GameObject.Find("Power Restoration Completion Screen"), Is.Null);
+            Assert.That(Time.timeScale, Is.EqualTo(1)); Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
+            Assert.That(Vector3.Distance(player.position, new Vector3(0, 1.05f, -8.2f)), Is.LessThan(.25f));
+            Assert.That(controller.enabled, Is.True); Assert.That(player.isKinematic, Is.False);
+            Assert.That(Cursor.visible, Is.False);
+            var before = player.position;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.W)); yield return new WaitForSeconds(.2f);
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState()); Assert.That(Vector3.Distance(before, player.position), Is.GreaterThan(.2f));
+            GameSettingsMenu.Instance.Open(); Assert.That(GameSettingsMenu.Instance.IsOpen, Is.True); GameSettingsMenu.Instance.Close();
+        }
+
+        [UnityTest] public IEnumerator ModuleBAloneCannotActivateOrUseTutorialCompletionShortcut()
+        {
+            yield return Past();
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Q)); yield return null; yield return null;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState()); RepairB(); yield return null;
+            CheckObjective("01", "Restore Power Modules");
+            yield return new WaitForSeconds(.4f); Call(state, "SwapTime"); yield return new WaitForSeconds(1.1f);
+            AimAtReactor(); RejectReactor(); Assert.That((bool)Prop(Presentation, "ReactorReady"), Is.False);
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.LeftShift, Key.K)); yield return null; yield return null;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            Assert.That((bool)Prop(Completion, "IsOpen"), Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
+        }
+
+        [UnityTest] public IEnumerator CompletedReactorReturnsToMainMenuAndReentryStartsFresh()
+        {
+            yield return CarryToMarker(); Interact(); RepairB();
+            Call(state, "SwapTime"); yield return new WaitForSeconds(1.1f);
+            yield return ActivateAndCheckCompletion(click: true);
+            GameObject.Find("MAIN MENU").GetComponent<UnityEngine.UI.Button>().onClick.Invoke(); yield return null; yield return null;
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("MainMenu"));
+            Assert.That(GameSettingsMenu.StartupInputBlocked, Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
+            Assert.That(Cursor.visible, Is.True); Assert.That(Cursor.lockState, Is.EqualTo(CursorLockMode.None));
+            Assert.That(GameObject.Find("Power Restoration Completion Screen"), Is.Null);
+            yield return SceneManager.LoadSceneAsync("Level1_PowerRestoration"); yield return null;
+            FindLevelComponents(); CheckRepairState(false, false); CheckObjective("01", "Restore Power Modules");
+            Assert.That((bool)Prop(Reactor, "IsOnline"), Is.False); Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
+            // A second run must get a fresh completion panel and lock, with no stale listeners.
+            yield return CarryToMarker(); Interact(); RepairB();
+            Call(state, "SwapTime"); yield return new WaitForSeconds(1.1f);
+            yield return ActivateAndCheckCompletion();
         }
 
         [UnityTest] public IEnumerator InstallationRejectsGroundedMisalignedBlockedAndPausedAttempts()

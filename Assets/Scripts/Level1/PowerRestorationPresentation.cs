@@ -13,6 +13,7 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
     [SerializeField] private TMP_FontAsset titleFont, supportingFont;
     [SerializeField] private PowerModuleA moduleA;
     [SerializeField] private PowerModuleB moduleB;
+    [SerializeField] private PowerReactor reactor;
     private string previousObjective;
     private TimeState? displayedTime;
     private GameplayHud hud;
@@ -36,7 +37,7 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
         AudioListener.pause = false;
         hud = new GameplayHud(transform, "Power Restoration Objective UI", titleFont, supportingFont);
         controls = GameplayHud.CreateControlHint(hud.Instruction.GetComponentInParent<Canvas>().transform, supportingFont);
-        SetObjective("OBJECTIVE 01", "Power Restoration", "Reactor offline. Survey the room.\nLocate Module A and Module B.");
+        UpdateObjective(GlobalState.get().now);
     }
 
     public void SetObjective(string number, string title, string instruction) => hud.SetObjective(number, title, instruction);
@@ -45,7 +46,7 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
     {
         var time = GlobalState.get().now;
         UpdateObjective(time);
-        hud.SetVisible(!GameSettingsMenu.GameplayInputBlocked);
+        hud.SetVisible(reactor.IsOnline || !GameSettingsMenu.GameplayInputBlocked);
         hud.Status.text = (time == TimeState.Past ? "2026 / PAST" : "2176 / FUTURE") +
             (playerGravity.IsGravityActive ? "  ·  GRAVITY ON" : "  ·  GRAVITY OFF");
         controls.text = "ESC / P — Settings / Resume" + (!playerGravity.IsGravityActive ? "    ·    Q — Toggle jetpack" : "");
@@ -54,8 +55,10 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
         var module = interaction.HeldObject as PowerModuleA ?? target as PowerModuleA;
         hud.Prompt.text = module != null ? module.InteractionHint : interaction.HeldObject != null ? "E — Place" :
             target is PowerModuleB repair ? repair.InteractionHint :
+            target is PowerReactor console ? console.InteractionHint :
             target is MovableObject movable && !movable.GetComponent<Rigidbody>().isKinematic ? "E — Pick up" :
             target is Switch ? (time == TimeState.Past ? "E — Toggle gravity" : "F — Switch Timeline") : "";
+        if (reactor.IsOnline) { controls.text = ""; hud.Prompt.text = ""; }
         if (displayedTime == time) return;
         foreach (var light in roomLights)
             light.intensity = time == TimeState.Future ? 1.4f : 2.6f;
@@ -66,8 +69,9 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
     {
         string progress = (moduleA.IsRepaired ? "A repaired" : "A pending") + " · " +
             (moduleB.IsRepaired ? "B repaired" : "B pending");
-        string next = ReactorReady ? (time == TimeState.Future ? "Past repairs preserved. Reactor ready." :
-            "Reactor ready. F — View in Future.") :
+        string next = reactor.IsOnline ? "Reactor online. Power restored." :
+            ReactorReady ? (time == TimeState.Future ? "Reactor ready. E — Activate console." :
+            "Reactor ready. F — Return to Future.") :
             time != TimeState.Past ? (moduleA.IsRepaired || moduleB.IsRepaired ?
                 "Repair preserved. F — Finish in Past." : "F — Switch to the Past to repair.") :
             playerGravity.effective ? "Q — Activate Zero-G to reach modules." :
@@ -77,6 +81,10 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
         string instruction = progress + "\n" + next;
         if (instruction == previousObjective) return;
         previousObjective = instruction;
-        SetObjective("OBJECTIVE 01", "Power Restoration", instruction);
+        string number = reactor.IsOnline ? "04" : !ReactorReady ? "01" : time == TimeState.Past ? "02" : "03";
+        string title = reactor.IsOnline ? "Power Restored" : !ReactorReady ? "Restore Power Modules" :
+            time == TimeState.Past ? "Return to the Future" : "Activate the Reactor";
+        SetObjective("OBJECTIVE " + number, title, instruction);
+        reactor.RefreshFeedback();
     }
 }

@@ -8601,7 +8601,8 @@ GameObject:
   - component: {fileID: 10375}
   - component: {fileID: 10376}
   - component: {fileID: 10377}
-  m_Layer: 3
+  - component: {fileID: 2100400001}
+  m_Layer: 7
   m_Name: Console housing
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10606,6 +10607,7 @@ GameObject:
   - component: {fileID: 10458}
   - component: {fileID: 10459}
   - component: {fileID: 2141915310}
+  - component: {fileID: 2100400002}
   m_Layer: 0
   m_Name: 08 / Scene presentation
   m_TagString: Untagged
@@ -10927,6 +10929,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PowerRestorationPresentation
   moduleA: {fileID: 2100200003}
   moduleB: {fileID: 2100200020}
+  reactor: {fileID: 2100400001}
   interaction: {fileID: 1786953326}
   titleFont: {fileID: 11400000, guid: d006551d96cdf48d39739dfe3c748d6c, type: 2}
   supportingFont: {fileID: 11400000, guid: 5ab9449966a174634bb20e4c7e5bc291, type: 2}
@@ -12038,3 +12041,41 @@ SceneRoots:
   - {fileID: 10443}
   - {fileID: 10457}
   - {fileID: 10461}
+--- !u!114 &2100400001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1658ccf5b90d4459a5b40841cb18e047, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PowerReactor
+  player: {fileID: 1786953326}
+  presentation: {fileID: 10459}
+  completion: {fileID: 2100400002}
+  reactorLabel: {fileID: 10219}
+  consoleLabel: {fileID: 10384}
+  poweredLight: {fileID: 10223}
+--- !u!114 &2100400002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5adb58ecaef44064b0a71a7e52db761b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::TutorialCompletionScreen
+  level: {fileID: 0}
+  reactor: {fileID: 2100400001}
+  primaryFont: {fileID: 11400000, guid: d006551d96cdf48d39739dfe3c748d6c, type: 2}
+  secondaryFont: {fileID: 11400000, guid: 5ab9449966a174634bb20e4c7e5bc291, type: 2}
+  nextScene:
+  completionDelay: 1
+  fadeDuration: 0.8
+  allowCompletionShortcut: 0
