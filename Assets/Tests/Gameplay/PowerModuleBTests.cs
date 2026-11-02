@@ -30,6 +30,9 @@ namespace Parallax.Gameplay.Tests
         bool Repaired => (bool)Prop(module, "IsRepaired");
         bool Ready => (bool)Prop(module, "CanRepair");
         void Keys(params Key[] keys) => InputSystem.QueueStateEvent(keyboard, new KeyboardState(keys));
+        MonoBehaviour ModuleA => Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "PowerModuleA");
+        // A's own carry and seating are covered by PowerModuleATests; here it only has to feed B's junction.
+        void InstallA() => ModuleA.GetType().GetField("<IsRepaired>k__BackingField", Fields).SetValue(ModuleA, true);
 
         [UnitySetUp] public IEnumerator Setup()
         {
@@ -75,6 +78,7 @@ namespace Parallax.Gameplay.Tests
         [UnityTest] public IEnumerator RealQSpaceAndEInputsReachAndRepairTheElevatedPanel()
         {
             Keys(Key.F); yield return null; Keys(); yield return new WaitForSeconds(.7f);
+            InstallA();
             player.position = new Vector3(6.5f, 1.05f, 1.4f); player.linearVelocity = Vector3.zero;
             Call(Component(Camera.main.gameObject, "Look"), "Rotate", new Vector2(0, 0));
             Physics.SyncTransforms(); yield return null;
@@ -91,19 +95,24 @@ namespace Parallax.Gameplay.Tests
             Assert.That(GameObject.Find("B / REPAIR").GetComponent<TextMesh>().text, Is.EqualTo("B / REPAIRED"));
             Assert.That(GameObject.Find("CONNECTION LOST").GetComponent<TextMesh>().text, Is.EqualTo("REPAIR COMPLETE"));
             Assert.That(GameObject.Find("B / REPAIR").GetComponent<TextMesh>().color.g, Is.GreaterThan(.9f));
-            Assert.That(GameObject.Find("Current instruction").GetComponent<TMP_Text>().text, Does.Contain("A pending · B repaired"));
+            Assert.That(GameObject.Find("Current instruction").GetComponent<TMP_Text>().text, Does.Contain("A repaired · B repaired"));
             yield return null; Keys(Key.E); yield return null; Keys();
             Assert.That(Repaired, Is.True); Assert.That(Ready, Is.False, "Repeated interaction cannot repair twice.");
             Assert.That((string)Prop(module, "InteractionHint"), Is.EqualTo("Module B repaired"));
         }
 
-        [UnityTest] public IEnumerator RepairRequiresPastZeroGHeightRangeClearRayAndUnpausedInput()
+        [UnityTest] public IEnumerator RepairRequiresPastFeedHeightRangeClearRayAndUnpausedInput()
         {
-            Aim(); Set(gravity, "effective", false); Reject(); // Future.
+            InstallA(); Aim(); Reject(); // Future.
+            ModuleA.GetType().GetField("<IsRepaired>k__BackingField", Fields).SetValue(ModuleA, false);
             Call(state, "SwapTime"); yield return new WaitForSeconds(.7f);
-            Aim(height: 1.05f); Reject(); // Floor, even with Q active.
-            Aim(); Set(gravity, "effective", true); Reject(); // Naturally weightless altitude is not Q.
-            Set(gravity, "effective", false);
+            Aim(); Reject(); // No feed until module A is installed.
+            Assert.That((string)Prop(module, "InteractionHint"), Is.EqualTo("No feed — module A offline"));
+            InstallA();
+            Aim(height: 1.05f); Reject(); // Floor.
+            // From the floor this ray meets the route selector at the foot of B's wall; keep route 1 for the checks below.
+            Call(Component(GameObject.Find("09 / Power path"), "PowerCircuit"), "SelectRoute", 1);
+            Aim(); Set(gravity, "effective", true); Assert.That(Ready, Is.True, "Reaching the panel is enough; no extra zero-G rule.");
             Aim(2.7f); Reject(); // Outside the existing 2.5 m ray.
             Aim(2.4f); Assert.That(Ready, Is.True, "The existing range must remain usable.");
             Aim(); var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -115,20 +124,18 @@ namespace Parallax.Gameplay.Tests
             GameSettingsMenu.Instance.Close(); yield return null; yield return null;
             Assert.That(Ready, Is.True); Call(interaction, "TryInteract"); Assert.That(Repaired, Is.True);
             var presentation = Component(GameObject.Find("08 / Scene presentation"), "PowerRestorationPresentation");
-            var moduleA = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "PowerModuleA");
             for (int cycle = 0; cycle < 4; cycle++)
             {
                 yield return new WaitForSeconds(.5f); Call(state, "SwapTime"); yield return new WaitForSeconds(.7f);
                 Assert.That(state.GetType().GetField("now").GetValue(state).ToString(), Is.EqualTo(cycle % 2 == 0 ? "Future" : "Past"));
                 Call(interaction, "TryInteract"); Call(module, "onInteract", interaction); yield return null;
                 Assert.That(Repaired, Is.True); Assert.That(Ready, Is.False, "A completed repair cannot be repeated in either timeline.");
-                Assert.That((bool)Prop(moduleA, "IsRepaired"), Is.False, "B cannot complete A.");
-                Assert.That((bool)Prop(presentation, "ReactorReady"), Is.False, "B alone cannot ready the reactor.");
+                Assert.That((bool)Prop(presentation, "ReactorReady"), Is.False, "Route 1 does not survive to 2176.");
                 Assert.That(GameObject.Find("B / REPAIR").GetComponent<TextMesh>().text, Is.EqualTo("B / REPAIRED"));
                 Assert.That((Color32)GameObject.Find("B / REPAIR").GetComponent<TextMesh>().color,
                     Is.EqualTo((Color32)new Color(.35f, 1, .65f)));
-                Assert.That(GameObject.Find("CONNECTION LOST").GetComponent<TextMesh>().text, Is.EqualTo("REPAIR COMPLETE"));
-                Assert.That(GameObject.Find("Current instruction").GetComponent<TMP_Text>().text, Does.Contain("A pending · B repaired"));
+                Assert.That(GameObject.Find("CONNECTION LOST").GetComponent<TextMesh>().text, Is.EqualTo(cycle % 2 == 0 ? "NO FEED" : "REPAIR COMPLETE"));
+                Assert.That(GameObject.Find("Current instruction").GetComponent<TMP_Text>().text, Does.Contain("A repaired · B repaired"));
                 Assert.That(GameObject.Find("Contextual interaction prompt").GetComponent<TMP_Text>().text, Is.EqualTo("Module B repaired"));
             }
         }

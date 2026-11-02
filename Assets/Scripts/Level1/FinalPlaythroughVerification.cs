@@ -215,30 +215,42 @@ public sealed class FinalPlaythroughVerification : MonoBehaviour
         yield return Click("RESTART LEVEL"); yield return null; yield return null; BindPlayer();
         Require(!FindFirstObjectByType<PowerModuleA>().IsRepaired && !FindFirstObjectByType<PowerModuleB>().IsRepaired && !FindFirstObjectByType<PowerReactor>().IsOnline, "Restart must clear all progress");
         Mark("Restart resets module/reactor state"); yield return RestorePower();
-        yield return Click("MAIN MENU"); yield return Until(() => SceneManager.GetActiveScene().name == "MainMenu", "Main Menu navigation failed");
+        // Power Restoration now continues to Cargo Bay; its own tests cover that level's ending.
+        yield return Click("CONTINUE"); yield return Until(() => SceneManager.GetActiveScene().name == "Level2_CargoBay", "Continue to Cargo Bay failed");
+        Mark("Continue -> Cargo Bay");
+        SceneManager.LoadScene("MainMenu"); // Navigation only; the menu's Play is then exercised with input.
+        yield return Until(() => SceneManager.GetActiveScene().name == "MainMenu", "Main Menu navigation failed");
         Require(Cursor.visible && !GameSettingsMenu.StartupInputBlocked && Time.timeScale == 1, "Main Menu input state wrong");
         yield return MenuPlay(); Require(!FindFirstObjectByType<Level1Controller>().Completed, "New tutorial must start fresh");
-        Finish(true, "Menu, both tutorial puzzles, Continue, both modules, reactor, completion, restart, Main Menu and new game via normal input.");
+        Finish(true, "Menu, both tutorial puzzles, Continue, the power path, reactor, completion, restart, Continue to Cargo Bay and new game via normal input.");
     }
     IEnumerator RestorePower()
     {
         Require(GlobalState.get().now == TimeState.Future, "New Level 1 starts in Future");
-        yield return Snapshot("level1-entry"); yield return Tap(Key.Q); yield return Swap();
+        yield return Snapshot("level1-entry"); yield return Swap();
         var a = FindFirstObjectByType<PowerModuleA>(); var b = FindFirstObjectByType<PowerModuleB>();
+        var console = GameObject.Find("Gravity switch").transform.position;
+        // Module A weighs 380 kg: cut station gravity at the 2026 console before lifting it.
+        yield return Move(new Vector3(-6.6f, 1.05f, -2)); Face(console); yield return Tap(Key.E);
+        Require(GlobalState.get().gravity < .1f, "Gravity console must cut station gravity");
         yield return Move(new Vector3(-5.8f, 1.05f, -2.6f)); yield return Grab(a);
         yield return Tap(Key.Escape); Require(GameSettingsMenu.Instance.IsOpen, "Pause while carrying failed");
         Require(interaction.HeldObject == a, "Pause lost held module"); yield return Snapshot("pause-holding"); yield return Tap(Key.Escape);
-        yield return Tap(Key.Q); yield return Tap(Key.Q);
-        Require(!player.GetComponent<ArtificialGravity>().effective && interaction.HeldObject == a, "Rapid Q toggles lost flight or held module");
-        yield return Move(new Vector3(-5.8f, 3, -1.5f)); yield return CarryTo(a, Read<Vector3>(a, "alignmentPosition"));
-        yield return Until(() => a.CanInstall, "Module A did not align at " + a.transform.position + " player " + player.position, 3);
-        yield return Tap(Key.E); Require(a.IsRepaired, "Module A installation failed"); Mark("Module A carried, aligned in Zero-G and installed");
-        yield return Move(new Vector3(-6, 3, -3)); yield return Move(new Vector3(6.5f, 3, -3));
+        yield return CarryTo(a, Read<Vector3>(a, "installationPosition") + Vector3.back * .4f);
+        yield return Until(() => a.CanInstall, "Module A not inside its socket guide at " + a.transform.position + " player " + player.position, 3);
+        yield return Tap(Key.E); Require(a.IsRepaired, "Module A installation failed"); Mark("Module A carried in station zero-G and seated");
+        yield return Move(new Vector3(-6, 1.05f, -3)); yield return Move(new Vector3(6.5f, 1.05f, -3));
         yield return Move(new Vector3(6.5f, 11.3f, 1.4f)); Face(b.transform.position); yield return Tap(Key.E);
-        Require(b.IsRepaired, "Module B repair failed"); Mark("Module B reached with Zero-G and repaired");
-        yield return Swap(); Require(a.IsRepaired && b.IsRepaired, "Temporal repairs lost");
-        yield return Move(new Vector3(6.5f, 1.1f, 1.2f)); yield return Move(new Vector3(3.5f, 1.05f, 1.2f));
-        yield return Tap(Key.Q); Face(FindFirstObjectByType<PowerReactor>().transform.position);
+        Require(b.IsRepaired, "Module B repair failed"); Mark("Module B reached in zero-G and repaired");
+        // Route 1 does not survive to 2176: feed B through route 2 at the floor junction.
+        yield return Move(new Vector3(7.05f, 1.05f, 1)); Face(GameObject.Find("B feed junction").transform.position); yield return Tap(Key.E);
+        Require(FindFirstObjectByType<PowerCircuit>().Route == 2, "Route selector must switch B's feed to route 2");
+        // Restore station gravity so the reactor's control rods seat.
+        yield return Move(new Vector3(-6.6f, 1.05f, -2)); Face(console); yield return Tap(Key.E);
+        Require(GlobalState.get().gravity > 4.5f, "Gravity console must restore station gravity");
+        yield return new WaitForSeconds(1);
+        yield return Swap(); Require(a.IsRepaired && b.IsRepaired && FindFirstObjectByType<PowerCircuit>().ReactorReady, "Power path incomplete in 2176");
+        yield return Move(new Vector3(3.5f, 1.05f, 1.2f)); Face(FindFirstObjectByType<PowerReactor>().transform.position);
         yield return Snapshot("reactor-ready"); yield return Tap(Key.E);
         yield return Until(() => FindFirstObjectByType<TutorialCompletionScreen>().IsReady, "Level completion missing");
         Require(FindFirstObjectByType<PowerReactor>().IsOnline && Cursor.visible && GameSettingsMenu.GameplayInputBlocked, "Completion state wrong");

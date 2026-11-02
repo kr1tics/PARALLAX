@@ -18,6 +18,7 @@ public static class ProjectValidation
 
     static void Build(string output, BuildOptions options)
     {
+        CargoBaySetup.Audit();
         var findings = new List<string>();
         var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
         foreach (string path in AssetDatabase.FindAssets("t:Scene", new[] { "Assets" }).Select(AssetDatabase.GUIDToAssetPath))
@@ -45,8 +46,9 @@ public static class ProjectValidation
         Directory.CreateDirectory("Logs");
         File.WriteAllLines("Logs/review-unity-assets.txt", findings.Distinct());
         Debug.Log($"Asset audit: {findings.Distinct().Count()} findings; see Logs/review-unity-assets.txt.");
-        if (scenes.Length != 3 || scenes[0] != "Assets/MainMenu.unity" || scenes[1] != "Assets/StartScene.unity" || scenes[2] != "Assets/Scenes/Level1_PowerRestoration.unity")
-            throw new InvalidOperationException("Expected MainMenu, tutorial StartScene, then Level1_PowerRestoration.");
+        var route = new[] { "Assets/MainMenu.unity", "Assets/StartScene.unity", "Assets/Scenes/Level1_PowerRestoration.unity", CargoBaySetup.ScenePath };
+        if (!scenes.Take(route.Length).SequenceEqual(route))
+            throw new InvalidOperationException("Expected MainMenu → Tutorial (StartScene) → Level1_PowerRestoration → Level2_CargoBay; additional levels may follow.");
         EditorSceneManager.OpenScene(scenes[0], OpenSceneMode.Single);
         var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {

@@ -110,13 +110,11 @@ namespace Parallax.Gameplay.Tests
             Assert.That(GameObject.Find("MAINTENANCE / G SCAN"), Is.Null);
             Assert.That(Root.Q("manual-distortion-control").style.display.value, Is.EqualTo(DisplayStyle.None));
             Assert.That(Root.Q("checkpoint-control").style.display.value, Is.EqualTo(DisplayStyle.None));
-            body.position = new Vector3(-7.9f, 1.05f, -8.5f); body.linearVelocity = Vector3.zero;
-            Physics.SyncTransforms(); yield return new WaitForSeconds(.2f);
-            Assert.That(Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out var hit, 4), Is.True);
-            Assert.That(hit.collider.GetComponent("DistortableObject"), Is.Not.Null, "G test must target the diagnostic display.");
+            // Level 1's scene has no distortable target (nor did it on main), so check the player's own switch and that
+            // pressing G changes nothing it could act on.
+            Assert.That((bool)Field(Component(body.gameObject, "PlayerController"), "allowManualDistortion"), Is.False);
+            Assert.That(Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Any(x => x.GetType().Name == "DistortableObject"), Is.False);
             Keys(Key.G); yield return new WaitForSeconds(.25f);
-            var props = new MaterialPropertyBlock(); hit.collider.GetComponent<Renderer>().GetPropertyBlock(props);
-            Assert.That(props.GetFloat("_EffectAmount"), Is.Zero);
             Keys(); yield return null;
             Keys(Key.F); yield return null; yield return null;
             Assert.That(((Material)Field(state, "shader")).GetFloat("_StartTime"), Is.GreaterThanOrEqualTo(0), "Automatic timeline wipe still starts.");
