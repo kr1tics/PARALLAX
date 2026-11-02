@@ -68,6 +68,11 @@ namespace Parallax.Gameplay.Tests
         }
 
         bool Flag(string name) => (bool)level.GetType().GetProperty(name).GetValue(level);
+        Rigidbody Rigid(string name) => (Rigidbody)Get(level, name);
+        bool Pressed(string plate) { var button = Get(level, plate); return (bool)button.GetType().GetProperty("IsPressed").GetValue(button); }
+        // Drop points just above: A staging, P counterweight, R1 and R2 receiving scales.
+        static readonly Vector3 A = new Vector3(-10.5f, -.2f, -3), P = new Vector3(-10.8f, -.2f, 2.4f),
+            R1 = new Vector3(13.5f, -.2f, 10), R2 = new Vector3(-14.4f, -.2f, 9.3f), Cradle = new Vector3(-14.6f, 2.46f, 2.6f);
         object State => player.GetType().Assembly.GetType("GlobalState").GetMethod("get").Invoke(null, null);
         MonoBehaviour Interaction => Component(player.gameObject, "Interact");
         object Held => Interaction.GetType().GetProperty("HeldObject").GetValue(Interaction);
@@ -132,14 +137,28 @@ namespace Parallax.Gameplay.Tests
             yield return Swap(); yield return new WaitForSeconds(.6f);
             Assert.That(Flag("FreightAccessGranted"), Is.True);
             Assert.That(Flag("CargoDelivered"), Is.False, "Staging is only the first step.");
-            yield return Face(90, -.07f); yield return Keys(.06f, Key.E);
-            Assert.That(Held, Is.Not.Null, "Carry the Future counterpart while its Past version stays at A.");
+            // Stage B. The jetpack climb to the mezzanine has its own input test; here the Past crates are placed directly.
+            var c1Past = Rigid("pastCrate"); var c2Past = Rigid("rackPast");
+            Assert.That(Rigid("rackFuture").isKinematic, Is.True, "The 2176 rack clamp has seized.");
+            yield return Swap();
+            Assert.That(c2Past.isKinematic, Is.True, "An empty counterweight pad keeps C2 clamped.");
+            Place(c1Past, P); yield return new WaitForSeconds(1);
+            Assert.That(c2Past.isKinematic, Is.False, "Past C1 on the counterweight opens the clamp.");
+            Place(c2Past, R2); yield return new WaitForSeconds(1);
+            Assert.That(Flag("RackReleased"), Is.True);
+            yield return Swap(); yield return new WaitForSeconds(.6f);
+            Assert.That(Pressed("rackPlate"), Is.True, "Moving C2 in 2026 loads the booth scale that is sealed in 2176.");
+            Assert.That(Flag("CargoDelivered"), Is.False, "C2 alone cannot satisfy receiving.");
+            // Stage C: the Future C1 followed its Past copy onto P; carry it to R1 with normal controls.
+            yield return WalkTo(-8.8f, 2.4f);
+            yield return Face(180, -.07f); yield return Keys(.06f, Key.E);
+            Assert.That(Held, Is.Not.Null, "Future C1 now rests on the counterweight pad.");
             // Wide southern detour: a deliberate alternative to the shorter northern freight aisle.
-            yield return WalkTo(-10.5f, -11); yield return WalkTo(10.5f, -11);
+            yield return WalkTo(-8.2f, -11); yield return WalkTo(10.5f, -11);
             yield return WalkTo(10.5f, 10); yield return WalkTo(11.5f, 10);
             yield return Face(0, -.09f); yield return new WaitForSeconds(.8f);
             yield return Keys(.06f, Key.E); yield return new WaitForSeconds(1);
-            Assert.That(Flag("CargoDelivered"), Is.True, "Receiving requires Future cargo and preserved Past staging.");
+            Assert.That(Flag("CargoDelivered"), Is.True, "Receiving requires both Future manifests on their scales together.");
             Capture("future-delivery");
             yield return WalkTo(10.5f, 10); yield return WalkTo(10.5f, 16);
             Assert.That(Flag("Completed"), Is.True);
@@ -197,6 +216,7 @@ namespace Parallax.Gameplay.Tests
             yield return Swap();
             var past = (Rigidbody)Get(level, "pastCrate"); var future = (Rigidbody)Get(level, "futureCrate");
             past.position = new Vector3(0, -30, 0); future.position = new Vector3(0, -40, 0);
+            Rigid("rackPast").position = new Vector3(5, -30, 0); Rigid("rackFuture").position = new Vector3(5, -40, 0);
             yield return Keys(.06f, Key.Q);
             yield return new WaitForSeconds(1.05f); yield return Keys(.06f, Key.T);
             yield return Keys(.06f, Key.R); yield return new WaitForSeconds(.8f);
@@ -205,8 +225,13 @@ namespace Parallax.Gameplay.Tests
             Assert.That(Vector3.Distance(future.position, new Vector3(-14, -.55f, -11)), Is.LessThan(.2f));
             Assert.That((bool)Get(player, "isInJetpack"), Is.False);
             Assert.That(Held, Is.Null);
+            Assert.That(Vector3.Distance(Rigid("rackFuture").position, Cradle), Is.LessThan(.2f));
+            Assert.That(Rigid("rackFuture").isKinematic, Is.True);
+            Assert.That(((GameObject)Get(level, "futureDebris")).activeSelf, Is.True, "Reset returns to 2176 with the booth sealed.");
             yield return Swap();
             Assert.That(Vector3.Distance(past.position, new Vector3(-10.5f, -.55f, -9)), Is.LessThan(.2f), "Reset must rebase causality as well as restore transforms.");
+            Assert.That(Vector3.Distance(Rigid("rackPast").position, Cradle), Is.LessThan(.2f), "Reset restores C2 to the rack.");
+            Assert.That(Rigid("rackPast").isKinematic, Is.True, "Reset re-clamps C2.");
             body.position = new Vector3(0, -10, 0); yield return new WaitForSeconds(.3f);
             Assert.That(body.position.y, Is.GreaterThan(-.2f), "Automatic fall recovery.");
             Assert.That(Timeline, Is.EqualTo("Future"));
@@ -219,28 +244,95 @@ namespace Parallax.Gameplay.Tests
             item.WakeUp(); Physics.SyncTransforms();
         }
 
-        [UnityTest] public IEnumerator ReceivingCannotSkipStagingOrOverwriteThePastAnchor()
+        // Stage C: replaces the single-crate "Past anchor" rule with two manifests that must be loaded together in 2176.
+        [UnityTest] public IEnumerator ReceivingCannotSkipStagingOrCompleteWithOneManifest()
         {
-            var past = (Rigidbody)Get(level, "pastCrate"); var future = (Rigidbody)Get(level, "futureCrate");
-            Place(future, new Vector3(13.5f, -.2f, 10)); yield return new WaitForSeconds(1);
-            Assert.That(Flag("CargoDelivered"), Is.False, "Delivering straight to B cannot skip A.");
-            yield return Swap(); Place(past, new Vector3(-10.5f, -.2f, -3)); yield return new WaitForSeconds(1);
+            var past = Rigid("pastCrate"); var future = Rigid("futureCrate"); var c2Past = Rigid("rackPast");
+            Place(future, R1); yield return new WaitForSeconds(1);
+            Assert.That(Flag("CargoDelivered"), Is.False, "Delivering straight to R1 cannot skip A.");
+            yield return Swap(); Place(past, A); yield return new WaitForSeconds(1);
             yield return Swap(); yield return new WaitForSeconds(.5f);
             Assert.That(Flag("FreightAccessGranted"), Is.True);
-            // Simulate an invalid changed Past position before the Future crate reaches B.
-            past.transform.position = new Vector3(-10.5f, -.54f, -9);
-            Place(future, new Vector3(13.5f, -.2f, 10)); yield return new WaitForSeconds(1);
-            Assert.That(Flag("CargoDelivered"), Is.False, "A must still preserve the Past crate.");
-            yield return Swap(); Place(past, new Vector3(-10.5f, -.2f, -3)); yield return new WaitForSeconds(1);
+            Place(future, R2); yield return new WaitForSeconds(1);
+            Assert.That(Pressed("rackPlate"), Is.False, "R2 only weighs manifest C2.");
+            Place(future, R1); yield return new WaitForSeconds(1);
+            Assert.That(Pressed("plate"), Is.True);
+            Assert.That(Flag("CargoDelivered"), Is.False, "C1 alone cannot open maintenance access.");
+            // The booth is sealed to walking and flying in 2176, open in 2026.
+            for (int epoch = 0; epoch < 2; epoch++)
+            {
+                foreach (float y in new[] { -.6f, .4f, 1.4f, 2.1f })
+                for (float z = 7.9f; z <= 9.8f; z += .3f)
+                    Assert.That(Physics.Raycast(new Vector3(-10.8f, y, z), Vector3.left, 2, ~0, QueryTriggerInteraction.Ignore), Is.EqualTo(epoch == 0),
+                        (epoch == 0 ? "2176 booth gap at " : "2026 booth doorway blocked at ") + y + "," + z);
+                Assert.That(Physics.Raycast(new Vector3(-15, 4.5f, 10), Vector3.down, 3, ~0, QueryTriggerInteraction.Ignore), Is.True, "Booth roof.");
+                if (epoch == 0) yield return Swap();
+            }
+            // Ordering matters: using Past C1 as the counterweight pulls its Future copy off R1.
+            Place(past, P); yield return new WaitForSeconds(1);
+            Place(c2Past, R2); yield return new WaitForSeconds(1);
             yield return Swap(); yield return new WaitForSeconds(.5f);
-            Place(future, new Vector3(13.5f, -.2f, 10)); yield return new WaitForSeconds(1);
+            Assert.That(Pressed("rackPlate"), Is.True);
+            Assert.That(Pressed("plate"), Is.False, "Relocating Past C1 moved its Future copy off R1.");
+            Assert.That(Flag("CargoDelivered"), Is.False);
+            Assert.That(Vector3.Distance(future.position, new Vector3(P.x, -.3f, P.z)), Is.LessThan(.3f));
+            // Weight scales ignore weightless cargo; recovery is to put C1 back once gravity holds it.
+            var state = State; var gravity = state.GetType().GetField("gravity");
+            gravity.SetValue(state, 0f);
+            Place(future, R1); yield return new WaitForSeconds(1);
+            Assert.That(Flag("CargoDelivered"), Is.False, "Floating cargo cannot press the scales.");
+            gravity.SetValue(state, 14.715f); yield return new WaitForSeconds(1.2f);
             Assert.That(Flag("CargoDelivered"), Is.True);
+            Assert.That(((Component)Get(level, "exitDoor")).GetComponent<Collider>().enabled, Is.False);
             yield return Swap(); yield return Swap();
-            Assert.That(Vector3.Distance(future.position, new Vector3(13.5f, -.3f, 10)), Is.LessThan(.2f), "Unchanged Past must preserve the independent Future delivery.");
+            Assert.That(Vector3.Distance(future.position, new Vector3(R1.x, -.3f, R1.z)), Is.LessThan(.2f), "Unchanged Past must preserve the independent Future delivery.");
+            // Delivery latches: moving C2 out of the booth afterwards cannot re-lock the exit.
+            yield return Swap(); Place(c2Past, new Vector3(-9, -.2f, 10)); yield return new WaitForSeconds(1);
+            body.position = new Vector3(10.5f, 0, 16); yield return new WaitForSeconds(.3f);
+            Assert.That(Flag("Completed"), Is.False, "Maintenance access only completes in 2176.");
+            yield return Swap(); yield return new WaitForSeconds(.3f);
+            Assert.That(Pressed("rackPlate"), Is.False);
+            Assert.That(Flag("CargoDelivered"), Is.True);
+            Assert.That(Flag("Completed"), Is.True);
             yield return Keys(.06f, Key.R); yield return new WaitForSeconds(.2f);
             Assert.That(Flag("FreightAccessGranted"), Is.False); Assert.That(Flag("CargoDelivered"), Is.False);
+            Assert.That(Flag("Completed"), Is.False); Assert.That(Flag("RackReleased"), Is.False);
             foreach (string gate in new[] { "freightDoor", "exitDoor" })
                 Assert.That(((Component)Get(level, gate)).GetComponent<Collider>().enabled, Is.True);
+        }
+
+        // Stage B: Past counterweight, re-clamping, the seized 2176 clamp, propagation and repeated switching.
+        [UnityTest] public IEnumerator ArchiveRackClampNeedsPastCounterweightAndSeizesInFuture()
+        {
+            var c1Past = Rigid("pastCrate"); var c1Future = Rigid("futureCrate");
+            var c2Past = Rigid("rackPast"); var c2Future = Rigid("rackFuture");
+            Place(c1Future, P); yield return new WaitForSeconds(1);
+            Assert.That(Pressed("counterweight"), Is.False, "Only Past C1 weights the counterweight.");
+            Assert.That(c2Future.isKinematic, Is.True, "The 2176 clamp stays seized.");
+            yield return Swap();
+            Assert.That(c2Past.isKinematic, Is.True);
+            Place(c1Past, P); yield return new WaitForSeconds(1);
+            Assert.That(Pressed("counterweight"), Is.True); Assert.That(c2Past.isKinematic, Is.False);
+            Vector3 aside = new Vector3(-8, -.2f, 0);
+            Place(c1Past, aside); yield return new WaitForSeconds(1);
+            Assert.That(c2Past.isKinematic, Is.True, "Lifting the counterweight re-closes the clamp on a crate still in the cradle.");
+            Assert.That(Flag("RackReleased"), Is.False);
+            Place(c1Past, P); yield return new WaitForSeconds(1);
+            Place(c2Past, new Vector3(-11.5f, -.2f, -1)); yield return new WaitForSeconds(1);
+            Place(c1Past, aside); yield return new WaitForSeconds(1);
+            Assert.That(c2Past.isKinematic, Is.False, "Only the cradle clamps.");
+            Assert.That(Flag("RackReleased"), Is.True);
+            Vector3 settled = c2Past.position;
+            yield return Swap();
+            Assert.That(Vector3.Distance(c2Future.position, settled), Is.LessThan(.2f), "Future C2 follows the moved Past crate.");
+            Assert.That(c2Future.isKinematic, Is.False, "Out of the seized cradle, Future C2 can be carried.");
+            Assert.That(Vector3.Distance(c1Future.position, new Vector3(aside.x, -.55f, aside.z)), Is.LessThan(.3f));
+            for (int i = 0; i < 6; i++) yield return Swap();
+            Assert.That(Timeline, Is.EqualTo("Future"));
+            // The inactive timeline's body reports Rigidbody.position as zero; its Transform is authoritative.
+            Assert.That(Vector3.Distance(c2Future.position, settled), Is.LessThan(.2f), "Repeated switching cannot drift entangled cargo.");
+            Assert.That(Vector3.Distance(c2Past.transform.position, settled), Is.LessThan(.2f));
+            Assert.That(c2Future.isKinematic || c2Past.isKinematic, Is.False);
         }
 
         [UnityTest] public IEnumerator ExpandedDeckAndAlternateNorthAisleAreTraversable()
@@ -264,7 +356,8 @@ namespace Parallax.Gameplay.Tests
             var architecture = hall.Find("Cargo Bay - architecture");
             Assert.That(architecture.Cast<Transform>().Count(t => t.name == "Floor_01"), Is.EqualTo(36));
             Assert.That(architecture.Cast<Transform>().Count(t => t.name == "Wall_Simple_01"), Is.EqualTo(24));
-            Assert.That(Physics.Raycast(new Vector3(-11, 0, 8.8f), Vector3.left, 4, ~0, QueryTriggerInteraction.Ignore), Is.False, "Control booth doorway.");
+            // Phase 3: the booth doorway is open in 2026 (see the receiving test) and collapsed shut in 2176, where this test starts.
+            Assert.That(Physics.Raycast(new Vector3(-11, 0, 8.8f), Vector3.left, 4, ~0, QueryTriggerInteraction.Ignore), Is.True, "Future booth collapse.");
             Capture("loading");
             yield return WalkTo(-8.2f, -11); yield return WalkTo(-8.2f, -1.2f); yield return WalkTo(-11.4f, -1.2f);
             yield return Face(90); Capture("freight-hall"); yield return Face(180);

@@ -249,7 +249,93 @@ public static class CargoBaySetup
             .Select(r => new FutureDecayEnvironment.Surface { renderer = r, past = r.sharedMaterials,
                 future = r.sharedMaterials.Select(m => m == pastMaterial ? futureMaterial : m).ToArray() }).ToArray();
         environment.gameObject.AddComponent<FutureDecayEnvironment>().Configure(surfaces);
-        EditorSceneManager.SaveScene(scene, ScenePath); PolishPuzzle(); ExpandPuzzle(); RedesignEnvironment();
+        EditorSceneManager.SaveScene(scene, ScenePath); PolishPuzzle(); ExpandPuzzle(); RedesignEnvironment(); BuildManifestPuzzle();
+    }
+
+    static readonly Vector3 CradleCentre = new Vector3(-14.6f, 2.46f, 2.6f);
+
+    // Re-runnable puzzle pass: rebuilds only the C2 crate pair and the "Cargo Bay - manifest puzzle" group.
+    public static void BuildManifestPuzzle()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        var level = Object.FindFirstObjectByType<CargoBayController>();
+        var root = level.transform;
+        casing = AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/Scene01/IndustrialCasing.mat");
+        amber = AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/HologramLocked.mat");
+        ready = AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/HologramReady.mat");
+        var steel = Level2Material("Level2_DarkSteel", new Color(.16f, .17f, .18f), .55f, .45f);
+        var hazard = Level2Material("Level2_Hazard", new Color(.86f, .62f, .1f), .1f, .3f);
+        var cyan = Level2Material("Level2_ManifestC2", new Color(.2f, .75f, .9f), .1f, .5f);
+        var relay = AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/Scene01/RelayPlate.mat");
+        foreach (var old in new[] { root.Find("Temporal cargo C2"), root.Find("Cargo Bay - manifest puzzle") })
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+        Entangler c1; Rigidbody c1Past;
+        using (var data = new SerializedObject(level))
+        {
+            c1 = (Entangler)data.FindProperty("cargo").objectReferenceValue;
+            c1Past = (Rigidbody)data.FindProperty("pastCrate").objectReferenceValue;
+        }
+
+        // C2: a second entangled pair; both copies start clamped in the archive rack cradle on the mezzanine.
+        var c2 = Object.Instantiate(c1, root); c2.name = "Temporal cargo C2";
+        Rigidbody past, future;
+        using (var entangled = new SerializedObject(c2))
+        {
+            past = ((GameObject)entangled.FindProperty("pastObject").objectReferenceValue).GetComponent<Rigidbody>();
+            future = ((GameObject)entangled.FindProperty("futureObject").objectReferenceValue).GetComponent<Rigidbody>();
+        }
+        past.name = "Cargo C2 - Past"; future.name = "Cargo C2 - Future";
+        foreach (var crate in new[] { past, future })
+        {
+            crate.transform.SetPositionAndRotation(CradleCentre, Quaternion.identity);
+            // Kinematic bodies only support speculative CCD; carrying switches it to dynamic CCD and back.
+            crate.isKinematic = true; crate.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+            foreach (var stripe in crate.GetComponentsInChildren<Renderer>(true).Where(r => r.transform != crate.transform))
+            { stripe.sharedMaterial = cyan; stripe.name = "Cargo C2 cyan inset"; }
+        }
+
+        environment = new GameObject("Cargo Bay - manifest puzzle").transform; environment.SetParent(root, false);
+        // P: only Past C1 can weight it; a cable runs up the mezzanine column to the C2 clamp.
+        var pad = Solid("P - Rack counterweight plate", new Vector3(-10.8f, -.88f, 2.4f), new Vector3(2.2f, .24f, 2.2f), relay);
+        var counterweight = pad.AddComponent<PressureButton>(); SetObject(counterweight, "requiredBody", c1Past);
+        var padRim = Visual("P - Counterweight indicator", new Vector3(-10.8f, -.75f, 2.4f), Vector3.zero, new Vector3(2.3f, .02f, 2.3f), amber);
+        Visual("Counterweight cable", new Vector3(-12.5f, -.95f, 2.4f), Vector3.zero, new Vector3(1.2f, .06f, .06f), hazard);
+        Visual("Counterweight cable", new Vector3(-13.1f, .5f, 2.4f), Vector3.zero, new Vector3(.06f, 2.9f, .06f), hazard);
+        Visual("Counterweight cable", new Vector3(-13.55f, 2.04f, 2.4f), Vector3.zero, new Vector3(.9f, .06f, .06f), hazard);
+        Sign("Counterweight label", "RACK CLAMP\nCOUNTERWEIGHT", new Vector3(-10.8f, .9f, 3.75f), 0, 3).fontSize = 1.5f;
+        Visual("C2 cradle base", CradleCentre + new Vector3(0, -.44f, 0), Vector3.zero, new Vector3(1.4f, .03f, 1.4f), steel);
+        var jaws = new[] { -.62f, .62f }.Select(x =>
+            Visual("C2 clamp jaw", CradleCentre + new Vector3(x, -.05f, 0), Vector3.zero, new Vector3(.12f, .7f, 1.1f), amber).GetComponent<Renderer>()).ToArray();
+        var rackLabel = Sign("C2 rack clamp label", "C2 / RACK CLAMP\nLOCKED", new Vector3(-13, 3.55f, 2.6f), -90, 3); rackLabel.fontSize = 1.8f;
+
+        // R2: inside the receiving booth, so in 2176 it can only be loaded by moving C2 in 2026.
+        var scale = Solid("R2 - Manifest C2 receiving plate", new Vector3(-14.4f, -.88f, 9.3f), new Vector3(2.2f, .24f, 2.2f), relay);
+        var receiving = scale.AddComponent<PressureButton>(); SetObject(receiving, "requiredBody", future);
+        var scaleRim = Visual("R2 - Receiving indicator", new Vector3(-14.4f, -.75f, 9.3f), Vector3.zero, new Vector3(2.3f, .02f, 2.3f), amber);
+        Visual("R2 manifest marking", new Vector3(-14.4f, -.97f, 9.3f), Vector3.zero, new Vector3(2.7f, .02f, 2.7f), cyan);
+        Sign("R2 label", "R2 / MANIFEST C2", new Vector3(-12.2f, 1.4f, 10.6f), -90, 3).fontSize = 1.8f;
+        var debris = new GameObject("Future booth collapse").transform; debris.SetParent(environment, false);
+        // Full doorway height up to the booth roof, so neither walking nor the jetpack gets past it in 2176.
+        Solid("Collapsed booth girder", new Vector3(-12, .7f, 8.82f), new Vector3(.8f, 3.4f, 2.3f), steel).transform.SetParent(debris, true);
+        Visual("Collapsed booth beam", new Vector3(-11.55f, .4f, 8.8f), new Vector3(0, 0, 38), new Vector3(.25f, 3.6f, .3f), hazard).transform.SetParent(debris, true);
+        environment = null;
+        GameObject.Find("Cargo pad label").GetComponent<TMP_Text>().text = "R1 / MANIFEST C1";
+        // StationHull gives every mesh under the hall a collider; these rims sit 2cm above their plates and would carry the crate.
+        foreach (string rim in new[] { "Cargo pad indicator", "A - Staging indicator" })
+            GameObject.Find(rim).transform.SetParent(root, true);
+
+        SetObject(level, "rackCargo", c2); SetObject(level, "rackPast", past); SetObject(level, "rackFuture", future);
+        SetObject(level, "counterweight", counterweight); SetObject(level, "rackPlate", receiving);
+        SetObject(level, "rackPlateIndicator", scaleRim.GetComponent<Renderer>()); SetObject(level, "rackLabel", rackLabel);
+        SetObject(level, "futureDebris", debris.gameObject);
+        SetArray(level, "clampFeedback", new Object[] { padRim.GetComponent<Renderer>(), jaws[0], jaws[1] });
+        using (var data = new SerializedObject(level))
+        {
+            data.FindProperty("cradle").boundsValue = new Bounds(CradleCentre, new Vector3(1.3f, 1, 1.3f));
+            data.ApplyModifiedPropertiesWithoutUndo();
+        }
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene, ScenePath); Audit();
     }
 
     // Re-runnable: rebuilds only the groups it owns, after removing the 1.5x stretch from the expanded 24m kit once.
@@ -424,10 +510,10 @@ public static class CargoBaySetup
         EditorSceneManager.SaveScene(scene, ScenePath); Audit();
     }
 
-    static void Visual(string name, Vector3 position, Vector3 euler, Vector3 scale, Material material)
+    static GameObject Visual(string name, Vector3 position, Vector3 euler, Vector3 scale, Material material)
     {
         var obj = Solid(name, position, scale, material); obj.transform.rotation = Quaternion.Euler(euler);
-        Object.DestroyImmediate(obj.GetComponent<Collider>());
+        Object.DestroyImmediate(obj.GetComponent<Collider>()); return obj;
     }
 
     // New Level 2 finishes are copies; the tutorial's casing material is never edited.
