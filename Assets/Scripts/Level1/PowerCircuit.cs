@@ -44,8 +44,10 @@ public sealed class PowerCircuit : MonoBehaviour
         // Without station gravity the rods drift out of their seats; restoring it drops them back.
         for (int i = 0; i < controlRods.Length; i++)
             controlRods[i].localPosition = rodSeats[i] + (RodsSeated ? Vector3.zero : new Vector3(0, .7f + .2f * i, 0));
-        selectorLabel.text = "B FEED / ROUTE " + Route;
-        gravityLabel.text = "STATION GRAVITY\n" + (RodsSeated ? "ON" : "OFF");
+        // TextMesh rebuilds its mesh on every assignment, so only write changes.
+        string selector = "B FEED / ROUTE " + Route, gravity = "STATION GRAVITY\n" + (RodsSeated ? "ON" : "OFF");
+        if (selectorLabel.text != selector) selectorLabel.text = selector;
+        if (gravityLabel.text != gravity) gravityLabel.text = gravity;
     }
 
     void Lamp(Renderer lamp, bool live)

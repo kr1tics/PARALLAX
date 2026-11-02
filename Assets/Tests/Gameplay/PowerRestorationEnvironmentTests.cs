@@ -136,6 +136,99 @@ namespace Parallax.Gameplay.Tests
             }
         }
 
+        IEnumerator Press(Key key) { InputSystem.QueueStateEvent(keyboard, new KeyboardState(key)); yield return null; yield return null; InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null; }
+        IEnumerator Hold(Key key, System.Func<bool> done, float seconds)
+        {
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(key));
+            for (float end = Time.time + seconds; Time.time < end && !done();) yield return new WaitForFixedUpdate();
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return new WaitForSeconds(.4f);
+        }
+        // Look at a point the way a mouse would: yaw from the horizontal offset, pitch from the eye height.
+        void LookAt(Vector3 point)
+        {
+            var eye = Camera.main.transform.position; var d = point - eye;
+            float flat = new Vector2(d.x, d.z).magnitude;
+            Face(Mathf.Atan2(d.z, d.x) * Mathf.Rad2Deg, .25f * d.y / Mathf.Max(.01f, flat));
+        }
+        // Zero-G legs: the jetpack keeps momentum, so release W early and let its damping bring the player to rest.
+        IEnumerator FlyTo(float x, float z)
+        {
+            float Gap() => Vector2.Distance(new Vector2(player.position.x, player.position.z), new Vector2(x, z));
+            for (int attempt = 0; attempt < 4 && Gap() > .6f; attempt++)
+            {
+                var delta = new Vector3(x, 0, z) - player.position;
+                Face(Mathf.Atan2(delta.z, delta.x) * Mathf.Rad2Deg); yield return null;
+                // Measured: the jetpack coasts about 0.6 s worth of speed after W is released.
+                yield return Hold(Key.W, () => Gap() < .3f + player.linearVelocity.magnitude * .6f, 8);
+                yield return new WaitForSeconds(1.5f);
+            }
+            Assert.That(Gap(), Is.LessThan(.8f), "Flight route blocked at " + player.position + " towards " + x + "," + z);
+        }
+        float StationGravity => (float)state.GetType().GetField("gravity").GetValue(state);
+        object Prop(string objectName, string component, string property) => Prop(Component(GameObject.Find(objectName), component), property);
+
+        // The whole level with normal controls: keyboard for every action, the camera aimed as a mouse would.
+        [UnityTest] public IEnumerator FullPowerRestorationWithNormalControls()
+        {
+            var moduleA = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "PowerModuleA");
+            var interact = Component(player.gameObject, "Interact");
+            Component(GameObject.Find("08 / Scene presentation"), "TutorialCompletionScreen").enabled = true;
+            yield return Press(Key.F); yield return new WaitForSeconds(.8f);
+            Assert.That(Now, Is.EqualTo("Past"));
+            // Gravity console: cut station gravity so the 380 kg module can be lifted.
+            yield return WalkTo(-6.6f, -2);
+            LookAt(GameObject.Find("Gravity switch").transform.position); yield return null;
+            yield return Press(Key.E);
+            Assert.That(StationGravity, Is.LessThan(.1f), "Console pressed with E.");
+            LookAt(moduleA.transform.position); yield return null;
+            yield return Press(Key.E);
+            Assert.That(Prop(interact, "HeldObject"), Is.SameAs(moduleA), "Module A lifted in zero-G.");
+            // Fly (W) to stand in front of the socket, face it, release into the guide.
+            yield return FlyTo(-6, .9f);
+            Face(90, -.03f); yield return new WaitForSeconds(.8f);
+            Assert.That((bool)Prop(moduleA, "CanInstall"), Is.True, "Inside the forgiving guide. module=" + moduleA.transform.position);
+            yield return Press(Key.E); yield return new WaitForSeconds(.5f);
+            Assert.That((bool)Prop(moduleA, "IsRepaired"), Is.True);
+            // Fly to the climb column, ascend with Space, repair B.
+            yield return FlyTo(6.5f, 1.4f);
+            yield return Hold(Key.Space, () => player.position.y + player.linearVelocity.y * .6f > 11.6f, 6);
+            yield return new WaitForSeconds(1);
+            var panel = GameObject.Find("Repair panel");
+            LookAt(panel.transform.position); yield return null;
+            Assert.That((bool)Prop("Repair panel", "PowerModuleB", "CanRepair"), Is.True, "At B. player=" + player.position);
+            yield return Press(Key.E);
+            Assert.That((bool)Prop("Repair panel", "PowerModuleB", "IsRepaired"), Is.True);
+            // Descend with Ctrl, switch B's feed to the route that survives.
+            yield return Hold(Key.LeftCtrl, () => player.position.y + player.linearVelocity.y * .6f < 1.4f, 8);
+            yield return new WaitForSeconds(1);
+            yield return FlyTo(7, 1);
+            LookAt(GameObject.Find("B feed junction").transform.position); yield return null;
+            yield return Press(Key.E);
+            Assert.That((int)Prop("09 / Power path", "PowerCircuit", "Route"), Is.EqualTo(2));
+            // Back to the console: restore gravity for the control rods.
+            yield return FlyTo(-6.6f, -2);
+            LookAt(GameObject.Find("Gravity switch").transform.position); yield return null;
+            yield return Press(Key.E);
+            Assert.That(StationGravity, Is.GreaterThan(4.5f));
+            yield return new WaitForSeconds(1);
+            // 2176: start the reactor at its console.
+            yield return Press(Key.F); yield return new WaitForSeconds(.8f);
+            Assert.That(Now, Is.EqualTo("Future"));
+            Assert.That((bool)Prop("08 / Scene presentation", "PowerRestorationPresentation", "ReactorReady"), Is.True);
+            yield return WalkTo(3.5f, 1.2f);
+            LookAt(GameObject.Find("Console housing").transform.position); yield return null;
+            yield return Press(Key.E);
+            var reactor = Component(GameObject.Find("Console housing"), "PowerReactor");
+            Assert.That((bool)Prop(reactor, "IsOnline"), Is.True);
+            var completion = Component(GameObject.Find("08 / Scene presentation"), "TutorialCompletionScreen");
+            Assert.That((bool)Prop(completion, "IsOpen"), Is.False, "The start-up plays before the completion screen.");
+            yield return new WaitForSecondsRealtime(2.6f);
+            Assert.That((bool)Prop(completion, "IsOpen"), Is.True); Assert.That(Time.timeScale, Is.Zero);
+            yield return new WaitForSecondsRealtime(2.6f); // Its own one-second delay and fade.
+            Assert.That((bool)Prop(completion, "IsReady"), Is.True);
+            Assert.That(GameObject.Find("Power Restoration Completion Screen"), Is.Not.Null);
+        }
+
         // Visual review stills; not assertions.
         [UnityTest] public IEnumerator CaptureReviewViews()
         {
