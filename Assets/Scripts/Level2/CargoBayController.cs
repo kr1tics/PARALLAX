@@ -75,6 +75,7 @@ public sealed class CargoBayController : MonoBehaviour
         {
             Completed = true;
             Play(sounds != null ? sounds.complete : null);
+            GetComponent<TutorialCompletionScreen>()?.ShowCompletion();
         }
         if (previousTime != GlobalState.get().now)
         {

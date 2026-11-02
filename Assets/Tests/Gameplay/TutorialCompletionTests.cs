@@ -104,9 +104,34 @@ namespace Parallax.Gameplay.Tests
             }
             finally { InputSystem.RemoveDevice(keyboard); InputSystem.settings.backgroundBehavior = background; InputSystem.settings.editorInputBehaviorInPlayMode = editorInput; }
         }
-        [UnityTest] public IEnumerator ContinueSafelyReturnsToExistingMenu()
+        [UnityTest] public IEnumerator ContinueLoadsCargoAndCargoCompletionFallsBackToMenu()
         {
             yield return Complete(); Call(completion, "Continue"); yield return null; yield return null;
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level2_CargoBay"));
+            Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
+            Assert.That(GameObject.Find("Context Intro"), Is.Null);
+            var root = GameObject.Find("Level 2 - Cargo Bay");
+            var cargo = root.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "CargoBayController");
+            completion = root.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "TutorialCompletionScreen");
+            Assert.That(Flag(cargo, "CargoDelivered"), Is.False);
+            Assert.That(completion.GetType().GetField("nextScene", Flags).GetValue(completion), Is.EqualTo("Level3_MaintenanceShaft"));
+            // Drive the real exit check after supplying the already-tested delivery prerequisite.
+            Set(cargo, "<CargoDelivered>k__BackingField", true);
+            GameObject.Find("Player").GetComponent<Rigidbody>().position = new Vector3(7, 0, 10.5f);
+            yield return new WaitForSecondsRealtime(.2f);
+            Assert.That(Flag(cargo, "Completed"), Is.True);
+            yield return new WaitForSecondsRealtime(2.7f);
+            Assert.That(Flag(completion, "IsReady"), Is.True);
+            Call(completion, "ReplayTutorial"); yield return null; yield return null;
+            root = GameObject.Find("Level 2 - Cargo Bay");
+            cargo = root.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "CargoBayController");
+            completion = root.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "TutorialCompletionScreen");
+            Assert.That(Flag(cargo, "Completed"), Is.False); Assert.That(Flag(cargo, "CargoDelivered"), Is.False);
+            Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
+            // A missing destination is safe, independent of whether Level 3 later joins the build.
+            Set(completion, "nextScene", "MissingSceneForTest");
+            Call(completion, "ShowCompletion"); yield return new WaitForSecondsRealtime(2.7f);
+            Call(completion, "Continue"); yield return null; yield return null;
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("MainMenu"));
             Assert.That(GameSettingsMenu.StartupInputBlocked, Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
             Assert.That(Cursor.visible, Is.True); Assert.That(Cursor.lockState, Is.EqualTo(CursorLockMode.None));

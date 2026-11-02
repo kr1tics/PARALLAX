@@ -82,6 +82,40 @@ public static class CargoBaySetup
         Audit();
     }
 
+    public static void ConnectProgression()
+    {
+        var tutorialScene = EditorSceneManager.OpenScene("Assets/StartScene.unity", OpenSceneMode.Single);
+        var tutorialScreen = Object.FindFirstObjectByType<TutorialCompletionScreen>();
+        using (var data = new SerializedObject(tutorialScreen))
+        {
+            data.FindProperty("nextScene").stringValue = "Level2_CargoBay";
+            data.ApplyModifiedPropertiesWithoutUndo();
+        }
+        EditorSceneManager.SaveScene(tutorialScene);
+        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        var root = Object.FindFirstObjectByType<CargoBayController>().gameObject;
+        var screen = root.GetComponent<TutorialCompletionScreen>() ?? root.AddComponent<TutorialCompletionScreen>();
+        using (var data = new SerializedObject(screen))
+        {
+            data.FindProperty("nextScene").stringValue = "Level3_MaintenanceShaft";
+            data.FindProperty("completionTitle").stringValue = "CARGO BAY COMPLETE";
+            data.FindProperty("completionDescription").stringValue = "The cargo transfer restored maintenance access.";
+            data.FindProperty("finalMessage").stringValue = "Continue to the maintenance shaft.";
+            data.FindProperty("replayLabel").stringValue = "REPLAY CARGO BAY";
+            data.FindProperty("allowCompletionShortcut").boolValue = false;
+            data.ApplyModifiedPropertiesWithoutUndo();
+        }
+        SetObject(screen, "primaryFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/Oxanium/Oxanium-Regular SDF.asset"));
+        SetObject(screen, "secondaryFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/Space_Mono/SpaceMono-Regular SDF.asset"));
+        EditorSceneManager.SaveScene(scene);
+        var scenes = EditorBuildSettings.scenes.ToList();
+        scenes.RemoveAll(s => s.path == ScenePath);
+        int index = scenes.FindIndex(s => s.path == "Assets/StartScene.unity");
+        scenes.Insert(index + 1, new EditorBuildSettingsScene(ScenePath, true));
+        EditorBuildSettings.scenes = scenes.ToArray();
+        Audit();
+    }
+
     static GameObject Fit(string prefab, Vector3 center, Vector3 size, float yaw = 0)
     {
         var obj = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(Kit + prefab + ".prefab"));

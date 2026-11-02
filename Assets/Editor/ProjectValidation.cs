@@ -39,8 +39,8 @@ public static class ProjectValidation
         Directory.CreateDirectory("Logs");
         File.WriteAllLines("Logs/review-unity-assets.txt", findings.Distinct());
         Debug.Log($"Asset audit: {findings.Distinct().Count()} findings; see Logs/review-unity-assets.txt.");
-        if (scenes.Length != 2 || scenes[0] != "Assets/MainMenu.unity" || scenes[1] != "Assets/StartScene.unity")
-            throw new InvalidOperationException("Expected MainMenu followed by the Level 1 tutorial StartScene.");
+        if (scenes.Length < 3 || scenes[0] != "Assets/MainMenu.unity" || scenes[1] != "Assets/StartScene.unity" || scenes[2] != CargoBaySetup.ScenePath)
+            throw new InvalidOperationException("Expected MainMenu, StartScene, then Level2_CargoBay; additional levels may follow.");
         EditorSceneManager.OpenScene(scenes[0], OpenSceneMode.Single);
         var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {

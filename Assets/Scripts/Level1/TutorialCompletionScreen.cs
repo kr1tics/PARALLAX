@@ -13,8 +13,12 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
 {
     [SerializeField] Level1Controller level;
     [SerializeField] TMP_FontAsset primaryFont, secondaryFont;
-    [Tooltip("Leave empty until a next gameplay scene exists. Continue returns to MainMenu meanwhile.")]
+    [Tooltip("Scene name or build path. Missing or empty destinations return to MainMenu.")]
     [SerializeField] string nextScene;
+    [SerializeField] string completionTitle = "TUTORIAL COMPLETE";
+    [SerializeField] string completionDescription = "You've learned the basics of time manipulation and gravity control.";
+    [SerializeField] string finalMessage = "The investigation begins now.";
+    [SerializeField] string replayLabel = "REPLAY TUTORIAL";
     [SerializeField, Min(0)] float completionDelay = 1f;
     [SerializeField, Min(.01f)] float fadeDuration = .8f;
     [Header("Tutorial shortcut")]
@@ -34,7 +38,12 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     {
         if (triggered || GameSettingsMenu.GameplayInputBlocked) return;
         bool shortcut = allowCompletionShortcut && Keyboard.current != null && Keyboard.current.shiftKey.isPressed && Keyboard.current.kKey.wasPressedThisFrame;
-        if (!level.Completed && !shortcut) return;
+        if ((level == null || !level.Completed) && !shortcut) return;
+        ShowCompletion();
+    }
+    public void ShowCompletion()
+    {
+        if (!isActiveAndEnabled || triggered || GameSettingsMenu.GameplayInputBlocked) return;
         triggered = true;
         previousScale = Time.timeScale;
         previousCursorVisible = Cursor.visible; previousCursorLock = Cursor.lockState;
@@ -74,13 +83,14 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
         shade.gameObject.AddComponent<Image>().color = new Color(.015f, .02f, .025f, .84f);
         var content = Rect(screen.transform, "Completion content", new Vector2(0, 10), new Vector2(760, 350));
         copy = content.gameObject.AddComponent<CanvasGroup>(); copy.alpha = 0;
-        Text(content, "Completion title", "TUTORIAL COMPLETE", primaryFont, 44, 115, 72, true);
-        Text(content, "Completion description", "You've learned the basics of time manipulation and gravity control.", secondaryFont, 22, 32, 88, false);
-        Text(content, "Completion final message", "The investigation begins now.", secondaryFont, 23, -66, 50, false);
+        Text(content, "Completion title", completionTitle, primaryFont, 44, 115, 72, true);
+        Text(content, "Completion description", completionDescription, secondaryFont, 22, 32, 88, false);
+        bool destinationMissing = !string.IsNullOrWhiteSpace(nextScene) && !Application.CanStreamedLevelBeLoaded(nextScene);
+        Text(content, "Completion final message", destinationMissing ? "The next level is not available in this build." : finalMessage, secondaryFont, 23, -66, 50, false);
         var row = Rect(screen.transform, "Completion actions", new Vector2(0, -155), new Vector2(520, 48));
         actions = row.gameObject.AddComponent<CanvasGroup>(); actions.alpha = 0; actions.interactable = false;
-        replayButton = MakeButton(row, "REPLAY TUTORIAL", -138, ReplayTutorial);
-        MakeButton(row, "CONTINUE", 138, Continue);
+        replayButton = MakeButton(row, replayLabel, -138, ReplayTutorial);
+        MakeButton(row, destinationMissing ? "MAIN MENU" : "CONTINUE", 138, Continue);
     }
     static RectTransform Rect(Transform parent, string name, Vector2 position, Vector2 size)
     {
@@ -114,7 +124,7 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     public void Continue()
     {
         if (!IsReady || navigating) return;
-        // No unimplemented level is created. The existing menu is the safe prototype destination.
+        // A forthcoming level need not exist in this build; keep the completed level navigable.
         string destination = !string.IsNullOrWhiteSpace(nextScene) && Application.CanStreamedLevelBeLoaded(nextScene) ? nextScene : "MainMenu";
         Navigate(destination);
     }

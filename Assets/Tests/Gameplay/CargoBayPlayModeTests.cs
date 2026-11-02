@@ -46,6 +46,8 @@ namespace Parallax.Gameplay.Tests
             player = Component(GameObject.Find("Player"), "PlayerController"); body = player.GetComponent<Rigidbody>();
             var cargoRoot = GameObject.Find("Level 2 - Cargo Bay");
             if (cargoRoot != null) level = Component(cargoRoot, "CargoBayController");
+            // These tests exercise puzzle physics; completion navigation has its own integration tests.
+            if (cargoRoot != null) Component(cargoRoot, "TutorialCompletionScreen").enabled = false;
             Call(Component(Camera.main.gameObject, "Look"), "Rotate", new Vector2(90, 0));
             yield return new WaitForSeconds(.5f);
         }
