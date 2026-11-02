@@ -126,6 +126,25 @@ namespace Parallax.Gameplay.Tests
         }
 
         [UnityTest]
+        public IEnumerator SolvedTutorialExitContinuesToPowerRestoration()
+        {
+            yield return SolveIntro();
+            yield return SolveMain();
+            playerBody.isKinematic = false;
+            Place(playerBody, new Vector3(-13.3f, 0, 4.45f));
+            yield return new WaitForSecondsRealtime(3f);
+            Assert.That(Flag("Completed"), Is.True);
+            var completion = Component(level.gameObject, "TutorialCompletionScreen");
+            Assert.That((bool)Prop(completion, "IsReady"), Is.True);
+            GameObject.Find("CONTINUE").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            yield return null; yield return null;
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level1_PowerRestoration"));
+            Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1));
+            Assert.That(Component(GameObject.Find("Player"), "PlayerController").enabled, Is.True);
+        }
+
+        [UnityTest]
         public IEnumerator TimelineWipeRendersAfterSceneReload()
         {
             // Ensure the clocks differ enough to detect an application-time timestamp.
