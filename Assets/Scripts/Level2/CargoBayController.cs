@@ -20,8 +20,9 @@ public sealed class CargoBayController : MonoBehaviour
     [SerializeField] Door exitDoor;
     [SerializeField] BoxCollider exitZone;
     [SerializeField] Vector3 arrival = new Vector3(0, .02f, -10);
-    [SerializeField] CanvasGroup hud;
-    [SerializeField] TMP_Text objective, status, prompt, doorLabel;
+    [Tooltip("Same fonts as the tutorial and Power Restoration HUD.")]
+    [SerializeField] TMP_FontAsset titleFont, supportingFont;
+    [SerializeField] TMP_Text doorLabel;
     [SerializeField] Renderer plateIndicator;
     [SerializeField] Material waitingMaterial, readyMaterial;
     [SerializeField] GameObject placementTarget;
@@ -39,6 +40,7 @@ public sealed class CargoBayController : MonoBehaviour
     [SerializeField] PressureButton rackPlate;
     [SerializeField] Renderer rackPlateIndicator;
     [SerializeField] GameObject futureDebris;
+    static readonly Color Solved = new Color(.35f, 1f, .65f), Unsolved = new Color(.75f, .9f, 1);
     Color[] lightColours;
     float[] lightIntensities;
     public bool CargoDelivered { get; private set; }
@@ -49,6 +51,9 @@ public sealed class CargoBayController : MonoBehaviour
     Vector3 pastStart, futureStart, rackPastStart, rackFutureStart;
     Quaternion pastRotation, futureRotation, rackPastRotation, rackFutureRotation;
     Interact interaction;
+    GameplayHud hud;
+    TMP_Text controls;
+    ArtificialGravity playerGravity;
     AudioSource events, ambience;
     TimeState previousTime;
     MovableObject previousHeld;
@@ -78,6 +83,12 @@ public sealed class CargoBayController : MonoBehaviour
         ApplyTimeline();
         foreach (var crate in new[] { pastCrate, futureCrate, rackPast, rackFuture })
             if (sounds != null) crate.gameObject.AddComponent<ParallaxDropAudio>().Configure(sounds, interaction);
+        // Cargo Bay has no distortable objects (G hidden); R resets the bay, so its row stays in the controls list.
+        var menu = GameSettingsMenu.Instance;
+        if (menu != null) { menu.SetMainMenuContext(false); menu.SetGameplayControls(false, true); }
+        hud = new GameplayHud(transform, "Cargo Bay Objective UI", titleFont, supportingFont);
+        controls = GameplayHud.CreateControlHint(hud.Instruction.GetComponentInParent<Canvas>().transform, supportingFont);
+        playerGravity = player.GetComponent<ArtificialGravity>();
     }
 
     void Update()
@@ -107,7 +118,7 @@ public sealed class CargoBayController : MonoBehaviour
 
     void LateUpdate()
     {
-        hud.alpha = GameSettingsMenu.GameplayInputBlocked ? 0 : 1;
+        hud.SetVisible(Completed || !GameSettingsMenu.GameplayInputBlocked);
         if (GameSettingsMenu.GameplayInputBlocked) return;
         bool past = GlobalState.get().now == TimeState.Past;
         bool anchored = PastCrateOnTarget(stagingPlate);
@@ -143,18 +154,14 @@ public sealed class CargoBayController : MonoBehaviour
             previousHeld = interaction.HeldObject;
         }
         bool clampOpen = past && (counterweight.IsPressed || RackReleased);
-        objective.text = Completed ? "CARGO BAY COMPLETE\nMaintenance access restored." :
-            CargoDelivered ? "REACH MAINTENANCE ACCESS\n" + (past ? "Return to the Future to leave." : "Follow the green marker through the exit.") :
-            !FreightAccessGranted ? "01 / LOADING BAY\nOpen freight access. " + (past ? "In 2026, C1 is not caged." : "Manifest C1 is caged in 2176.") :
-            !RackReleased ? "02 / ARCHIVE RACK\nFree manifest C2 from the mezzanine rack. " + (!past ? "Its 2176 clamp has seized." :
-                counterweight.IsPressed ? "The clamp is open." : "The clamp is locked; its counterweight pad is empty.") :
-            "03 / RECEIVING\nLoad C1 and C2 at the same time. " + (past ? "The scales only read in 2176." :
-                "R1 " + (c1 ? "LOADED" : "EMPTY") + "   R2 " + (c2 ? "LOADED" : "EMPTY"));
-        status.text = "02 / CARGO BAY     " + (past ? "2026 / PAST" : "2176 / FUTURE");
+        UpdateObjective(past, c1, c2);
+        hud.Status.text = (past ? "2026 / PAST" : "2176 / FUTURE") + (playerGravity.IsGravityActive ? "  ·  GRAVITY ON" : "  ·  GRAVITY OFF");
+        controls.text = Completed ? "" : "ESC / P — Settings / Resume    ·    R — Reset cargo" +
+            (!playerGravity.IsGravityActive ? "    ·    Q — Toggle jetpack" : "");
         var hit = interaction.fireInteractRay(true);
         var aimed = hit.Item1 ? hit.Item2.collider.GetComponentInParent<MovableObject>() : null;
-        prompt.text = interaction.HeldObject != null ? "E / CLICK  —  RELEASE CARGO" : aimed == null ? "" :
-            aimed.GetComponent<Rigidbody>().isKinematic ? "CARGO CLAMPED" : "E / CLICK  —  PICK UP CARGO";
+        hud.Prompt.text = Completed ? "" : interaction.HeldObject != null ? "E — Place" : aimed == null ? "" :
+            aimed.GetComponent<Rigidbody>().isKinematic ? "Cargo clamped" : "E — Pick up";
         doorLabel.text = CargoDelivered ? "MAINTENANCE ACCESS / OPEN" : "MAINTENANCE LIFT\nAWAITING C1 + C2";
         plateIndicator.sharedMaterial = CargoDelivered || (!past && c1) ? readyMaterial : waitingMaterial;
         rackPlateIndicator.sharedMaterial = CargoDelivered || (!past && c2) ? readyMaterial : waitingMaterial;
@@ -163,7 +170,27 @@ public sealed class CargoBayController : MonoBehaviour
         foreach (var item in clampFeedback) item.sharedMaterial = clampOpen ? readyMaterial : waitingMaterial;
         rackLabel.text = "C2 / RACK CLAMP\n" + (!past ? (cradle.Contains(rackFuture.transform.position) ? "SEIZED" : "EMPTY") :
             RackReleased ? "EMPTY" : counterweight.IsPressed ? "OPEN" : "LOCKED");
+        // Power Restoration's socket labels turn this green once their condition is met.
+        stagingLabel.color = FreightAccessGranted ? Solved : Unsolved;
+        rackLabel.color = clampOpen ? Solved : Unsolved;
+        doorLabel.color = CargoDelivered ? Solved : Unsolved;
         placementTarget.SetActive(FreightAccessGranted && !CargoDelivered);
+    }
+
+    // Same shape as the earlier levels: a progress line, then what the current timeline shows. States, never the solution.
+    void UpdateObjective(bool past, bool c1, bool c2)
+    {
+        if (Completed) hud.SetObjective("COMPLETE", "Cargo Bay Complete", "Maintenance access restored.");
+        else if (CargoDelivered)
+            hud.SetObjective("OBJECTIVE 04", "Reach Maintenance Access", "Both manifests received\n" + (past ? "Return to the Future." : "Proceed to the maintenance lift."));
+        else if (!FreightAccessGranted)
+            hud.SetObjective("OBJECTIVE 01", "Open Freight Access", "Freight gate sealed\n" + (past ? "In 2026, manifest C1 is not caged." : "Manifest C1 is caged in 2176."));
+        else if (!RackReleased)
+            hud.SetObjective("OBJECTIVE 02", "Free Manifest C2", "Freight open · C2 on the archive rack\n" + (!past ? "The 2176 rack clamp has seized." :
+                counterweight.IsPressed ? "The rack clamp is open." : "The rack clamp is locked."));
+        else
+            hud.SetObjective("OBJECTIVE 03", "Load Both Manifests", past ? "C1 to R1 · C2 to R2\nReceiving scales read in 2176." :
+                "R1 " + (c1 ? "loaded" : "empty") + " · R2 " + (c2 ? "loaded" : "empty") + "\nBoth must be loaded at once.");
     }
 
     bool PastCrateOnTarget(PressureButton targetPlate)

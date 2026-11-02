@@ -111,7 +111,7 @@ namespace Parallax.Gameplay.Tests
         {
             Directory.CreateDirectory(".utmp/cargo");
             var camera = Camera.main; var target = new RenderTexture(1280, 720, 24);
-            var canvas = GameObject.Find("Cargo HUD").GetComponent<Canvas>();
+            var canvas = GameObject.Find("Cargo Bay Objective UI").GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = camera; canvas.planeDistance = .5f;
             camera.targetTexture = target; Canvas.ForceUpdateCanvases(); camera.Render();
             RenderTexture.active = target; var image = new Texture2D(1280, 720, TextureFormat.RGB24, false);
@@ -383,6 +383,41 @@ namespace Parallax.Gameplay.Tests
             Assert.That(future.GetComponentsInChildren<Collider>(true), Is.Empty);
             yield return Keys(.06f, Key.R); yield return null; yield return null;
             Assert.That(future.activeSelf, Is.True); Assert.That(light.intensity, Is.EqualTo(dim).Within(.01f));
+        }
+
+        // Phase 4: Cargo Bay uses the tutorial / Power Restoration GameplayHud layout, fonts, wording and visibility rules.
+        [UnityTest] public IEnumerator HudMatchesSharedLayoutAndReportsStageState()
+        {
+            Assert.That(GameObject.Find("Cargo HUD"), Is.Null, "The bespoke 1280x720 HUD is gone.");
+            var ui = GameObject.Find("Cargo Bay Objective UI");
+            var scaler = ui.GetComponent("CanvasScaler");
+            Assert.That((Vector2)scaler.GetType().GetProperty("referenceResolution").GetValue(scaler), Is.EqualTo(new Vector2(1920, 1080)));
+            Assert.That(((RectTransform)ui.transform.Find("Objective panel")).sizeDelta, Is.EqualTo(new Vector2(470, 148)));
+            TMPro.TMP_Text Text(string name) => ui.GetComponentsInChildren<TMPro.TMP_Text>(true).Single(t => t.name == name);
+            Assert.That(Text("Objective number").text, Is.EqualTo("OBJECTIVE 01"));
+            Assert.That(Text("Objective title").text, Is.EqualTo("Open Freight Access"));
+            Assert.That(Text("Objective title").font.name, Does.StartWith("Oxanium"));
+            Assert.That(Text("Current instruction").font.name, Does.StartWith("SpaceMono"));
+            Assert.That(Text("Timeline status").text, Is.EqualTo("2176 / FUTURE  ·  GRAVITY ON"));
+            Assert.That(Text("Contextual control hints").text, Does.Contain("R — Reset cargo"));
+            Assert.That((bool)Get(player, "allowManualDistortion"), Is.False, "No distortable objects here.");
+            Assert.That((bool)Get(GameSettingsMenu.Instance, "manualDistortionControl"), Is.False);
+            Assert.That((bool)Get(GameSettingsMenu.Instance, "checkpointControl"), Is.True, "R resets the bay, so its row stays listed.");
+            yield return Keys(.06f, Key.Q); yield return null;
+            Assert.That(Text("Timeline status").text, Does.EndWith("GRAVITY OFF"));
+            Assert.That(Text("Contextual control hints").text, Does.Contain("Q — Toggle jetpack"));
+            yield return Keys(.06f, Key.Q); yield return new WaitForSeconds(.5f);
+            yield return Swap(); Place(Rigid("pastCrate"), A); yield return new WaitForSeconds(1);
+            yield return Swap(); yield return new WaitForSeconds(.5f);
+            Assert.That(Text("Objective number").text, Is.EqualTo("OBJECTIVE 02"));
+            Assert.That(Text("Current instruction").text, Does.Contain("seized"));
+            yield return WalkTo(-8.2f, -11); yield return WalkTo(-10.5f, -5); yield return Face(90, -.07f);
+            Assert.That(Text("Contextual interaction prompt").text, Is.EqualTo("E — Pick up"));
+            Capture("hud-objective-02");
+            GameSettingsMenu.StartupInputBlocked = true; yield return null;
+            Assert.That(ui.GetComponent<CanvasGroup>().alpha, Is.Zero, "HUD hides while gameplay input is blocked.");
+            GameSettingsMenu.StartupInputBlocked = false; yield return null;
+            Assert.That(ui.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1));
         }
 
         [UnityTest] public IEnumerator LayoutOpensAndNormalMovementStaysOnDeck()

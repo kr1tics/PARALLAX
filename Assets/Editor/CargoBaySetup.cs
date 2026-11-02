@@ -6,7 +6,6 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 /// <summary>Authors Cargo Bay using the shipped player and modular kit. Never edits other levels.</summary>
@@ -223,21 +222,10 @@ public static class CargoBaySetup
         var zone = new GameObject("Cargo completion zone", typeof(BoxCollider)); zone.transform.SetParent(root.transform);
         zone.transform.position = new Vector3(7, .25f, 10.6f);
         var exit = zone.GetComponent<BoxCollider>(); exit.isTrigger = true; exit.size = new Vector3(2, 2.5f, 1.4f);
-        var hudObject = new GameObject("Cargo HUD", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(CanvasGroup));
-        hudObject.transform.SetParent(root.transform, false);
-        hudObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
-        var scaler = hudObject.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1280, 720); scaler.matchWidthOrHeight = .5f;
-        var objective = HudText(hudObject.transform, "Cargo objective", new Vector2(28, -65), new Vector2(620, 105), 23);
-        var status = HudText(hudObject.transform, "Cargo timeline", new Vector2(28, -25), new Vector2(1100, 30), 17);
-        var prompt = HudText(hudObject.transform, "Cargo interaction", new Vector2(440, -600), new Vector2(600, 35), 20);
-        var controls = HudText(hudObject.transform, "Cargo controls", new Vector2(28, -675), new Vector2(1200, 28), 16);
-        controls.text = "WASD  MOVE     E / CLICK  CARRY     F / T  TIME     Q  JETPACK     R  RESET CARGO & PLAYER     ESC  SETTINGS";
+        // The HUD is the shared GameplayHud, built at runtime by CargoBayController (see ApplySharedHud).
         SetObject(level, "player", GameObject.Find("Player").GetComponent<PlayerController>());
         SetObject(level, "cargo", cargo); SetObject(level, "pastCrate", past); SetObject(level, "futureCrate", future);
         SetObject(level, "plate", plate); SetObject(level, "exitDoor", door); SetObject(level, "exitZone", exit);
-        SetObject(level, "hud", hudObject.GetComponent<CanvasGroup>());
-        SetObject(level, "objective", objective); SetObject(level, "status", status); SetObject(level, "prompt", prompt);
         SetObject(level, "doorLabel", GameObject.Find("Exit sign").GetComponent<TMP_Text>());
         SetObject(level, "plateIndicator", indicator.GetComponent<Renderer>());
         SetObject(level, "waitingMaterial", amber); SetObject(level, "readyMaterial", ready);
@@ -249,7 +237,7 @@ public static class CargoBaySetup
             .Select(r => new FutureDecayEnvironment.Surface { renderer = r, past = r.sharedMaterials,
                 future = r.sharedMaterials.Select(m => m == pastMaterial ? futureMaterial : m).ToArray() }).ToArray();
         environment.gameObject.AddComponent<FutureDecayEnvironment>().Configure(surfaces);
-        EditorSceneManager.SaveScene(scene, ScenePath); PolishPuzzle(); ExpandPuzzle(); RedesignEnvironment(); BuildManifestPuzzle();
+        EditorSceneManager.SaveScene(scene, ScenePath); PolishPuzzle(); ExpandPuzzle(); RedesignEnvironment(); BuildManifestPuzzle(); ApplySharedHud();
     }
 
     static readonly Vector3 CradleCentre = new Vector3(-14.6f, 2.46f, 2.6f);
@@ -647,26 +635,26 @@ public static class CargoBaySetup
         foreach (var text in environment.GetComponentsInChildren<TMP_Text>()) text.fontSize = 1.8f;
         var arrivalSign = GameObject.Find("Cargo arrival").GetComponent<TMP_Text>();
         arrivalSign.text = "02 / CARGO BAY"; arrivalSign.transform.position = new Vector3(0, 3.8f, -4.7f);
-        var hud = GameObject.Find("Cargo HUD").transform;
-        if (hud.Find("Objective backing") == null)
-        {
-            var panel = new GameObject("Objective backing", typeof(RectTransform), typeof(Image)); panel.transform.SetParent(hud, false);
-            var rect = panel.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, 1);
-            rect.anchoredPosition = new Vector2(16, -15); rect.sizeDelta = new Vector2(640, 145);
-            panel.GetComponent<Image>().color = new Color(.015f, .025f, .035f, .86f); panel.GetComponent<Image>().raycastTarget = false;
-            panel.transform.SetAsFirstSibling();
-        }
         EditorSceneManager.SaveScene(scene, ScenePath); Audit();
     }
 
-    static TMP_Text HudText(Transform parent, string name, Vector2 position, Vector2 size, float fontSize)
+    // Re-runnable UI pass: removes the bespoke 1280x720 "Cargo HUD" in favour of the runtime GameplayHud used by the
+    // tutorial and Power Restoration, and disables G distortion, which has no target in this scene.
+    public static void ApplySharedHud()
     {
-        var obj = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI)); obj.transform.SetParent(parent, false);
-        var rect = obj.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, 1);
-        rect.anchoredPosition = position; rect.sizeDelta = size;
-        var text = obj.GetComponent<TextMeshProUGUI>(); text.fontSize = fontSize; text.raycastTarget = false;
-        text.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/Oxanium/Oxanium-Regular SDF.asset");
-        text.color = new Color(.86f, .92f, .96f); return text;
+        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        var level = Object.FindFirstObjectByType<CargoBayController>();
+        var old = level.transform.Find("Cargo HUD");
+        if (old != null) Object.DestroyImmediate(old.gameObject);
+        SetObject(level, "titleFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/Oxanium/Oxanium-Regular SDF.asset"));
+        SetObject(level, "supportingFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/Space_Mono/SpaceMono-Regular SDF.asset"));
+        using (var player = new SerializedObject(GameObject.Find("Player").GetComponent<PlayerController>()))
+        {
+            player.FindProperty("allowManualDistortion").boolValue = false;
+            player.ApplyModifiedPropertiesWithoutUndo();
+        }
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene, ScenePath); Audit();
     }
     static void SetFloat(Object component, string name, float value)
     {
