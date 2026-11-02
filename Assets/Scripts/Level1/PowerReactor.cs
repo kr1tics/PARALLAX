@@ -23,7 +23,7 @@ public sealed class PowerReactor : Interactable
     }
 
     public string InteractionHint => IsOnline ? "Reactor online" : !presentation.ReactorReady ?
-        "Power modules incomplete" : GlobalState.get().now != TimeState.Future ?
+        "Power path incomplete" : GlobalState.get().now != TimeState.Future ?
         "F — Return to the Future" : "E — Activate reactor";
 
     public override void onInteract(Interact owner)

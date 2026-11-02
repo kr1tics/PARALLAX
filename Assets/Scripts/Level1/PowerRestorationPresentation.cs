@@ -14,13 +14,14 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
     [SerializeField] private PowerModuleA moduleA;
     [SerializeField] private PowerModuleB moduleB;
     [SerializeField] private PowerReactor reactor;
+    [SerializeField] private PowerCircuit circuit;
     private string previousObjective;
     private TimeState? displayedTime;
     private GameplayHud hud;
     private TMP_Text controls;
 
-    // Read-only scene state for the HUD and reactor: the modules own the repair flags.
-    public bool ReactorReady => moduleA.IsRepaired && moduleB.IsRepaired;
+    // Read-only scene state for the HUD and reactor: the modules own the repair flags, the circuit the power path.
+    public bool ReactorReady => circuit.ReactorReady;
 
     private void Awake()
     {
@@ -56,6 +57,7 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
         hud.Prompt.text = module != null ? module.InteractionHint : interaction.HeldObject != null ? "E — Place" :
             target is PowerModuleB repair ? repair.InteractionHint :
             target is PowerReactor console ? console.InteractionHint :
+            target is PowerRouteSelector selector ? selector.InteractionHint :
             target is MovableObject movable && !movable.GetComponent<Rigidbody>().isKinematic ? "E — Pick up" :
             target is Switch ? (time == TimeState.Past ? "E — Toggle gravity" : "F — Switch Timeline") : "";
         if (reactor.IsOnline) { controls.text = ""; hud.Prompt.text = ""; }
@@ -69,21 +71,21 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
     {
         string progress = (moduleA.IsRepaired ? "A repaired" : "A pending") + " · " +
             (moduleB.IsRepaired ? "B repaired" : "B pending");
+        bool repaired = moduleA.IsRepaired && moduleB.IsRepaired;
+        // States, not steps: each line names what is wrong now, never the fix.
         string next = reactor.IsOnline ? "Reactor online. Power restored." :
-            ReactorReady ? (time == TimeState.Future ? "Reactor ready. E — Activate console." :
-            "Reactor ready. F — Return to Future.") :
-            time != TimeState.Past ? (moduleA.IsRepaired || moduleB.IsRepaired ?
-                "Repair preserved. F — Finish in Past." : "F — Switch to the Past to repair.") :
-            playerGravity.effective ? "Q — Activate Zero-G to reach modules." :
-            moduleA.IsRepaired ? "Float to B. E — Repair within reach." :
-            moduleB.IsRepaired ? "Align A above its socket. E — Install." :
-            "Carry A to its marker, or float to B.";
+            ReactorReady ? (time == TimeState.Future ? "Reactor ready. E — Activate console." : "Reactor ready in 2176.") :
+            repaired ? (time == TimeState.Past ? "Check the reactor in 2176." :
+                !circuit.BFeed ? "B has no feed in 2176." : "Control rods are not seated.") :
+            time != TimeState.Past ? "Repairs are made in 2026." :
+            !moduleA.IsRepaired ? (PowerModuleA.StationZeroG ? "Module A floats free." : "Module A is too heavy to lift.") :
+            "B's junction has power now.";
         string instruction = progress + "\n" + next;
         if (instruction == previousObjective) return;
         previousObjective = instruction;
-        string number = reactor.IsOnline ? "04" : !ReactorReady ? "01" : time == TimeState.Past ? "02" : "03";
-        string title = reactor.IsOnline ? "Power Restored" : !ReactorReady ? "Restore Power Modules" :
-            time == TimeState.Past ? "Return to the Future" : "Activate the Reactor";
+        string number = reactor.IsOnline ? "04" : !repaired ? "01" : !ReactorReady ? "02" : "03";
+        string title = reactor.IsOnline ? "Power Restored" : !repaired ? "Restore Power Modules" :
+            !ReactorReady ? "Complete the Power Path" : "Activate the Reactor";
         SetObjective("OBJECTIVE " + number, title, instruction);
         reactor.RefreshFeedback();
     }
