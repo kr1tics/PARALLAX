@@ -46,7 +46,7 @@ public class Interact : MonoBehaviour
         if (GameSettingsMenu.GameplayInputBlocked) return;
         if (HeldObject != null)
         {
-            DropHeldObject();
+            HeldObject.onInteract(this);
             return;
         }
         var cast = fireInteractRay(true);

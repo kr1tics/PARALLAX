@@ -249,7 +249,297 @@ public static class CargoBaySetup
             .Select(r => new FutureDecayEnvironment.Surface { renderer = r, past = r.sharedMaterials,
                 future = r.sharedMaterials.Select(m => m == pastMaterial ? futureMaterial : m).ToArray() }).ToArray();
         environment.gameObject.AddComponent<FutureDecayEnvironment>().Configure(surfaces);
-        EditorSceneManager.SaveScene(scene, ScenePath); PolishPuzzle();
+        EditorSceneManager.SaveScene(scene, ScenePath); PolishPuzzle(); ExpandPuzzle(); RedesignEnvironment();
+    }
+
+    // Re-runnable: rebuilds only the groups it owns, after removing the 1.5x stretch from the expanded 24m kit once.
+    public static void RedesignEnvironment()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        var hall = GameObject.Find("Cargo Bay - modular freight hall").transform;
+        var level = Object.FindFirstObjectByType<CargoBayController>();
+        casing = AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/Scene01/IndustrialCasing.mat");
+        amber = AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/HologramLocked.mat");
+        ready = AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/HologramReady.mat");
+        var steel = Level2Material("Level2_DarkSteel", new Color(.16f, .17f, .18f), .55f, .45f);
+        var hazard = Level2Material("Level2_Hazard", new Color(.86f, .62f, .1f), .1f, .3f);
+        var glass = AssetDatabase.LoadAssetAtPath<Material>("Assets/3D Modular Kit/3D Free Modular Kit/Meshes/Materials/Glass.mat");
+        var crate = AssetDatabase.LoadAssetAtPath<Material>("Assets/TextMesh Pro/Examples & Extras/Materials/Small Crate_diffuse.mat");
+        if (hall.localScale != Vector3.one)
+        {
+            // Keep every authored world transform; only the stretched kit tiles, columns and lamp grid are replaced.
+            var saved = hall.Cast<Transform>().Select(c => (c, c.position, c.rotation, c.lossyScale)).ToArray();
+            hall.localScale = Vector3.one;
+            foreach (var (child, position, rotation, scale) in saved) { child.SetPositionAndRotation(position, rotation); child.localScale = scale; }
+            foreach (var (child, _, _, _) in saved)
+                if (new[] { "Floor_01", "Wall_Simple_01", "Column_01_Top", "Light_01", "Cargo work light", "Freight stack" }.Contains(child.name))
+                    Object.DestroyImmediate(child.gameObject);
+            foreach (var text in hall.GetComponentsInChildren<TextMeshPro>(true))
+            {
+                text.rectTransform.sizeDelta = new Vector2(text.rectTransform.sizeDelta.x * text.transform.localScale.x, text.rectTransform.sizeDelta.y);
+                text.transform.localScale = Vector3.one;
+            }
+        }
+        foreach (var old in new[] { hall.Find("Cargo Bay - architecture"), level.transform.Find("Cargo Bay - timeline set dressing") })
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+        environment = new GameObject("Cargo Bay - architecture").transform; environment.SetParent(hall, false);
+
+        // Unstretched 6m modular deck and perimeter.
+        for (int x = -15; x <= 15; x += 6)
+        for (int z = -15; z <= 15; z += 6)
+        {
+            var floor = Fit("Floor_01", new Vector3(x, -.99f, z), new Vector3(6, .02f, 6)).transform;
+            var mesh = floor.GetComponentInChildren<Renderer>();
+            floor.localScale = new Vector3(floor.localScale.x, 1, floor.localScale.z);
+            var center = mesh.bounds.center; center.y = -.99f; floor.position += center - mesh.bounds.center;
+        }
+        for (int i = -15; i <= 15; i += 6)
+        {
+            Fit("Wall_Simple_01", new Vector3(i, 2, -18), new Vector3(6, 6, .4f));
+            Fit("Wall_Simple_01", new Vector3(i, 2, 18), new Vector3(6, 6, .4f), 180);
+            Fit("Wall_Simple_01", new Vector3(-18, 2, i), new Vector3(6, 6, .4f), 90);
+            Fit("Wall_Simple_01", new Vector3(18, 2, i), new Vector3(6, 6, .4f), -90);
+        }
+
+        // Loading: sealed dock shutter behind the arrival point.
+        Solid("Dock shutter", new Vector3(0, 1.2f, -17.75f), new Vector3(6, 4.4f, .1f), steel);
+        for (float y = -.6f; y < 3.3f; y += .55f) Solid("Dock shutter slat", new Vector3(0, y, -17.69f), new Vector3(6, .05f, .03f), casing);
+        foreach (float x in new[] { -3.25f, 3.25f })
+        {
+            Solid("Dock frame", new Vector3(x, 1.4f, -17.7f), new Vector3(.5f, 4.8f, .3f), hazard);
+            Solid("Dock bumper", new Vector3(x * .62f, -.55f, -17.55f), new Vector3(.5f, .6f, .3f), steel);
+        }
+        Solid("Dock header", new Vector3(0, 3.65f, -17.7f), new Vector3(7, .5f, .3f), hazard);
+        Solid("Dock edge marking", new Vector3(0, -.97f, -16.6f), new Vector3(7, .02f, .25f), hazard);
+
+        // Freight hall: two container islands keep the central, north and south lanes open.
+        foreach (float x in new[] { -4.2f, 4.2f })
+        {
+            foreach (float z in new[] { -4.55f, 1.35f }) Solid("Freight container", new Vector3(x, .3f, z), new Vector3(5.4f, 2.6f, 5.9f), crate);
+            foreach (float z in new[] { -7.52f, 4.32f }) Solid("Container doors", new Vector3(x, .3f, z), new Vector3(5.2f, 2.4f, .06f), steel);
+            Solid("Freight container", new Vector3(x, 2.7f, x < 0 ? -1.5f : 1), new Vector3(5, 2.2f, 5.6f), crate);
+        }
+        // Gantry crane over the loading lane: a landmark visible from arrival, above head height.
+        foreach (float x in new[] { -8.7f, 8.7f }) Solid("Gantry runway", new Vector3(x, 4.75f, -8), new Vector3(.4f, .3f, 10), steel);
+        Solid("Gantry bridge", new Vector3(0, 4.3f, -8.5f), new Vector3(17.8f, .45f, .6f), hazard);
+        Solid("Gantry hoist", new Vector3(1.5f, 3.8f, -8.5f), new Vector3(.8f, .55f, .9f), steel);
+
+        // West archive mezzanine: 3m up, reached with the jetpack through a gap in the railing.
+        Solid("Mezzanine deck", new Vector3(-15.5f, 1.85f, -.5f), new Vector3(5, .3f, 12), steel);
+        Solid("Mezzanine edge marking", new Vector3(-13.04f, 2.01f, -.5f), new Vector3(.08f, .02f, 12), hazard);
+        foreach (float z in new[] { -6.2f, -2.5f, 1.5f, 5.2f }) Solid("Mezzanine column", new Vector3(-13.3f, .35f, z), new Vector3(.35f, 2.7f, .35f), steel);
+        foreach (var (from, to) in new[] { (-6.5f, -3.2f), (-.2f, 5.5f) })
+        {
+            float middle = (from + to) / 2, length = to - from;
+            Solid("Mezzanine rail", new Vector3(-13.15f, 3, middle), new Vector3(.08f, .08f, length), hazard);
+            Solid("Mezzanine rail", new Vector3(-13.15f, 2.5f, middle), new Vector3(.06f, .06f, length), steel);
+            for (float z = from; z <= to + .01f; z += length / Mathf.Ceil(length / 1.6f))
+                Solid("Mezzanine rail post", new Vector3(-13.15f, 2.5f, z), new Vector3(.08f, 1, .08f), steel);
+        }
+        foreach (float shelf in new[] { 3, 4 }) Solid("Archive rack shelf", new Vector3(-16.9f, shelf, -.5f), new Vector3(1.6f, .08f, 11.6f), steel);
+        for (float z = -6.2f; z <= 5.3f; z += 2.875f)
+        foreach (float x in new[] { -17.65f, -16.15f })
+            Solid("Archive rack upright", new Vector3(x, 3.45f, z), new Vector3(.1f, 2.9f, .1f), steel);
+        foreach (var p in new[] { new Vector3(-16.9f, 3.44f, -5), new Vector3(-16.9f, 3.44f, 3.6f), new Vector3(-16.9f, 4.44f, -3.6f),
+            new Vector3(-16.9f, 4.44f, 2.2f), new Vector3(-16.9f, 2.44f, -5.3f), new Vector3(-17.2f, -.55f, -4), new Vector3(-17.2f, -.55f, 3) })
+            Solid("Archived freight", p, Vector3.one * .8f, crate);
+
+        // Gate frames make both progression doors recognisable from across the hall.
+        foreach (float z in new[] { 7.5f, 13.5f })
+        {
+            foreach (float x in new[] { 8.9f, 12.1f }) Solid("Gate frame", new Vector3(x, .5f, z), new Vector3(.2f, 3, .9f), hazard);
+            Solid("Gate header", new Vector3(10.5f, 2.1f, z), new Vector3(3.4f, .2f, .9f), hazard);
+        }
+
+        // Receiving: glazed control booth in the west corner.
+        Solid("Booth glass", new Vector3(-12, .6f, 11.5f), new Vector3(.1f, 3.2f, 3.2f), glass);
+        Solid("Booth roof", new Vector3(-15, 2.3f, 10.45f), new Vector3(6, .2f, 5.4f), steel);
+        Solid("Booth console", new Vector3(-16.5f, -.45f, 10.5f), new Vector3(1, 1.1f, 1.6f), steel);
+        Object.DestroyImmediate(Solid("Booth console screen", new Vector3(-15.98f, .25f, 10.5f), new Vector3(.04f, .5f, 1.2f), amber).GetComponent<Collider>());
+        Sign("Booth sign", "RECEIVING CONTROL", new Vector3(-11.93f, 2.0f, 11.5f), -90, 3).fontSize = 1.8f;
+        Sign("Archive sign", "ARCHIVE RACKS", new Vector3(-12.93f, 3.6f, -4.8f), -90, 3).fontSize = 1.8f;
+
+        // Maintenance lift shaft beyond the exit door.
+        Solid("Lift platform", new Vector3(10.5f, -.97f, 16), new Vector3(3, .02f, 3), steel);
+        Solid("Lift back panel", new Vector3(10.5f, 2, 17.75f), new Vector3(3.6f, 6, .1f), steel);
+        foreach (float x in new[] { 8.6f, 12.4f }) Solid("Lift frame", new Vector3(x, 2, 17.6f), new Vector3(.3f, 6, .3f), hazard);
+
+        // Zone lighting replaces the uniform lamp grid; CargoBayController grades it per timeline.
+        var lights = new[] {
+            ("Loading light", new Vector3(0, 4.2f, -13), new Color(.85f, .9f, 1), 14f, 1.6f, true),
+            ("Cage light", new Vector3(-12, 4.2f, -9), new Color(.95f, .85f, .7f), 10f, 1.3f, true),
+            ("Freight light", new Vector3(0, 4.4f, -1), new Color(.75f, .85f, 1), 14f, 1.4f, true),
+            ("Freight east light", new Vector3(11, 4.2f, -3), new Color(.75f, .85f, 1), 12f, 1.2f, true),
+            ("Mezzanine light", new Vector3(-15.5f, 4.6f, -.5f), new Color(1, .85f, .6f), 9f, 1.4f, true),
+            ("Receiving light", new Vector3(3, 4.2f, 10.5f), new Color(.8f, .9f, 1), 12f, 1.3f, true),
+            ("Receiving east light", new Vector3(13, 4.2f, 10.5f), new Color(.8f, .9f, 1), 10f, 1.3f, true),
+            ("Booth light", new Vector3(-15, 1.9f, 10.5f), new Color(.6f, .9f, 1), 6f, 1f, false),
+            ("Lift beacon", new Vector3(10.5f, 3.4f, 16.5f), new Color(.35f, 1, .65f), 7f, 1.5f, false) }
+            .Select(l =>
+            {
+                if (l.Item6) Fit("Light_01", new Vector3(l.Item2.x, 4.85f, l.Item2.z), new Vector3(2, .15f, .6f));
+                var lamp = new GameObject(l.Item1, typeof(Light)); lamp.transform.SetParent(environment); lamp.transform.position = l.Item2;
+                var light = lamp.GetComponent<Light>(); light.type = LightType.Point; light.color = l.Item3; light.range = l.Item4; light.intensity = l.Item5;
+                return light;
+            }).ToArray();
+
+        var signs = environment.parent.GetComponentsInChildren<TMP_Text>(true).ToDictionary(t => t.name, t => t, StringComparer.Ordinal);
+        signs["Freight area"].text = "02 / FREIGHT HALL";
+        signs["Sealed cargo instructions"].text = "FREIGHT CAGE C1\nSEALED / 2176";
+        signs["Past cargo marker"].text = "MANIFEST C1 / 2026";
+
+        // Timeline set dressing is visual only and lives outside the hull, so switching time inside it cannot trap the player.
+        var footprint = new GameObject("Pallet footprint", typeof(BoxCollider)); footprint.transform.SetParent(environment);
+        footprint.transform.position = new Vector3(15.2f, .2f, -14.4f); footprint.GetComponent<BoxCollider>().size = new Vector3(3, 2.4f, 3.2f);
+        var dressing = new GameObject("Cargo Bay - timeline set dressing").transform; dressing.SetParent(level.transform, false);
+        var past = new GameObject("Past only").transform; past.SetParent(dressing, false);
+        var future = new GameObject("Future only").transform; future.SetParent(dressing, false);
+        environment = past;
+        Visual("Wrapped pallet", new Vector3(14.6f, -.4f, -14.6f), Vector3.zero, Vector3.one * 1.2f, crate);
+        Visual("Wrapped pallet", new Vector3(15.9f, -.4f, -14.6f), Vector3.zero, Vector3.one * 1.2f, crate);
+        Visual("Wrapped pallet", new Vector3(15.2f, .8f, -14.6f), new Vector3(0, 8, 0), Vector3.one * 1.2f, crate);
+        Visual("Pallet strapping", new Vector3(15.25f, -.4f, -15.22f), Vector3.zero, new Vector3(2.6f, .08f, .02f), hazard);
+        environment = future;
+        Visual("Toppled pallet", new Vector3(14.4f, -.45f, -14.2f), new Vector3(0, 25, 0), Vector3.one * 1.1f, crate);
+        Visual("Toppled pallet", new Vector3(16, -.42f, -15.5f), new Vector3(8, 60, 80), Vector3.one * 1.1f, crate);
+        Visual("Toppled pallet", new Vector3(15.6f, -.45f, -13.3f), new Vector3(0, -20, 90), Vector3.one * 1.1f, crate);
+        Visual("Fallen ceiling panel", new Vector3(14.5f, -.95f, 0), new Vector3(0, 30, 4), new Vector3(2, .06f, 1.2f), steel);
+        Visual("Fallen ceiling panel", new Vector3(-9, -.95f, 12.2f), new Vector3(3, -15, 0), new Vector3(1.8f, .06f, 1.1f), steel);
+        Visual("Fallen ceiling panel", new Vector3(5.5f, -.95f, -15.2f), new Vector3(0, 70, 3), new Vector3(1.6f, .06f, 1), steel);
+        Visual("Collapsed rack shelf", new Vector3(-16.9f, 2.6f, 4.3f), new Vector3(0, 0, 25), new Vector3(1.6f, .08f, 2.2f), steel);
+        Visual("Spilled freight", new Vector3(-14.8f, 2.42f, 4.4f), new Vector3(0, 35, 0), Vector3.one * .8f, crate);
+        environment = hall;
+
+        SetArray(level, "zoneLights", lights);
+        SetArray(level, "pastOnly", new Object[] { past.gameObject });
+        SetArray(level, "futureOnly", new Object[] { future.gameObject });
+        var pastMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/3D Modular Kit/3D Free Modular Kit/Meshes/Materials/Diffuse_01.mat");
+        var futureMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/FutureDecay_Diffuse_01.mat");
+        var surfaces = hall.GetComponentsInChildren<Renderer>(true).Where(r => r.sharedMaterials.Contains(pastMaterial))
+            .Select(r => new FutureDecayEnvironment.Surface { renderer = r, past = r.sharedMaterials,
+                future = r.sharedMaterials.Select(m => m == pastMaterial ? futureMaterial : m).ToArray() }).ToArray();
+        hall.GetComponent<FutureDecayEnvironment>().Configure(surfaces);
+        EditorUtility.SetDirty(hall.GetComponent<FutureDecayEnvironment>());
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene, ScenePath); Audit();
+    }
+
+    static void Visual(string name, Vector3 position, Vector3 euler, Vector3 scale, Material material)
+    {
+        var obj = Solid(name, position, scale, material); obj.transform.rotation = Quaternion.Euler(euler);
+        Object.DestroyImmediate(obj.GetComponent<Collider>());
+    }
+
+    // New Level 2 finishes are copies; the tutorial's casing material is never edited.
+    static Material Level2Material(string name, Color colour, float metallic, float smoothness)
+    {
+        string path = "Assets/Material/Level2/" + name + ".mat";
+        var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+        if (material != null) return material;
+        if (!AssetDatabase.IsValidFolder("Assets/Material/Level2")) AssetDatabase.CreateFolder("Assets/Material", "Level2");
+        material = new Material(casing) { name = name, color = colour };
+        material.SetFloat("_Metallic", metallic); material.SetFloat("_Glossiness", smoothness);
+        AssetDatabase.CreateAsset(material, path);
+        return material;
+    }
+
+    static void SetArray(Object component, string name, Object[] values)
+    {
+        using var data = new SerializedObject(component);
+        var property = data.FindProperty(name); property.arraySize = values.Length;
+        for (int i = 0; i < values.Length; i++) property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
+        data.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    // Run after BuildPuzzle for a newly authored scene, or once to upgrade the shipped 24m bay.
+    public static void ExpandPuzzle()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        environment = GameObject.Find("Cargo Bay - modular freight hall").transform;
+        var level = Object.FindFirstObjectByType<CargoBayController>();
+        using var data = new SerializedObject(level);
+        if (data.FindProperty("stagingPlate").objectReferenceValue != null)
+        { PositionReceiving(data); EditorSceneManager.SaveScene(scene); Audit(); return; }
+        casing = AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/Scene01/IndustrialCasing.mat");
+        amber = AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/HologramLocked.mat");
+        ready = AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/HologramReady.mat");
+        environment.localScale = new Vector3(1.5f, 1, 1.5f);
+        // Move the sealed Future store to loading; it must not overlap the new freight bulkhead.
+        foreach (Transform child in environment)
+        {
+            if (child.name.StartsWith("Sealed freight cage") || child.name == "Sealed cargo instructions")
+                child.position += new Vector3(-2, 0, -18.5f);
+            if (child.name == "Freight stack") child.position += Vector3.back;
+        }
+        var past = (Rigidbody)data.FindProperty("pastCrate").objectReferenceValue;
+        var future = (Rigidbody)data.FindProperty("futureCrate").objectReferenceValue;
+        past.transform.position = new Vector3(-10.5f, -.54f, -9);
+        future.transform.position = new Vector3(-14, -.54f, -11);
+        data.FindProperty("arrival").vector3Value = new Vector3(0, .02f, -15);
+        data.ApplyModifiedPropertiesWithoutUndo();
+        ((PlayerController)data.FindProperty("player").objectReferenceValue).transform.position = new Vector3(0, .02f, -15);
+        var exit = (BoxCollider)data.FindProperty("exitZone").objectReferenceValue;
+        exit.transform.position = new Vector3(10.5f, .25f, 16);
+        Box("Freight bulkhead west", new Vector3(-4.5f, 2, 7.5f), new Vector3(27, 6.4f, .5f), casing);
+        Box("Freight bulkhead east", new Vector3(15, 2, 7.5f), new Vector3(6, 6.4f, .5f), casing);
+        Box("Freight lintel", new Vector3(10.5f, 3.6f, 7.5f), new Vector3(3, 3.2f, .5f), casing);
+        var gate = Box("Freight access door", new Vector3(10.5f, .5f, 7.5f), new Vector3(3, 3, .5f), casing);
+        var door = gate.AddComponent<Door>(); SetObject(door, "col", gate.GetComponent<Collider>()); SetObject(door, "ren", gate.GetComponent<Renderer>());
+        var pad = Box("A - Archive staging plate", new Vector3(-10.5f, -.88f, -3), new Vector3(2.4f, .24f, 2.4f),
+            AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/Scene01/RelayPlate.mat"));
+        var pressure = pad.AddComponent<PressureButton>(); SetObject(pressure, "requiredBody", future);
+        var rim = Box("A - Staging indicator", new Vector3(-10.5f, -.75f, -3), new Vector3(2.5f, .02f, 2.5f), amber);
+        Object.DestroyImmediate(rim.GetComponent<Collider>());
+        var label = Sign("Archive staging instructions", "A / ARCHIVE STAGING\nLEAVE THE PAST CRATE HERE", new Vector3(-10.5f, 1.8f, -1.5f), 0, 3.5f);
+        label.fontSize = 1.8f;
+        SetObject(level, "stagingPlate", pressure); SetObject(level, "freightDoor", door);
+        SetObject(level, "stagingLabel", label); SetObject(level, "stagingIndicator", rim.GetComponent<Renderer>());
+        GameObject.Find("Cargo pad label").GetComponent<TMP_Text>().text = "B / FUTURE RECEIVING\nPAST MUST REMAIN AT A";
+        GameObject.Find("Past cargo marker").GetComponent<TMP_Text>().text = "LOADING / PAST CARGO\nE: CARRY TO STAGING PAD A";
+        foreach (var info in new[] {
+            ("Loading area", "01 / LOADING", new Vector3(0, 2.8f, -12)),
+            ("Freight area", "02 / FREIGHT\nNORTH AISLE / SOUTH DETOUR", new Vector3(0, 3.3f, 0)),
+            ("Receiving area", "03 / RECEIVING", new Vector3(10.5f, 2.7f, 7.15f)) })
+        {
+            var sign = Sign(info.Item1, info.Item2, info.Item3, 0, 5); sign.fontSize = 1.8f;
+        }
+        // Two routes around the stacks: short northern aisle and wider southern loading detour.
+        foreach (var route in new[] {
+            (new Vector3(0, -.97f, 6.2f), new Vector3(19, .02f, .08f)),
+            (new Vector3(0, -.97f, -10.7f), new Vector3(21, .02f, .08f)),
+            (new Vector3(10.5f, -.97f, -2), new Vector3(.08f, .02f, 17)) })
+        {
+            var line = Box("Freight route strip", route.Item1, route.Item2, amber);
+            Object.DestroyImmediate(line.GetComponent<Collider>());
+        }
+        var completion = level.gameObject.AddComponent<TutorialCompletionScreen>();
+        SetObject(completion, "cargoLevel", level);
+        SetObject(completion, "primaryFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/Oxanium/Oxanium-Regular SDF.asset"));
+        SetObject(completion, "secondaryFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/Space_Mono/SpaceMono-Regular SDF.asset"));
+        using (var screen = new SerializedObject(completion))
+        {
+            screen.FindProperty("nextScene").stringValue = "Level3_MaintenanceShaft";
+            screen.FindProperty("allowCompletionShortcut").boolValue = false;
+            screen.ApplyModifiedPropertiesWithoutUndo();
+        }
+        PositionReceiving(data);
+        EditorSceneManager.SaveScene(scene, ScenePath); Audit();
+    }
+
+    static void PositionReceiving(SerializedObject level)
+    {
+        ((PressureButton)level.FindProperty("plate").objectReferenceValue).transform.position = new Vector3(13.5f, -.88f, 10);
+        ((Renderer)level.FindProperty("plateIndicator").objectReferenceValue).transform.position = new Vector3(13.5f, -.75f, 10);
+        ((GameObject)level.FindProperty("placementTarget").objectReferenceValue).transform.position = new Vector3(6.5f, 0, 3.5f);
+        GameObject.Find("Cargo pad label").transform.position = new Vector3(13.5f, 1.8f, 12);
+    }
+
+    static GameObject Box(string name, Vector3 position, Vector3 size, Material material)
+    {
+        var obj = Solid(name, position, size, material);
+        var scale = environment.lossyScale;
+        obj.transform.localScale = new Vector3(size.x / scale.x, size.y / scale.y, size.z / scale.z);
+        return obj;
     }
 
     public static void PolishPuzzle()
@@ -317,8 +607,9 @@ public static class CargoBaySetup
             count++;
         }
         Physics.SyncTransforms();
-        if (!Physics.Raycast(new Vector3(0, 0, -10), Vector3.down, 2)) throw new InvalidOperationException("No spawn floor.");
-        if (!Physics.Raycast(new Vector3(0, 0, -10), Vector3.up, 6)) throw new InvalidOperationException("No sealed roof.");
+        Vector3 spawn = GameObject.Find("Player").transform.position;
+        if (!Physics.Raycast(spawn, Vector3.down, 2)) throw new InvalidOperationException("No spawn floor.");
+        if (!Physics.Raycast(spawn, Vector3.up, 6)) throw new InvalidOperationException("No sealed roof.");
         Directory.CreateDirectory("Logs"); File.WriteAllText("Logs/cargo-scene-audit.txt", $"PASS: opened {scene.path}; {count} objects; no missing scripts/references; spawn floor and roof present.\n");
     }
 }

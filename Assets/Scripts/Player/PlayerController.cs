@@ -14,6 +14,7 @@ public class PlayerController : MonoBehaviour
     private Look cameraLook = null;
     
     [SerializeField] private float interactionDistance = 4f;
+    [SerializeField] private bool allowManualDistortion = true;
 
     private bool isInJetpack = false;
 
@@ -90,7 +91,7 @@ public class PlayerController : MonoBehaviour
         {
             GlobalState.get().SwapTime();
         }
-        if (Keyboard.current.gKey.wasPressedThisFrame)
+        if (allowManualDistortion && Keyboard.current.gKey.wasPressedThisFrame)
         {
             TryDistortObject();
         }
