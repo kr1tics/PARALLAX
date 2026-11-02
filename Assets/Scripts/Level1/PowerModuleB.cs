@@ -23,7 +23,7 @@ public sealed class PowerModuleB : Interactable
         }
     }
 
-    public string InteractionHint => IsRepaired ? "Module B repaired" : !Past ? "F — Switch to Past" :
+    public string InteractionHint => IsRepaired ? "Module B repaired" : !Past ? "Junction corroded in 2176" :
         !circuit.AFeed ? "No feed — module A offline" : CanRepair ? "E — Repair Module B" : "Float up beside the repair panel";
 
     void Awake() => RefreshFeedback();

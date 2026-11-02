@@ -7724,7 +7724,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &10335
 Transform:
   m_ObjectHideFlags: 0
@@ -22498,6 +22498,9 @@ MonoBehaviour:
   reactorLabel: {fileID: 10219}
   consoleLabel: {fileID: 10384}
   poweredLight: {fileID: 10223}
+  core: {fileID: 10171}
+  coreOnline: {fileID: 2100000, guid: 73d1820d5f8873747acc859c2dbdc300, type: 2}
+  startUpSeconds: 2.2
 --- !u!114 &2100400002
 MonoBehaviour:
   m_ObjectHideFlags: 0

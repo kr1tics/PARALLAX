@@ -24,24 +24,29 @@ public sealed class PowerModuleA : MovableObject
     bool Past => GlobalState.get().now == TimeState.Past;
     public static bool StationZeroG => GlobalState.get().gravity < .1f;
 
-    public bool CanInstall
+    // Times time travel sent a displaced, unfinished module back to its cradle; the HUD reports each one.
+    public int Returns { get; private set; }
+
+    public bool CanInstall => !GameSettingsMenu.GameplayInputBlocked && Past && !IsRepaired && player.HeldObject == this && InstallIssue == null;
+
+    // Why a held module will not seat yet, in the order a player would fix it; null when it will.
+    string InstallIssue
     {
         get
         {
-            if (GameSettingsMenu.GameplayInputBlocked || !Past || IsRepaired || player.HeldObject != this ||
-                Vector3.Distance(transform.position, installationPosition) > guideRadius ||
-                Quaternion.Angle(transform.rotation, initialRotation) > guideTilt) return false;
+            if (Vector3.Distance(transform.position, installationPosition) > guideRadius) return "Bring A to its socket · E — Release";
+            if (Quaternion.Angle(transform.rotation, initialRotation) > guideTilt) return "Square A up to the socket · E — Release";
             // Keep the seated casing clear of the player or another solid object. Ignore its own compound colliders.
             int count = Physics.OverlapBoxNonAlloc(installationPosition, new Vector3(.59f, .615f, .44f),
                 overlaps, initialRotation, ~0, QueryTriggerInteraction.Ignore);
-            if (count == overlaps.Length) return false;
-            for (int i = 0; i < count; i++) if (overlaps[i].attachedRigidbody != moduleBody) return false;
-            return true;
+            if (count == overlaps.Length) return "Socket blocked · E — Release";
+            for (int i = 0; i < count; i++) if (overlaps[i].attachedRigidbody != moduleBody) return "Socket blocked · E — Release";
+            return null;
         }
     }
 
-    public string InteractionHint => IsRepaired ? "Module A repaired" : !Past ? "F — Switch to Past" :
-        player.HeldObject == this ? (CanInstall ? "E — Install Module A" : "Bring A to its socket · E — Release") :
+    public string InteractionHint => IsRepaired ? "Module A installed" : !Past ? "Seized in its cradle in 2176" :
+        player.HeldObject == this ? InstallIssue ?? "E — Install Module A" :
         !StationZeroG ? "Too heavy — station gravity ON" : "E — Pick up Module A";
 
     void Start()
@@ -69,6 +74,7 @@ public sealed class PowerModuleA : MovableObject
         if (!IsRepaired)
         {
             // An unfinished carry still resets safely; an installed module stays seated and kinematic.
+            if (Vector3.Distance(transform.position, initialPosition) > .3f) Returns++;
             Drop();
             if (!moduleBody.isKinematic) { moduleBody.linearVelocity = Vector3.zero; moduleBody.angularVelocity = Vector3.zero; }
             moduleBody.isKinematic = !Past;

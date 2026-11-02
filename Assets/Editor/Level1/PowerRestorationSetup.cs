@@ -223,6 +223,25 @@ public static class PowerRestorationSetup
         Append(circuit, "pastOnly", past.gameObject); Append(circuit, "futureOnly", future.gameObject);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, ScenePath);
+        ApplyPresentation();
+    }
+
+    // Re-runnable presentation pass: the HUD hint replaces the wall's key sign, and the core gets its online finish.
+    public static void ApplyPresentation()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        casing = AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/Scene01/IndustrialCasing.mat");
+        var sign = GameObject.Find("Module B navigation marker").transform.Cast<Transform>().First(t => t.name.Contains("JETPACK"));
+        sign.gameObject.SetActive(false);
+        var online = Level1Material("Level1_CoreOnline", new Color(.25f, .85f, .95f), .2f, .8f);
+        online.EnableKeyword("_EMISSION"); online.SetColor("_EmissionColor", new Color(.2f, .9f, 1) * 2.2f);
+        online.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+        EditorUtility.SetDirty(online); AssetDatabase.SaveAssets();
+        var reactor = Object.FindFirstObjectByType<PowerReactor>();
+        SetRef(reactor, "core", GameObject.Find("Inactive core").GetComponent<Renderer>());
+        SetRef(reactor, "coreOnline", online);
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene, ScenePath);
         Audit();
     }
 

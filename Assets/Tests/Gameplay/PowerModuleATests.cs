@@ -290,6 +290,48 @@ namespace Parallax.Gameplay.Tests
             Assert.That(Quaternion.Angle(body.rotation, initial), Is.LessThan(.01f), "The rails square the casing up.");
         }
 
+        string Message => GameObject.Find("Power event message").GetComponent<TMPro.TMP_Text>().text;
+        string Prompt => GameObject.Find("Contextual interaction prompt").GetComponent<TMPro.TMP_Text>().text;
+
+        // Phase 3: every refusal says why, every change is announced once, and no key sign spells out the route.
+        [UnityTest] public IEnumerator FeedbackExplainsRefusalsAndAnnouncesChanges()
+        {
+            Assert.That(Object.FindObjectsByType<TextMesh>(FindObjectsSortMode.None).Any(t => t.text.Contains("JETPACK")), Is.False, "The key sign is gone.");
+            Assert.That(GameObject.Find("Contextual control hints").GetComponent<TMPro.TMP_Text>().text, Does.Contain("Q — Toggle jetpack"));
+            Assert.That((string)Prop(module, "InteractionHint"), Is.EqualTo("Seized in its cradle in 2176"));
+            Assert.That((string)Prop(ModuleB, "InteractionHint"), Is.EqualTo("Junction corroded in 2176"));
+            yield return Past();
+            var console = GameObject.Find("Gravity switch");
+            Aim(console.transform.position + Vector3.right * 1.5f, Vector3.left); yield return null;
+            Assert.That(Prompt, Is.EqualTo("E — Cut station gravity"));
+            ToggleGravity(); yield return null; // Re-aims in the same frame, as the other gravity helpers do.
+            Assert.That(Message, Is.EqualTo("Station gravity OFF")); Assert.That(Prompt, Is.EqualTo("E — Restore station gravity"));
+            yield return CarryToSocket();
+            var initial = (Quaternion)Get(module, "initialRotation");
+            body.rotation = initial * Quaternion.Euler(0, 70, 0); body.transform.rotation = body.rotation;
+            Assert.That((string)Prop(module, "InteractionHint"), Is.EqualTo("Square A up to the socket · E — Release"));
+            body.rotation = initial; body.transform.rotation = initial;
+            var blocker = GameObject.CreatePrimitive(PrimitiveType.Cube); blocker.transform.position = Socket; Physics.SyncTransforms();
+            Assert.That((string)Prop(module, "InteractionHint"), Is.EqualTo("Socket blocked · E — Release"));
+            Object.Destroy(blocker); yield return null; Physics.SyncTransforms();
+            Interact(); yield return null;
+            Assert.That(Message, Is.EqualTo("Module A seated · feed live"));
+            SelectRoute(2); yield return null;
+            Assert.That(Message, Is.EqualTo("B feed switched to route 2"));
+            yield return new WaitForSeconds(2.8f);
+            Assert.That(Message, Is.Empty, "Announcements clear themselves.");
+        }
+
+        [UnityTest] public IEnumerator TimeTravelReturningModuleAIsAnnounced()
+        {
+            yield return StationGravityOff();
+            Aim(body.position + Vector3.back * 1.8f, Vector3.forward); Interact();
+            Aim(body.position + Vector3.back * 1.8f + Vector3.right * 2, Vector3.forward); yield return new WaitForSeconds(.8f);
+            Interact(); yield return new WaitForSeconds(.3f);
+            yield return Swap("Future"); yield return null;
+            Assert.That(Message, Is.EqualTo("Module A returned to its cradle"));
+        }
+
         [UnityTest] public IEnumerator ModuleBHasNoFeedUntilModuleAIsInstalled()
         {
             yield return Past();
@@ -349,6 +391,17 @@ namespace Parallax.Gameplay.Tests
             InputSystem.QueueStateEvent(mouse, new MouseState());
             InputSystem.QueueStateEvent(keyboard, new KeyboardState());
             Assert.That((bool)Prop(Reactor, "IsOnline"), Is.True);
+            // The start-up plays first, visibly, with input already locked so Settings cannot open over it.
+            Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.True);
+            Assert.That((bool)Prop(Completion, "IsOpen"), Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
+            var core = (Renderer)Get(Reactor, "core");
+            Assert.That(GameObject.Find("Power event message").GetComponent<TMPro.TMP_Text>().text, Is.EqualTo("Reactor start-up"));
+            float startIntensity = ((Light)Get(Reactor, "poweredLight")).intensity;
+            GameSettingsMenu.Instance.Open(); Assert.That(GameSettingsMenu.Instance.IsOpen, Is.False);
+            yield return new WaitForSecondsRealtime(1);
+            Assert.That(((Light)Get(Reactor, "poweredLight")).intensity, Is.GreaterThan(startIntensity), "The core light ramps up.");
+            Assert.That(core.sharedMaterial, Is.SameAs(Get(Reactor, "coreOnline")), "The core lights up.");
+            yield return new WaitForSecondsRealtime(1.5f);
             Assert.That((bool)Prop(Completion, "IsOpen"), Is.True);
             Assert.That(Time.timeScale, Is.Zero); Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.True);
             Assert.That(Cursor.visible, Is.True); Assert.That(Cursor.lockState, Is.EqualTo(CursorLockMode.None));
