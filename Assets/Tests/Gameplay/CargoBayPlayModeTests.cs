@@ -454,6 +454,30 @@ namespace Parallax.Gameplay.Tests
             Assert.That(c2Past.position.y, Is.GreaterThan(1.9f), "Set down on the deck, still reachable.");
         }
 
+        // Every crate names its manifest on all four sides and the top; each scale is signed directly behind itself.
+        [UnityTest] public IEnumerator ManifestsAndScalesAreLabelled()
+        {
+            foreach (var (field, name) in new[] { ("pastCrate", "C1"), ("futureCrate", "C1"), ("rackPast", "C2"), ("rackFuture", "C2") })
+            {
+                var labels = Rigid(field).GetComponentsInChildren<TMPro.TextMeshPro>(true);
+                Assert.That(labels.Length, Is.EqualTo(5), field);
+                Assert.That(labels.All(l => l.text == name), Is.True, field + " is " + name);
+            }
+            foreach (var (label, plate) in new[] { ("Cargo pad label", "plate"), ("R2 label", "rackPlate") })
+            {
+                var sign = GameObject.Find(label).GetComponent<TMPro.TMP_Text>();
+                var at = ((Component)Get(level, plate)).transform.position;
+                Assert.That(sign.text, Does.StartWith(plate == "plate" ? "R1" : "R2"));
+                Assert.That(Vector2.Distance(new Vector2(sign.transform.position.x, sign.transform.position.z), new Vector2(at.x, at.z)), Is.LessThan(3.2f), label + " is beside its scale.");
+            }
+            body.position = new Vector3(-10.5f, .02f, -11); yield return new WaitForSeconds(.3f);
+            yield return Face(180, -.05f); Capture("label-c1-cage");
+            body.position = new Vector3(11, .02f, 8.4f); yield return new WaitForSeconds(.3f);
+            yield return Face(61, .02f); Capture("label-r1");
+            body.position = new Vector3(-10, .02f, 2.6f); yield return new WaitForSeconds(.3f);
+            yield return Face(180, .05f); Capture("label-c2-rack");
+        }
+
         // Phase 4: Cargo Bay uses the tutorial / Power Restoration GameplayHud layout, fonts, wording and visibility rules.
         [UnityTest] public IEnumerator HudMatchesSharedLayoutAndReportsStageState()
         {

@@ -232,7 +232,7 @@ public static class CargoBaySetup
             .Select(r => new FutureDecayEnvironment.Surface { renderer = r, past = r.sharedMaterials,
                 future = r.sharedMaterials.Select(m => m == pastMaterial ? futureMaterial : m).ToArray() }).ToArray();
         environment.gameObject.AddComponent<FutureDecayEnvironment>().Configure(surfaces);
-        EditorSceneManager.SaveScene(scene, ScenePath); PolishPuzzle(); ExpandPuzzle(); RedesignEnvironment(); BuildManifestPuzzle(); ApplySharedHud();
+        EditorSceneManager.SaveScene(scene, ScenePath); PolishPuzzle(); ExpandPuzzle(); RedesignEnvironment(); BuildManifestPuzzle(); LabelManifests(); ApplySharedHud();
     }
 
     static readonly Vector3 CradleCentre = new Vector3(-14.6f, 2.46f, 2.6f);
@@ -296,13 +296,13 @@ public static class CargoBaySetup
         var receiving = scale.AddComponent<PressureButton>(); SetObject(receiving, "requiredBody", future);
         var scaleRim = Visual("R2 - Receiving indicator", new Vector3(-14.4f, -.75f, 9.3f), Vector3.zero, new Vector3(2.3f, .02f, 2.3f), amber);
         Visual("R2 manifest marking", new Vector3(-14.4f, -.97f, 9.3f), Vector3.zero, new Vector3(2.7f, .02f, 2.7f), cyan);
-        Sign("R2 label", "R2 / MANIFEST C2", new Vector3(-12.2f, 1.4f, 10.6f), -90, 3).fontSize = 1.8f;
+        var r2 = Sign("R2 label", "R2\nMANIFEST C2", new Vector3(-12.2f, 1.4f, 10.6f), -90, 2.6f);
+        r2.fontSize = 2.6f; r2.color = new Color(.35f, .85f, 1); r2.rectTransform.sizeDelta = new Vector2(2.6f, 1.4f);
         var debris = new GameObject("Future booth collapse").transform; debris.SetParent(environment, false);
         // Full doorway height up to the booth roof, so neither walking nor the jetpack gets past it in 2176.
         Solid("Collapsed booth girder", new Vector3(-12, .7f, 8.82f), new Vector3(.8f, 3.4f, 2.3f), steel).transform.SetParent(debris, true);
         Visual("Collapsed booth beam", new Vector3(-11.55f, .4f, 8.8f), new Vector3(0, 0, 38), new Vector3(.25f, 3.6f, .3f), hazard).transform.SetParent(debris, true);
         environment = null;
-        GameObject.Find("Cargo pad label").GetComponent<TMP_Text>().text = "R1 / MANIFEST C1";
         // StationHull gives every mesh under the hall a collider; these rims sit 2cm above their plates and would carry the crate.
         foreach (string rim in new[] { "Cargo pad indicator", "A - Staging indicator" })
             GameObject.Find(rim).transform.SetParent(root, true);
@@ -630,6 +630,40 @@ public static class CargoBaySetup
         foreach (var text in environment.GetComponentsInChildren<TMP_Text>()) text.fontSize = 1.8f;
         var arrivalSign = GameObject.Find("Cargo arrival").GetComponent<TMP_Text>();
         arrivalSign.text = "02 / CARGO BAY"; arrivalSign.transform.position = new Vector3(0, 3.8f, -4.7f);
+        EditorSceneManager.SaveScene(scene, ScenePath); Audit();
+    }
+
+    // Re-runnable: names every crate on all four sides and the top in its stripe colour, and puts the R1 sign on the
+    // wall directly behind R1 (it was centred on the exit door, where it read as a door sign).
+    public static void LabelManifests()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        var level = Object.FindFirstObjectByType<CargoBayController>();
+        var c1 = new Color(.95f, .68f, .2f); var c2 = new Color(.35f, .85f, 1);
+        foreach (var (field, name, colour) in new[] { ("pastCrate", "C1", c1), ("futureCrate", "C1", c1), ("rackPast", "C2", c2), ("rackFuture", "C2", c2) })
+        {
+            Rigidbody crate;
+            using (var data = new SerializedObject(level)) crate = (Rigidbody)data.FindProperty(field).objectReferenceValue;
+            foreach (var old in crate.GetComponentsInChildren<TextMeshPro>(true)) Object.DestroyImmediate(old.gameObject);
+            // TMP reads from -Z; each rotation turns that face outward. Local units: the crate is 0.9m.
+            foreach (var (offset, euler) in new[] { (new Vector3(0, .25f, -.51f), Vector3.zero), (new Vector3(0, .25f, .51f), new Vector3(0, 180, 0)),
+                (new Vector3(.51f, .25f, 0), new Vector3(0, -90, 0)), (new Vector3(-.51f, .25f, 0), new Vector3(0, 90, 0)), (new Vector3(0, .51f, 0), new Vector3(90, 0, 0)) })
+            {
+                environment = null;
+                var label = Sign("Manifest label", name, Vector3.zero, 0, .9f);
+                label.transform.SetParent(crate.transform, false);
+                label.transform.SetLocalPositionAndRotation(offset, Quaternion.Euler(euler));
+                label.rectTransform.sizeDelta = new Vector2(.9f, .45f);
+                label.fontSize = 3.6f; label.color = colour; label.fontStyle = FontStyles.Bold;
+            }
+        }
+        var r1 = GameObject.Find("Cargo pad label").GetComponent<TMP_Text>();
+        // Under the level root, not the hall, so StationHull does not give the sign a collider.
+        r1.transform.SetParent(level.transform, true);
+        r1.transform.SetPositionAndRotation(new Vector3(13.5f, .9f, 13.05f), Quaternion.identity);
+        r1.rectTransform.sizeDelta = new Vector2(2.6f, 1.4f);
+        r1.text = "R1\nMANIFEST C1"; r1.fontSize = 2.6f; r1.color = c1;
+        EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, ScenePath); Audit();
     }
 
