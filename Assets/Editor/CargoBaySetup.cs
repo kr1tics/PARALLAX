@@ -81,16 +81,10 @@ public static class CargoBaySetup
         Audit();
     }
 
+    // Wires only Cargo Bay's own completion and build position. The tutorial and Power Restoration own their
+    // "next scene" settings (Tutorial -> Level 1 -> Cargo Bay); this never opens or saves those scenes.
     public static void ConnectProgression()
     {
-        var tutorialScene = EditorSceneManager.OpenScene("Assets/StartScene.unity", OpenSceneMode.Single);
-        var tutorialScreen = Object.FindFirstObjectByType<TutorialCompletionScreen>();
-        using (var data = new SerializedObject(tutorialScreen))
-        {
-            data.FindProperty("nextScene").stringValue = "Level2_CargoBay";
-            data.ApplyModifiedPropertiesWithoutUndo();
-        }
-        EditorSceneManager.SaveScene(tutorialScene);
         var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
         var root = Object.FindFirstObjectByType<CargoBayController>().gameObject;
         var screen = root.GetComponent<TutorialCompletionScreen>() ?? root.AddComponent<TutorialCompletionScreen>();
@@ -109,7 +103,8 @@ public static class CargoBaySetup
         EditorSceneManager.SaveScene(scene);
         var scenes = EditorBuildSettings.scenes.ToList();
         scenes.RemoveAll(s => s.path == ScenePath);
-        int index = scenes.FindIndex(s => s.path == "Assets/StartScene.unity");
+        int index = scenes.FindIndex(s => s.path == "Assets/Scenes/Level1_PowerRestoration.unity");
+        if (index < 0) throw new InvalidOperationException("Add Level1_PowerRestoration to Build Settings before Cargo Bay.");
         scenes.Insert(index + 1, new EditorBuildSettingsScene(ScenePath, true));
         EditorBuildSettings.scenes = scenes.ToArray();
         Audit();

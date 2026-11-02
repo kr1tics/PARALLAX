@@ -385,6 +385,75 @@ namespace Parallax.Gameplay.Tests
             Assert.That(future.activeSelf, Is.True); Assert.That(light.intensity, Is.EqualTo(dim).Within(.01f));
         }
 
+        // Phase 5: the 2176 girder appears in the booth doorway. Measured: PhysX depenetration moves a player or crate standing
+        // there out slowly (no extra code needed); this guards that nothing is trapped or launched.
+        [UnityTest] public IEnumerator TimeSwitchInBoothDoorwayNeitherTrapsNorLaunches()
+        {
+            var c2Past = Rigid("rackPast"); var c2Future = Rigid("rackFuture");
+            yield return Swap();
+            Place(Rigid("pastCrate"), P); yield return new WaitForSeconds(1);
+            Place(c2Past, new Vector3(-12, -.2f, 9.4f)); yield return new WaitForSeconds(1);
+            body.position = new Vector3(-12, .02f, 8.2f); yield return new WaitForSeconds(.4f);
+            Assert.That(body.position.x, Is.InRange(-12.4f, -11.6f), "Setup: the player stands in the doorway.");
+            yield return new WaitForSeconds(1.05f); yield return Keys(.06f, Key.T);
+            float peakPlayer = 0, peakCrate = 0;
+            for (float end = Time.time + 1.2f; Time.time < end; )
+            {
+                yield return new WaitForFixedUpdate();
+                peakPlayer = Mathf.Max(peakPlayer, body.linearVelocity.magnitude);
+                if (Timeline == "Future") peakCrate = Mathf.Max(peakCrate, c2Future.linearVelocity.magnitude);
+            }
+            Assert.That(Timeline, Is.EqualTo("Future"));
+            Assert.That(peakPlayer, Is.LessThan(3), "Player ejected at speed.");
+            Assert.That(peakCrate, Is.LessThan(3), "Future C2 ejected at speed.");
+            var girder = ((GameObject)Get(level, "futureDebris")).GetComponentInChildren<Collider>().bounds;
+            foreach (var (name, position) in new[] { ("player", body.position), ("Future C2", c2Future.position) })
+                Assert.That(position.x < girder.min.x - .3f || position.x > girder.max.x + .3f, Is.True, name + " left inside the girder at " + position);
+            Assert.That(body.position.y, Is.InRange(-.3f, .5f)); Assert.That(body.linearVelocity.magnitude, Is.LessThan(2), "Not ejected at speed.");
+            Assert.That(c2Future.position.y, Is.InRange(-.7f, -.2f));
+            Assert.That(Physics.Raycast(new Vector3(-10.8f, .4f, 8.8f), Vector3.left, 2, ~0, QueryTriggerInteraction.Ignore), Is.True, "Booth still sealed.");
+        }
+
+        [UnityTest] public IEnumerator LostCargoReturnsAloneWithoutResettingProgress()
+        {
+            var c1Past = Rigid("pastCrate"); var c1Future = Rigid("futureCrate");
+            yield return Swap(); Place(c1Past, A); yield return new WaitForSeconds(1);
+            yield return Swap(); yield return new WaitForSeconds(.5f);
+            Assert.That(Flag("FreightAccessGranted"), Is.True);
+            Vector3 standing = body.position;
+            Place(c1Future, new Vector3(0, -30, 0)); yield return new WaitForSeconds(.3f);
+            Assert.That(Vector3.Distance(c1Future.position, new Vector3(-14, -.55f, -11)), Is.LessThan(.3f), "Future C1 returns to its start.");
+            Assert.That(Flag("FreightAccessGranted"), Is.True, "Recovering one crate keeps progress.");
+            Assert.That(Vector3.Distance(body.position, standing), Is.LessThan(.5f), "The player is not reset.");
+            yield return Swap(); Place(c1Past, new Vector3(30, 0, 0)); yield return new WaitForSeconds(.3f);
+            Assert.That(Vector3.Distance(c1Past.position, new Vector3(-10.5f, -.55f, -9)), Is.LessThan(.3f), "Past C1 returns to its start.");
+            yield return Swap();
+            Assert.That(Vector3.Distance(c1Future.position, new Vector3(-10.5f, -.55f, -9)), Is.LessThan(.3f), "Its Future copy follows as for any Past move.");
+            Assert.That(Flag("FreightAccessGranted"), Is.True);
+        }
+
+        // Stage B with real input: jetpack to the mezzanine, lift Past C2 out of the open clamp and set it down.
+        [UnityTest] public IEnumerator PastC2CanBeLiftedFromTheMezzanineWithNormalControls()
+        {
+            var c2Past = Rigid("rackPast");
+            yield return Swap(); Place(Rigid("pastCrate"), P); yield return new WaitForSeconds(1);
+            yield return WalkTo(-8.2f, -11); yield return WalkTo(-8.2f, -1.2f); yield return WalkTo(-11.4f, -1.2f);
+            yield return Face(180);
+            yield return Keys(.06f, Key.Q); yield return Keys(1, Key.Space);
+            yield return Keys(1.2f, Key.W); yield return Keys(.06f, Key.Q);
+            yield return new WaitForSeconds(1.5f);
+            Assert.That(body.position.y, Is.GreaterThan(2.5f), "On the mezzanine. position=" + body.position);
+            yield return WalkTo(-14.6f, .6f); yield return Face(90, -.07f);
+            Assert.That(c2Past.isKinematic, Is.False, "Counterweight holds the clamp open.");
+            yield return Keys(.06f, Key.E);
+            Assert.That(Held, Is.Not.Null, "Past C2 can be carried.");
+            yield return Keys(.8f, Key.S); yield return new WaitForSeconds(.4f);
+            yield return Keys(.06f, Key.E); yield return new WaitForSeconds(1);
+            Assert.That(Held, Is.Null);
+            Assert.That(Flag("RackReleased"), Is.True, "C2 is out of the cradle. position=" + c2Past.position);
+            Assert.That(c2Past.position.y, Is.GreaterThan(1.9f), "Set down on the deck, still reachable.");
+        }
+
         // Phase 4: Cargo Bay uses the tutorial / Power Restoration GameplayHud layout, fonts, wording and visibility rules.
         [UnityTest] public IEnumerator HudMatchesSharedLayoutAndReportsStageState()
         {

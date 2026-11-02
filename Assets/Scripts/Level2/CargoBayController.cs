@@ -95,9 +95,22 @@ public sealed class CargoBayController : MonoBehaviour
     {
         if (GameSettingsMenu.GameplayInputBlocked) return;
         Vector3 p = player.transform.position;
-        if ((Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) ||
-            p.y < -6 || p.y > 9 || Mathf.Abs(p.x) > 21 || Mathf.Abs(p.z) > 21)
-            ResetCurrentPuzzle();
+        if ((Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) || Lost(p))
+        { ResetCurrentPuzzle(); return; }
+        // A lost crate returns alone to its start, so the rest of the bay keeps its progress; a Past crate's
+        // Future copy follows on the next switch to 2176, exactly as for any other Past move.
+        if (Lost(pastCrate.transform.position)) Recover(pastCrate, pastStart, pastRotation);
+        if (Lost(futureCrate.transform.position)) Recover(futureCrate, futureStart, futureRotation);
+        if (Lost(rackPast.transform.position)) Recover(rackPast, rackPastStart, rackPastRotation);
+        if (Lost(rackFuture.transform.position)) Recover(rackFuture, rackFutureStart, rackFutureRotation);
+    }
+
+    static bool Lost(Vector3 p) => p.y < -6 || p.y > 9 || Mathf.Abs(p.x) > 21 || Mathf.Abs(p.z) > 21;
+
+    void Recover(Rigidbody crate, Vector3 position, Quaternion rotation)
+    {
+        if (interaction.HeldObject == crate.GetComponent<MovableObject>()) interaction.DropHeldObject();
+        Restore(crate, position, rotation); Physics.SyncTransforms();
     }
 
     // Kinematic is the existing "cannot be carried" state; only a crate resting in the cradle is ever clamped.
