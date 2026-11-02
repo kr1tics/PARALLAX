@@ -79,15 +79,25 @@ public static class PowerRestorationSetup
 
         // Control rods around the reactor plinth: seated under station gravity, drifting without it.
         var rods = new GameObject("Control rods").transform; rods.SetParent(group, false);
-        var rodList = new[] { new Vector3(1.4f, 0, 3.1f), new Vector3(-1.4f, 0, 3.1f), new Vector3(1.4f, 0, 5.9f), new Vector3(-1.4f, 0, 5.9f) }.Select(p =>
+        var rodPositions = new[] { new Vector3(1.4f, 0, 3.1f), new Vector3(-1.4f, 0, 3.1f), new Vector3(1.4f, 0, 5.9f), new Vector3(-1.4f, 0, 5.9f) };
+        var sockets = rodPositions.Select(p =>
         {
-            Box("Rod socket", p + new Vector3(0, .5f, 0), new Vector3(.4f, .1f, .4f), casing, false).transform.SetParent(rods, true);
+            var socket = Box("Rod socket", p + new Vector3(0, .5f, 0), new Vector3(.55f, .12f, .55f), dead, false);
+            socket.transform.SetParent(rods, true); return socket.GetComponent<Renderer>();
+        }).ToArray();
+        var rodList = rodPositions.Select(p =>
+        {
             var rod = GameObject.CreatePrimitive(PrimitiveType.Cylinder); rod.name = "Control rod";
             Object.DestroyImmediate(rod.GetComponent<Collider>());
-            rod.transform.SetParent(rods, false); rod.transform.position = p + new Vector3(0, 1.15f, 0);
-            rod.transform.localScale = new Vector3(.2f, .7f, .2f); rod.GetComponent<Renderer>().sharedMaterial = casing;
+            rod.transform.SetParent(rods, false); rod.transform.position = p + new Vector3(0, 1.55f, 0);
+            rod.transform.localScale = new Vector3(.32f, 1, .32f); rod.GetComponent<Renderer>().sharedMaterial = casing;
             return rod.transform;
         }).ToArray();
+        // Facing the spawn, under the reactor's status display.
+        var rodLabel = Label("Control rod status", "CONTROL RODS\nSEATED", new Vector3(0, 1.05f, 1.95f), 0, .045f);
+        var warning = new GameObject("Control rod warning light", typeof(Light)); warning.transform.SetParent(rods, false);
+        warning.transform.position = new Vector3(0, 2.6f, 2.2f);
+        var warningLight = warning.GetComponent<Light>(); warningLight.type = LightType.Point; warningLight.color = new Color(1, .55f, .1f); warningLight.range = 8;
 
         // Reactor console: A feed, B feed and control rod lamps.
         var consoleLamps = new[] { 3.05f, 3.5f, 3.95f }.Select(x => Lamp("Reactor console lamp", new Vector3(x, 2.02f, 2.8f), dead)).ToArray();
@@ -96,6 +106,8 @@ public static class PowerRestorationSetup
         SetRef(circuit, "moduleA", moduleA); SetRef(circuit, "moduleB", moduleB);
         Set(circuit, "feedLamps", feedLamps); Set(circuit, "routeOneLamps", routeOne); Set(circuit, "routeTwoLamps", routeTwo);
         Set(circuit, "consoleLamps", consoleLamps); Set(circuit, "controlRods", rodList);
+        Set(circuit, "rodSockets", sockets); SetRef(circuit, "rodLabel", rodLabel); SetRef(circuit, "rodWarning", warningLight);
+        SetRef(circuit, "floatingRodMaterial", AssetDatabase.LoadAssetAtPath<Material>("Assets/Material/HologramLocked.mat"));
         Set(circuit, "pastOnly", new Object[] { lever, severed }); Set(circuit, "futureOnly", new Object[] { seized, collapse.gameObject });
         SetRef(circuit, "selectorLabel", selectorLabel); SetRef(circuit, "gravityLabel", gravityLabel);
         SetRef(circuit, "liveMaterial", live); SetRef(circuit, "deadMaterial", dead);

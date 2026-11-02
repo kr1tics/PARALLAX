@@ -456,12 +456,19 @@ namespace Parallax.Gameplay.Tests
             Assert.That(GameObject.Find("2176 truss collapse").activeInHierarchy, Is.True);
             Assert.That(GameObject.Find("Current instruction").GetComponent<TMPro.TMP_Text>().text, Does.Contain("B has no feed in 2176."));
             var rod = ((Transform[])Get(Circuit, "controlRods"))[0]; float floating = rod.position.y;
+            Assert.That(GameObject.Find("Control rod status").GetComponent<TextMesh>().text, Is.EqualTo("CONTROL RODS\nFLOATING"));
+            Assert.That(((Light)Get(Circuit, "rodWarning")).enabled, Is.True, "A pulsing warning while the rods float.");
+            Assert.That(rod.GetComponent<Renderer>().sharedMaterial, Is.SameAs(Get(Circuit, "floatingRodMaterial")));
+            Assert.That(Lit("rodSockets"), Is.False);
             SelectRoute(1); Interact(); Assert.That((int)Prop(Circuit, "Route"), Is.EqualTo(1), "The selector has seized by 2176.");
             Assert.That(GameObject.Find("Gravity switch"), Is.Null, "So has the gravity console.");
             // Back to 2026: the surviving route, and station gravity on.
             yield return Swap("Past");
             SelectRoute(2); ToggleGravity(); yield return null;
             Assert.That(StationGravity, Is.GreaterThan(4.5f)); Assert.That(rod.position.y, Is.LessThan(floating - .5f), "Rods seat.");
+            Assert.That(GameObject.Find("Control rod status").GetComponent<TextMesh>().text, Is.EqualTo("CONTROL RODS\nSEATED"));
+            Assert.That(GameObject.Find("Control rod status").GetComponent<TextMesh>().color.g, Is.GreaterThan(.9f), "Seated reads green.");
+            Assert.That(((Light)Get(Circuit, "rodWarning")).enabled, Is.False); Assert.That(Lit("rodSockets"), Is.True);
             Assert.That(Lit("routeTwoLamps", 4), Is.True); Assert.That(Lit("routeOneLamps", 0), Is.False);
             CheckObjective("03", "Activate the Reactor"); AimAtReactor(); RejectReactor();
             Assert.That((string)Prop(Reactor, "InteractionHint"), Does.Contain("Return to the Future"));

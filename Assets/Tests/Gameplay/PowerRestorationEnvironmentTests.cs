@@ -243,6 +243,9 @@ namespace Parallax.Gameplay.Tests
                 }
                 if (pass == 0) yield return Swap("Past");
             }
+            state.GetType().GetField("gravity").SetValue(state, 0f); // Station gravity off: the rods float.
+            Place(new Vector3(0, 1.05f, -3.5f)); Face(90, .05f); yield return new WaitForSeconds(.6f);
+            Capture("2026-reactor-rods-floating");
         }
     }
 }
