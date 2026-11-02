@@ -11100,7 +11100,7 @@ MonoBehaviour:
   level: {fileID: 1864023966}
   primaryFont: {fileID: 11400000, guid: d006551d96cdf48d39739dfe3c748d6c, type: 2}
   secondaryFont: {fileID: 11400000, guid: 5ab9449966a174634bb20e4c7e5bc291, type: 2}
-  nextScene: Level2_CargoBay
+  nextScene: Level1_PowerRestoration
   completionTitle: TUTORIAL COMPLETE
   completionDescription: You've learned the basics of time manipulation and gravity
     control.

@@ -7,13 +7,15 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>Presentation of the existing final objective; never solves or advances puzzles.</summary>
+/// <summary>Shared tutorial, Power Restoration and Cargo Bay completion presentation; never solves puzzles.</summary>
 [DefaultExecutionOrder(400)]
 public sealed class TutorialCompletionScreen : MonoBehaviour
 {
     [SerializeField] Level1Controller level;
+    [SerializeField] PowerReactor reactor;
+    [SerializeField] CargoBayController cargoLevel;
     [SerializeField] TMP_FontAsset primaryFont, secondaryFont;
-    [Tooltip("Scene name or build path. Missing or empty destinations return to MainMenu.")]
+    [Tooltip("Next scene name or path from Build Settings. Empty/unavailable destinations return to MainMenu.")]
     [SerializeField] string nextScene;
     [SerializeField] string completionTitle = "TUTORIAL COMPLETE";
     [SerializeField] string completionDescription = "You've learned the basics of time manipulation and gravity control.";
@@ -22,7 +24,7 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     [SerializeField, Min(0)] float completionDelay = 1f;
     [SerializeField, Min(.01f)] float fadeDuration = .8f;
     [Header("Tutorial shortcut")]
-    [Tooltip("Shift + K opens the completion screen without solving puzzles. Disable for submission if desired.")]
+    [Tooltip("Editor/development builds only: Shift + K previews completion without solving puzzles.")]
     [SerializeField] bool allowCompletionShortcut = true;
     CanvasGroup overlay, copy, actions;
     GameObject screen;
@@ -34,13 +36,17 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     public bool IsOpen => ownsLock;
     public bool IsReady => actions != null && actions.interactable;
 
-    void LateUpdate()
+    void LateUpdate() => TryShow();
+
+    public void TryShow()
     {
-        if (triggered || GameSettingsMenu.GameplayInputBlocked) return;
-        bool shortcut = allowCompletionShortcut && Keyboard.current != null && Keyboard.current.shiftKey.isPressed && Keyboard.current.kKey.wasPressedThisFrame;
-        if ((level == null || !level.Completed) && !shortcut) return;
+        if (!isActiveAndEnabled || triggered || GameSettingsMenu.GameplayInputBlocked) return;
+        bool shortcut = Debug.isDebugBuild && reactor == null && cargoLevel == null && allowCompletionShortcut && Keyboard.current != null && Keyboard.current.shiftKey.isPressed && Keyboard.current.kKey.wasPressedThisFrame;
+        bool completed = cargoLevel != null ? cargoLevel.Completed : reactor != null ? reactor.IsOnline : level != null && level.Completed;
+        if (!completed && !shortcut) return;
         ShowCompletion();
     }
+    // Called by a level once its own completion condition is met; TryShow remains the polling path.
     public void ShowCompletion()
     {
         if (!isActiveAndEnabled || triggered || GameSettingsMenu.GameplayInputBlocked) return;
@@ -72,7 +78,7 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     }
     void Build()
     {
-        screen = new GameObject("Tutorial Completion Screen", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
+        screen = new GameObject(reactor != null ? "Power Restoration Completion Screen" : "Tutorial Completion Screen", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
         screen.transform.SetParent(transform, false);
         var canvas = screen.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = 100;
         var scaler = screen.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -83,13 +89,14 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
         shade.gameObject.AddComponent<Image>().color = new Color(.015f, .02f, .025f, .84f);
         var content = Rect(screen.transform, "Completion content", new Vector2(0, 10), new Vector2(760, 350));
         copy = content.gameObject.AddComponent<CanvasGroup>(); copy.alpha = 0;
-        Text(content, "Completion title", completionTitle, primaryFont, 44, 115, 72, true);
-        Text(content, "Completion description", completionDescription, secondaryFont, 22, 32, 88, false);
-        bool destinationMissing = !string.IsNullOrWhiteSpace(nextScene) && !Application.CanStreamedLevelBeLoaded(nextScene);
-        Text(content, "Completion final message", destinationMissing ? "The next level is not available in this build." : finalMessage, secondaryFont, 23, -66, 50, false);
+        // Power Restoration keeps its own copy (its scene does not serialize the text fields); other scenes configure theirs.
+        bool destinationMissing = string.IsNullOrWhiteSpace(nextScene) || !Application.CanStreamedLevelBeLoaded(nextScene);
+        Text(content, "Completion title", reactor != null ? "POWER RESTORED" : completionTitle, primaryFont, 44, 115, 72, true);
+        Text(content, "Completion description", reactor != null ? "Both modules repaired. Reactor successfully activated." : completionDescription, secondaryFont, 22, 32, 88, false);
+        Text(content, "Completion final message", destinationMissing ? "The next level is not available in this build." : reactor != null ? "Level 1 complete." : finalMessage, secondaryFont, 23, -66, 50, false);
         var row = Rect(screen.transform, "Completion actions", new Vector2(0, -155), new Vector2(520, 48));
         actions = row.gameObject.AddComponent<CanvasGroup>(); actions.alpha = 0; actions.interactable = false;
-        replayButton = MakeButton(row, replayLabel, -138, ReplayTutorial);
+        replayButton = MakeButton(row, reactor != null ? "RESTART LEVEL" : replayLabel, -138, RestartLevel);
         MakeButton(row, destinationMissing ? "MAIN MENU" : "CONTINUE", 138, Continue);
     }
     static RectTransform Rect(Transform parent, string name, Vector2 position, Vector2 size)
@@ -116,7 +123,8 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
         Text(rect, label + " label", label, primaryFont, 18, 0, 42, true);
         button.onClick.AddListener(callback); return button;
     }
-    public void ReplayTutorial()
+    public void ReplayTutorial() => RestartLevel();
+    public void RestartLevel()
     {
         if (!IsReady || navigating) return;
         Navigate(gameObject.scene.name);
@@ -134,6 +142,8 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
         navigating = true; actions.interactable = false;
         ContextIntroFlow.Cancel();
         Release();
+        Time.timeScale = 1f;
+        AudioListener.pause = false;
         SceneManager.LoadScene(destination);
     }
     void Release()

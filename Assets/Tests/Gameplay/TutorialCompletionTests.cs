@@ -104,9 +104,20 @@ namespace Parallax.Gameplay.Tests
             }
             finally { InputSystem.RemoveDevice(keyboard); InputSystem.settings.backgroundBehavior = background; InputSystem.settings.editorInputBehaviorInPlayMode = editorInput; }
         }
-        [UnityTest] public IEnumerator ContinueLoadsCargoAndCargoCompletionFallsBackToMenu()
+        [UnityTest] public IEnumerator ContinueVisitsLevel1ThenCargoBayAndCargoCompletionFallsBackToMenu()
         {
             yield return Complete(); Call(completion, "Continue"); yield return null; yield return null;
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level1_PowerRestoration"));
+            Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
+            Assert.That(GameObject.Find("Context Intro"), Is.Null);
+            var reactor = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "PowerReactor");
+            Assert.That(Flag(reactor, "IsOnline"), Is.False);
+            completion = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "TutorialCompletionScreen");
+            // Module tests cover solving; this test isolates the shared navigation contract.
+            Set(reactor, "<IsOnline>k__BackingField", true);
+            Call(completion, "TryShow"); yield return new WaitForSecondsRealtime(2.7f);
+            Assert.That(Flag(completion, "IsReady"), Is.True);
+            Call(completion, "Continue"); yield return null; yield return null;
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level2_CargoBay"));
             Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
             Assert.That(GameObject.Find("Context Intro"), Is.Null);
@@ -117,7 +128,8 @@ namespace Parallax.Gameplay.Tests
             Assert.That(completion.GetType().GetField("nextScene", Flags).GetValue(completion), Is.EqualTo("Level3_MaintenanceShaft"));
             // Drive the real exit check after supplying the already-tested delivery prerequisite.
             Set(cargo, "<CargoDelivered>k__BackingField", true);
-            GameObject.Find("Player").GetComponent<Rigidbody>().position = new Vector3(7, 0, 10.5f);
+            // The expanded bay's maintenance exit zone is centred at (10.5, 0.25, 16).
+            GameObject.Find("Player").GetComponent<Rigidbody>().position = new Vector3(10.5f, 0, 16);
             yield return new WaitForSecondsRealtime(.2f);
             Assert.That(Flag(cargo, "Completed"), Is.True);
             yield return new WaitForSecondsRealtime(2.7f);

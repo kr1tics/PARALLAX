@@ -45,9 +45,8 @@ namespace Parallax.Gameplay.Tests
             yield return null;
             player = Component(GameObject.Find("Player"), "PlayerController"); body = player.GetComponent<Rigidbody>();
             var cargoRoot = GameObject.Find("Level 2 - Cargo Bay");
-            if (cargoRoot != null) level = Component(cargoRoot, "CargoBayController");
             // These tests exercise puzzle physics; completion navigation has its own integration tests.
-            if (cargoRoot != null) Component(cargoRoot, "TutorialCompletionScreen").enabled = false;
+            if (cargoRoot != null) { level = Component(cargoRoot, "CargoBayController"); Component(cargoRoot, "TutorialCompletionScreen").enabled = false; }
             Call(Component(Camera.main.gameObject, "Look"), "Rotate", new Vector2(90, 0));
             yield return new WaitForSeconds(.5f);
         }
@@ -122,31 +121,63 @@ namespace Parallax.Gameplay.Tests
             float started = Time.time;
             Assert.That(Flag("CargoDelivered"), Is.False); Capture("arrival");
             yield return Swap(); Assert.That(Timeline, Is.EqualTo("Past"));
-            yield return WalkTo(-7, -8);
+            yield return WalkTo(-10.5f, -11);
             yield return Face(90, -.07f); yield return Keys(.06f, Key.E);
-            Assert.That(Held, Is.Not.Null, "E must pick up the Past crate through the real interaction ray.");
-            yield return new WaitForSeconds(.5f);
-            yield return WalkTo(-5.5f, -8);
-            yield return WalkTo(-5.5f, 6.5f);
-            yield return WalkTo(5.2f, 6.5f);
-            yield return Face(0, -.09f); yield return new WaitForSeconds(.8f);
-            Capture("past-placement");
+            Assert.That(Held, Is.Not.Null);
+            yield return WalkTo(-10.5f, -5);
+            yield return Face(90, -.09f); yield return new WaitForSeconds(.8f);
             yield return Keys(.06f, Key.E); yield return new WaitForSeconds(1);
-            Assert.That(Held, Is.Null); Assert.That(Flag("CargoDelivered"), Is.False, "Past contact cannot open the Future exit.");
-            yield return Swap(); yield return new WaitForSeconds(1);
-            var future = (Rigidbody)Get(level, "futureCrate");
-            Assert.That(Flag("CargoDelivered"), Is.True, "Future contact must result from the carried Past position: " + future.position);
+            Assert.That(Flag("FreightAccessGranted"), Is.False, "Past contact alone cannot unlock freight.");
+            Capture("past-staging");
+            yield return Swap(); yield return new WaitForSeconds(.6f);
+            Assert.That(Flag("FreightAccessGranted"), Is.True);
+            Assert.That(Flag("CargoDelivered"), Is.False, "Staging is only the first step.");
+            yield return Face(90, -.07f); yield return Keys(.06f, Key.E);
+            Assert.That(Held, Is.Not.Null, "Carry the Future counterpart while its Past version stays at A.");
+            // Wide southern detour: a deliberate alternative to the shorter northern freight aisle.
+            yield return WalkTo(-10.5f, -11); yield return WalkTo(10.5f, -11);
+            yield return WalkTo(10.5f, 10); yield return WalkTo(11.5f, 10);
+            yield return Face(0, -.09f); yield return new WaitForSeconds(.8f);
+            yield return Keys(.06f, Key.E); yield return new WaitForSeconds(1);
+            Assert.That(Flag("CargoDelivered"), Is.True, "Receiving requires Future cargo and preserved Past staging.");
             Capture("future-delivery");
-            yield return WalkTo(5.2f, 8);
-            yield return WalkTo(7, 8);
-            yield return WalkTo(7, 10.5f);
+            yield return WalkTo(10.5f, 10); yield return WalkTo(10.5f, 16);
             Assert.That(Flag("Completed"), Is.True);
             File.WriteAllText("Logs/cargo-normal-controls.txt", "PASS: keyboard/mouse input, pickup, carry, release, time swap, plate, door and exit. Scripted route seconds: " + (Time.time - started));
+            var completion = Component(level.gameObject, "TutorialCompletionScreen");
+            completion.enabled = true;
+            yield return new WaitForSecondsRealtime(2.8f);
+            Assert.That((bool)completion.GetType().GetProperty("IsReady").GetValue(completion), Is.True);
+            Assert.That(Time.timeScale, Is.Zero);
+            Call(completion, "RestartLevel"); yield return null; yield return null;
+            level = Component(GameObject.Find("Level 2 - Cargo Bay"), "CargoBayController");
+            Assert.That(Flag("Completed"), Is.False);
+            Assert.That(Flag("FreightAccessGranted"), Is.False);
+            Assert.That(Flag("CargoDelivered"), Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1));
+            Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
+        }
+
+        [UnityTest] public IEnumerator UnavailableMaintenanceDestinationReturnsToMenu()
+        {
+            var completion = Component(level.gameObject, "TutorialCompletionScreen");
+            Assert.That((string)Get(completion, "nextScene"), Is.EqualTo("Level3_MaintenanceShaft"));
+            // Isolate the fallback contract even when another branch later supplies Level 3.
+            completion.GetType().GetField("nextScene", Fields).SetValue(completion, "UnavailableSceneForTest");
+            level.GetType().GetField("<Completed>k__BackingField", Fields).SetValue(level, true);
+            completion.enabled = true;
+            yield return new WaitForSecondsRealtime(2.8f);
+            Assert.That(GameObject.Find("MAIN MENU"), Is.Not.Null);
+            Call(completion, "Continue"); yield return null; yield return null;
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("MainMenu"));
+            Assert.That(Time.timeScale, Is.EqualTo(1));
+            Assert.That(GameSettingsMenu.StartupInputBlocked, Is.False);
+            Assert.That(GameSettingsMenu.Instance.IsMainMenuContext, Is.True);
         }
 
         [UnityTest] public IEnumerator FutureCageJetpackAndTimeSwitchCannotBypassDelivery()
         {
-            yield return WalkTo(-5.5f, -8); yield return WalkTo(-5.5f, 5);
+            yield return WalkTo(-10.5f, -11);
             yield return Face(180, -.06f); yield return Keys(.06f, Key.E);
             Assert.That(Held, Is.Null, "The nearest cage wall must block picking up the Future crate.");
             yield return Keys(.06f, Key.Q); yield return Keys(2, Key.Space);
@@ -154,8 +185,8 @@ namespace Parallax.Gameplay.Tests
             yield return Swap(); Assert.That(Flag("CargoDelivered"), Is.False);
             // Sample the entire bulkhead, including above the door, in both epochs.
             foreach (float y in new[] { -.5f, .5f, 2.5f, 4.5f })
-            for (float x = -11; x <= 11; x += .5f)
-                Assert.That(Physics.Raycast(new Vector3(x, y, 8), Vector3.forward, 2, ~0, QueryTriggerInteraction.Ignore), Is.True, "Exit gap at " + x + "," + y);
+            for (float x = -17; x <= 17; x += .5f)
+                Assert.That(Physics.Raycast(new Vector3(x, y, 12.4f), Vector3.forward, 2, ~0, QueryTriggerInteraction.Ignore), Is.True, "Exit gap at " + x + "," + y);
             yield return Swap();
             Assert.That(Flag("Completed"), Is.False);
             Assert.That(((Component)Get(level, "exitDoor")).GetComponent<Collider>().enabled, Is.True);
@@ -170,15 +201,95 @@ namespace Parallax.Gameplay.Tests
             yield return new WaitForSeconds(1.05f); yield return Keys(.06f, Key.T);
             yield return Keys(.06f, Key.R); yield return new WaitForSeconds(.8f);
             Assert.That(Timeline, Is.EqualTo("Future")); Assert.That(Flag("CargoDelivered"), Is.False);
-            Assert.That(Vector3.Distance(body.position, new Vector3(0, 0, -10)), Is.LessThan(.2f));
-            Assert.That(Vector3.Distance(future.position, new Vector3(-8, -.55f, 5)), Is.LessThan(.2f));
+            Assert.That(Vector3.Distance(body.position, new Vector3(0, 0, -15)), Is.LessThan(.2f));
+            Assert.That(Vector3.Distance(future.position, new Vector3(-14, -.55f, -11)), Is.LessThan(.2f));
             Assert.That((bool)Get(player, "isInJetpack"), Is.False);
             Assert.That(Held, Is.Null);
             yield return Swap();
-            Assert.That(Vector3.Distance(past.position, new Vector3(-7, -.55f, -6)), Is.LessThan(.2f), "Reset must rebase causality as well as restore transforms.");
+            Assert.That(Vector3.Distance(past.position, new Vector3(-10.5f, -.55f, -9)), Is.LessThan(.2f), "Reset must rebase causality as well as restore transforms.");
             body.position = new Vector3(0, -10, 0); yield return new WaitForSeconds(.3f);
             Assert.That(body.position.y, Is.GreaterThan(-.2f), "Automatic fall recovery.");
             Assert.That(Timeline, Is.EqualTo("Future"));
+        }
+
+        static void Place(Rigidbody item, Vector3 position)
+        {
+            item.position = position; item.transform.position = position;
+            item.linearVelocity = item.angularVelocity = Vector3.zero;
+            item.WakeUp(); Physics.SyncTransforms();
+        }
+
+        [UnityTest] public IEnumerator ReceivingCannotSkipStagingOrOverwriteThePastAnchor()
+        {
+            var past = (Rigidbody)Get(level, "pastCrate"); var future = (Rigidbody)Get(level, "futureCrate");
+            Place(future, new Vector3(13.5f, -.2f, 10)); yield return new WaitForSeconds(1);
+            Assert.That(Flag("CargoDelivered"), Is.False, "Delivering straight to B cannot skip A.");
+            yield return Swap(); Place(past, new Vector3(-10.5f, -.2f, -3)); yield return new WaitForSeconds(1);
+            yield return Swap(); yield return new WaitForSeconds(.5f);
+            Assert.That(Flag("FreightAccessGranted"), Is.True);
+            // Simulate an invalid changed Past position before the Future crate reaches B.
+            past.transform.position = new Vector3(-10.5f, -.54f, -9);
+            Place(future, new Vector3(13.5f, -.2f, 10)); yield return new WaitForSeconds(1);
+            Assert.That(Flag("CargoDelivered"), Is.False, "A must still preserve the Past crate.");
+            yield return Swap(); Place(past, new Vector3(-10.5f, -.2f, -3)); yield return new WaitForSeconds(1);
+            yield return Swap(); yield return new WaitForSeconds(.5f);
+            Place(future, new Vector3(13.5f, -.2f, 10)); yield return new WaitForSeconds(1);
+            Assert.That(Flag("CargoDelivered"), Is.True);
+            yield return Swap(); yield return Swap();
+            Assert.That(Vector3.Distance(future.position, new Vector3(13.5f, -.3f, 10)), Is.LessThan(.2f), "Unchanged Past must preserve the independent Future delivery.");
+            yield return Keys(.06f, Key.R); yield return new WaitForSeconds(.2f);
+            Assert.That(Flag("FreightAccessGranted"), Is.False); Assert.That(Flag("CargoDelivered"), Is.False);
+            foreach (string gate in new[] { "freightDoor", "exitDoor" })
+                Assert.That(((Component)Get(level, gate)).GetComponent<Collider>().enabled, Is.True);
+        }
+
+        [UnityTest] public IEnumerator ExpandedDeckAndAlternateNorthAisleAreTraversable()
+        {
+            var deck = GameObject.Find("Floor_Cargo backing").GetComponent<Collider>().bounds;
+            Assert.That(deck.size.x, Is.EqualTo(36).Within(.01f)); Assert.That(deck.size.z, Is.EqualTo(36).Within(.01f));
+            yield return WalkTo(-8.2f, -11); yield return WalkTo(-8.2f, 6.2f); yield return WalkTo(10.5f, 6.2f);
+            for (int epoch = 0; epoch < 2; epoch++)
+            {
+                foreach (float y in new[] { -.5f, .5f, 2.5f, 4.5f })
+                for (float x = -17; x <= 17; x += .5f)
+                    Assert.That(Physics.Raycast(new Vector3(x, y, 6.3f), Vector3.forward, 2, ~0, QueryTriggerInteraction.Ignore), Is.True, "Freight bulkhead gap.");
+                yield return Swap();
+            }
+        }
+
+        [UnityTest] public IEnumerator RedesignedHallIsUnstretchedAndMezzanineIsJetpackReachable()
+        {
+            var hall = GameObject.Find("Cargo Bay - modular freight hall").transform;
+            Assert.That(hall.lossyScale, Is.EqualTo(Vector3.one), "Modular kit must not be stretched.");
+            var architecture = hall.Find("Cargo Bay - architecture");
+            Assert.That(architecture.Cast<Transform>().Count(t => t.name == "Floor_01"), Is.EqualTo(36));
+            Assert.That(architecture.Cast<Transform>().Count(t => t.name == "Wall_Simple_01"), Is.EqualTo(24));
+            Assert.That(Physics.Raycast(new Vector3(-11, 0, 8.8f), Vector3.left, 4, ~0, QueryTriggerInteraction.Ignore), Is.False, "Control booth doorway.");
+            Capture("loading");
+            yield return WalkTo(-8.2f, -11); yield return WalkTo(-8.2f, -1.2f); yield return WalkTo(-11.4f, -1.2f);
+            yield return Face(90); Capture("freight-hall"); yield return Face(180);
+            yield return Keys(.06f, Key.Q); yield return Keys(1, Key.Space);
+            yield return Keys(1.2f, Key.W); yield return Keys(.06f, Key.Q);
+            yield return new WaitForSeconds(1.5f);
+            Assert.That(body.position.y, Is.GreaterThan(2.5f), "Landed on the mezzanine deck. position=" + body.position);
+            Assert.That(body.position.x, Is.LessThan(-13.2f));
+            yield return Face(0); Capture("mezzanine");
+        }
+
+        [UnityTest] public IEnumerator TimelineGradesLightingAndSetDressing()
+        {
+            var past = GameObject.Find("Cargo Bay - timeline set dressing").transform.Find("Past only").gameObject;
+            var future = past.transform.parent.Find("Future only").gameObject;
+            var light = ((Light[])Get(level, "zoneLights"))[0];
+            Assert.That(future.activeSelf, Is.True); Assert.That(past.activeSelf, Is.False);
+            float dim = light.intensity;
+            yield return Swap();
+            Assert.That(past.activeSelf, Is.True); Assert.That(future.activeSelf, Is.False);
+            Assert.That(light.intensity, Is.GreaterThan(dim * 1.4f), "The Past bay is brighter.");
+            Assert.That(past.GetComponentsInChildren<Collider>(true), Is.Empty, "Set dressing cannot trap a player during a time switch.");
+            Assert.That(future.GetComponentsInChildren<Collider>(true), Is.Empty);
+            yield return Keys(.06f, Key.R); yield return null; yield return null;
+            Assert.That(future.activeSelf, Is.True); Assert.That(light.intensity, Is.EqualTo(dim).Within(.01f));
         }
 
         [UnityTest] public IEnumerator LayoutOpensAndNormalMovementStaysOnDeck()

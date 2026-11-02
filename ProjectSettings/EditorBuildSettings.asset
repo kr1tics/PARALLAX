@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/StartScene.unity
     guid: 3a2589fc7ca64f4183102c76c4ed324d
   - enabled: 1
+    path: Assets/Scenes/Level1_PowerRestoration.unity
+    guid: 0edbfdcfca2e407fa08ab18ac1f7ba5c
+  - enabled: 1
     path: Assets/Scenes/Level2_CargoBay.unity
     guid: 6868c2661ba75b14688a12990cda8641
   m_configObjects: {}
