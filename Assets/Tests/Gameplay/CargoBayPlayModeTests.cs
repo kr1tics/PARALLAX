@@ -398,7 +398,7 @@ namespace Parallax.Gameplay.Tests
         [UnityTest] public IEnumerator UnavailableMaintenanceDestinationReturnsToMenu()
         {
             var completion = Component(level.gameObject, "TutorialCompletionScreen");
-            Assert.That((string)Get(completion, "nextScene"), Is.EqualTo("Level3_MaintenanceShaft"));
+            Assert.That((string)Get(completion, "nextScene"), Is.EqualTo("Level3_ColdStorage"));
             // Isolate the fallback contract even when another branch later supplies Level 3.
             completion.GetType().GetField("nextScene", Fields).SetValue(completion, "UnavailableSceneForTest");
             level.GetType().GetField("<Completed>k__BackingField", Fields).SetValue(level, true);

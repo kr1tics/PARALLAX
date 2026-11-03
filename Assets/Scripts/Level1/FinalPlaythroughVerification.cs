@@ -29,7 +29,7 @@ public sealed class FinalPlaythroughVerification : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
     {
-        bool run = Environment.GetCommandLineArgs().Contains("--parallax-verify");
+        bool run = Environment.GetCommandLineArgs().Contains("--parallax-verify") || Environment.GetCommandLineArgs().Contains("--parallax-verify-cold");
 #if UNITY_EDITOR
         run |= UnityEditor.SessionState.GetBool("Parallax.FinalVerification", false);
         UnityEditor.SessionState.SetBool("Parallax.FinalVerification", false);
@@ -53,7 +53,7 @@ public sealed class FinalPlaythroughVerification : MonoBehaviour
         mouse = InputSystem.AddDevice<Mouse>(); mouse.MakeCurrent();
         timeout = Time.realtimeSinceStartup + 900;
         Application.logMessageReceived += OnLog;
-        StartCoroutine(Run());
+        StartCoroutine(Environment.GetCommandLineArgs().Contains("--parallax-verify-cold") ? ColdOnly() : Run());
     }
     void Update() { if (!finished && Time.realtimeSinceStartup > timeout) Finish(false, "Overall playthrough timeout"); }
     void OnLog(string message, string stack, LogType type)
@@ -99,8 +99,8 @@ public sealed class FinalPlaythroughVerification : MonoBehaviour
     IEnumerator Swap()
     {
         var previous = GlobalState.get().now;
-        yield return Tap(Key.F); yield return new WaitForSeconds(1.1f);
-        Require(GlobalState.get().now != previous, "F must swap timelines");
+        yield return Tap(Key.T); yield return new WaitForSeconds(1.1f);
+        Require(GlobalState.get().now != previous, "T must swap timelines");
     }
     void Face(Vector3 target)
     {
@@ -223,6 +223,88 @@ public sealed class FinalPlaythroughVerification : MonoBehaviour
         Require(Cursor.visible && !GameSettingsMenu.StartupInputBlocked && Time.timeScale == 1, "Main Menu input state wrong");
         yield return MenuPlay(); Require(!FindFirstObjectByType<Level1Controller>().Completed, "New tutorial must start fresh");
         Finish(true, "Menu, both tutorial puzzles, Continue, the power path, reactor, completion, restart, Continue to Cargo Bay and new game via normal input.");
+    }
+    // --parallax-verify-cold: Cold Storage through normal input only, with gameplay HUD screenshots in both eras.
+    IEnumerator ColdOnly()
+    {
+        yield return SceneManager.LoadSceneAsync("Level3_ColdStorage"); yield return null; yield return null; BindPlayer();
+        var plant = FindFirstObjectByType<ColdStorageController>();
+        Body(out var pastA, out var pastB, out var futureA, out var futureB);
+        Require(!plant.Completed && GlobalState.get().now == TimeState.Future, "Cold Storage must start fresh in 2176");
+        yield return Snapshot("cold-2176-entry"); yield return Tap(Key.Q); yield return Swap(); yield return Snapshot("cold-2026-entry");
+        Vector3 pan = new Vector3(2.6f, .95f, 3), s1 = new Vector3(0, .95f, 5), s2 = new Vector3(5, 7.9f, 5.8f);
+        yield return Fly(new Vector3(-4, 1.3f, -4.8f), 90); Face(GameObject.Find("Plant valve").transform.position); yield return Tap(Key.E);
+        Require(plant.ServiceMode, "Valve to SERVICE failed");
+        yield return Fly(new Vector3(-6, 1.3f, -4.8f), 90); yield return Fly(new Vector3(-6, 1.3f, -1), 90); yield return Fly(new Vector3(-6, 1.3f, 4.6f), 90); yield return Grab(pastA);
+        yield return Fly(new Vector3(-6, 1.3f, -.6f), 270); yield return Fly(new Vector3(1.6f, 1.3f, -.6f), 90); yield return Drop(pan, 90, false);
+        Require(plant.HatchOpen, "A on the balance pan must lift R's hatch");
+        yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(5, 8.5f, 4.2f), 90); yield return Grab(pastB);
+        yield return Fly(new Vector3(6.8f, 9.8f, 6), 0); yield return Drop(new Vector3(8.7f, 9.8f, 6), 0, true);
+        yield return Until(() => plant.SiteOf(pastB.transform.position) == ColdStorageController.Site.R, "B did not settle in R");
+        yield return Fly(new Vector3(6, 9.8f, 6), 0); yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(2.2f, 1.6f, 1.4f), 90);
+        yield return Grab(pastA); yield return Drop(s1, 90, false);
+        yield return Fly(new Vector3(2.2f, 4.6f, 6.4f), 90); yield return Fly(new Vector3(2.9f, 4.6f, 6.6f), 90);
+        Face(GameObject.Find("Flange F3").transform.position); yield return Tap(Key.E); Require(plant.FlangeRepaired, "F3 repair failed");
+        yield return Fly(new Vector3(2.2f, 1.3f, 3), 90); yield return Fly(new Vector3(-1, 1.3f, -4.8f), 90); yield return Fly(new Vector3(-4, 1.3f, -4.8f), 90);
+        Face(GameObject.Find("Plant valve").transform.position); yield return Tap(Key.E); Require(!plant.ServiceMode, "Valve to LOOP failed");
+        yield return Swap(); Require(plant.CellUsable(0) && plant.CellUsable(1), "Both cells must survive 150 years");
+        Mark("2026 arrangement preserved both cells"); yield return Snapshot("cold-2176-preserved");
+        yield return Fly(new Vector3(-1, 1.3f, -4.8f), 90); yield return Fly(new Vector3(0, 1.3f, 3.2f), 90); yield return Grab(futureA); yield return Drop(pan, 90, false);
+        yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(7.05f, 9.8f, 6), 0); yield return Grab(futureB);
+        yield return Fly(new Vector3(5.2f, 9.8f, 6), 0); yield return Fly(new Vector3(5, 8.6f, 4.4f), 90); yield return Drop(s2, 90, false);
+        yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(2.2f, 1.6f, 1.4f), 90); yield return Grab(futureA); yield return Drop(s1, 90, false);
+        Require(plant.Ready, "Exchanger must be ready"); yield return Snapshot("cold-ready");
+        yield return Fly(new Vector3(-2.8f, 1.3f, 3.2f), 90); Face(GameObject.Find("Exchanger console").transform.position); yield return Tap(Key.E);
+        yield return Until(() => plant.GetComponent<TutorialCompletionScreen>().IsReady, "Cold Storage completion missing", 12);
+        Mark("Exchanger started; final completion shown"); yield return Snapshot("cold-complete");
+        Require(GameObject.Find("RESTART LEVEL") != null && GameObject.Find("MAIN MENU") == null, "The final level offers Restart Level and Continue");
+        yield return Click("CONTINUE"); yield return Until(() => MemoryRecoveryCinematic.IsPlaying, "Continue must play the Restored memory");
+        var memory = FindFirstObjectByType<MemoryRecoveryCinematic>();
+        Require(memory.Stage == MemoryRecoveryStage.Restored && GameSettingsMenu.NarrativeInputBlocked, "Restored memory must own input");
+        yield return new WaitForSecondsRealtime(1); yield return Snapshot("cold-restored");
+        yield return Tap(Key.Space); yield return Until(() => memory.EndCardReady, "Restored end card missing", 12);
+        yield return new WaitForSecondsRealtime(2.5f); yield return Snapshot("cold-ending");
+        yield return Click("Return to Main Menu"); yield return Until(() => SceneManager.GetActiveScene().name == "MainMenu", "Main Menu navigation failed");
+        Require(Time.timeScale == 1 && !GameSettingsMenu.NarrativeInputBlocked && !GameSettingsMenu.StartupInputBlocked, "Main Menu input state wrong");
+        Finish(true, "Cold Storage solved with movement, jetpack, carrying, interaction and time input; Continue played Restored and returned to Main Menu.");
+    }
+    void Body(out MovableObject pastA, out MovableObject pastB, out MovableObject futureA, out MovableObject futureB)
+    {
+        MovableObject Find(string name) => Resources.FindObjectsOfTypeAll<MovableObject>().Single(m => m.name == name && m.gameObject.scene.IsValid());
+        pastA = Find("Cell A - 2026"); pastB = Find("Cell B - 2026"); futureA = Find("Cell A - 2176"); futureB = Find("Cell B - 2176");
+    }
+    // Jetpack flight with a level view at a fixed heading (degrees; 90 faces +z).
+    IEnumerator Fly(Vector3 target, float heading)
+    {
+        look.Rotate(new Vector2(heading, 0));
+        float deadline = Time.realtimeSinceStartup + 30;
+        while (Vector3.Distance(player.position, target) > .15f || player.linearVelocity.magnitude > .25f)
+        {
+            Require(Time.realtimeSinceStartup < deadline, "Flight blocked: " + player.position + " -> " + target);
+            var desired = Vector3.ClampMagnitude((target - player.position) * 1.6f, 2.2f);
+            var thrust = (desired - player.linearVelocity) * 4;
+            float lateral = Vector3.Dot(thrust, Camera.main.transform.right), forward = Vector3.Dot(thrust, Camera.main.transform.forward);
+            var keys = new System.Collections.Generic.List<Key>(3);
+            if (Mathf.Abs(lateral) > .3f) keys.Add(lateral > 0 ? Key.D : Key.A);
+            if (Mathf.Abs(forward) > .3f) keys.Add(forward > 0 ? Key.W : Key.S);
+            if (Mathf.Abs(thrust.y) > .3f) keys.Add(thrust.y > 0 ? Key.Space : Key.LeftCtrl);
+            Keys(keys.ToArray()); yield return null;
+        }
+        Keys(); yield return new WaitForSecondsRealtime(.2f);
+    }
+    // Brings the carried cell over (or, exactly, to) a target and releases it to fall.
+    IEnumerator Drop(Vector3 target, float heading, bool exact)
+    {
+        var cell = interaction.HeldObject.transform;
+        Vector3 Error()
+        {
+            var e = target - cell.position;
+            if (!exact) e.y = cell.position.y < target.y ? target.y - cell.position.y : cell.position.y > target.y + 1.1f ? target.y + .6f - cell.position.y : 0;
+            return e;
+        }
+        for (int i = 0; i < 8 && Error().magnitude > .15f; i++) { yield return Fly(player.position + Error(), heading); yield return new WaitForSecondsRealtime(.5f); }
+        Require(Error().magnitude < .3f, "Carried cell not over " + target + ": " + cell.position);
+        yield return Tap(Key.E); yield return new WaitForSecondsRealtime(1.2f);
     }
     IEnumerator RestorePower()
     {

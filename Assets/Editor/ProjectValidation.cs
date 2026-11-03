@@ -46,9 +46,9 @@ public static class ProjectValidation
         Directory.CreateDirectory("Logs");
         File.WriteAllLines("Logs/review-unity-assets.txt", findings.Distinct());
         Debug.Log($"Asset audit: {findings.Distinct().Count()} findings; see Logs/review-unity-assets.txt.");
-        var route = new[] { "Assets/MainMenu.unity", "Assets/StartScene.unity", "Assets/Scenes/Level1_PowerRestoration.unity", CargoBaySetup.ScenePath };
+        var route = new[] { "Assets/MainMenu.unity", "Assets/StartScene.unity", "Assets/Scenes/Level1_PowerRestoration.unity", CargoBaySetup.ScenePath, ColdStorageBuilder.ScenePath };
         if (!scenes.Take(route.Length).SequenceEqual(route))
-            throw new InvalidOperationException("Expected MainMenu → Tutorial (StartScene) → Level1_PowerRestoration → Level2_CargoBay; additional levels may follow.");
+            throw new InvalidOperationException("Expected MainMenu → Tutorial (StartScene) → Level1_PowerRestoration → Level2_CargoBay → Level3_ColdStorage.");
         EditorSceneManager.OpenScene(scenes[0], OpenSceneMode.Single);
         var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {

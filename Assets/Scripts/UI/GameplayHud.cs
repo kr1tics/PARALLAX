@@ -39,7 +39,16 @@ public sealed class GameplayHud
         var text = Label(parent, "Contextual control hints", font, 16, new Vector2(28, 24), new Vector2(1000, 32));
         text.rectTransform.anchorMin = text.rectTransform.anchorMax = text.rectTransform.pivot = Vector2.zero;
         text.color = new Color(.70f, .73f, .75f);
+        Legible(text);
         return text;
+    }
+
+    // A dark outline keeps light HUD text readable over bright Past cladding as well as dark Future surfaces.
+    // Outline, unlike underlay, is not a shader_feature keyword, so player builds keep it.
+    public static void Legible(TMP_Text text)
+    {
+        text.outlineWidth = .15f; text.outlineColor = new Color32(8, 12, 16, 220);
+        text.fontMaterial.SetFloat(ShaderUtilities.ID_FaceDilate, .12f);
     }
 
     public GameplayHud(Transform parent, string name, TMP_FontAsset titleFont, TMP_FontAsset supportingFont, float titleSize = 23, float instructionSize = 17)

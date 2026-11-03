@@ -12,6 +12,8 @@ public class CausalityController : MonoBehaviour
 
     void OnValidate()
     {
+        // A freshly added component (e.g. by a scene builder) has no serialized array yet.
+        if (_backingCausalityTypes == null) return;
         causalities = Array.ConvertAll<Causality.CausalityType, ICausality>(_backingCausalityTypes, it => it.toImplementation()).ToList<ICausality>();
     }
 
