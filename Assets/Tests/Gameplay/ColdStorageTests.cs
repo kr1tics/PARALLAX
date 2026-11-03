@@ -386,6 +386,122 @@ namespace Parallax.Gameplay.Tests
             Assert.That(GameObject.Find("Completion title").GetComponent<TMP_Text>().text, Is.EqualTo("STATION STABLE"));
         }
 
+        // Legitimate alternative: B is the 2026 counterweight and A is flown into R; B ends sealed in S1.
+        [UnityTest] public IEnumerator RoleSwappedSolveWithInput()
+        {
+            yield return Tap(Key.Q); yield return Swap();
+            yield return Fly(new Vector3(-4, 1.3f, -4.8f), 90); yield return Use("Plant valve");
+            yield return Fly(new Vector3(-1, 1.3f, -4.8f), 90); yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(5, 8.5f, 4.2f), 90);
+            yield return Grab(past[B]);
+            yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(2.2f, 1.6f, .8f), 90);
+            yield return Drop(Pan + Vector3.up * .15f, 90);
+            Assert.That(Flag("HatchOpen"), Is.True);
+            yield return Fly(new Vector3(-1, 1.3f, -.6f), 90); yield return Fly(new Vector3(-6, 1.3f, -.6f), 90); yield return Fly(new Vector3(-6, 1.3f, 4.6f), 90);
+            yield return Grab(past[A]);
+            yield return Fly(new Vector3(-6, 1.3f, -.6f), 270); yield return Fly(new Vector3(1.8f, 1.6f, -.6f), 90);
+            yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(6.8f, 9.8f, 6), 0);
+            yield return Drop(new Vector3(8.7f, 9.8f, 6), 0, true); yield return new WaitForSeconds(1);
+            Assert.That(SiteOf(past[A]), Is.EqualTo("R"));
+            yield return Fly(new Vector3(6, 9.8f, 6), 0); yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(2.2f, 1.6f, 1.4f), 90);
+            yield return Grab(past[B]); yield return Drop(S1 + Vector3.up * .15f, 90);
+            yield return Fly(new Vector3(2.2f, 4.6f, 6.4f), 90); yield return Fly(new Vector3(2.9f, 4.6f, 6.6f), 90); yield return Use("Flange F3");
+            yield return Fly(new Vector3(2.2f, 1.3f, 3), 90); yield return Fly(new Vector3(-1, 1.3f, -4.8f), 90); yield return Fly(new Vector3(-4, 1.3f, -4.8f), 90); yield return Use("Plant valve");
+            yield return Swap();
+            Assert.That(Usable(A) && Usable(B), Is.True, Reason(A) + " / " + Reason(B));
+            yield return Fly(new Vector3(-1, 1.3f, -4.8f), 90); yield return Fly(new Vector3(0, 1.3f, 3.2f), 90); yield return Grab(future[B]);
+            yield return Drop(Pan + Vector3.up * .15f, 90);
+            yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(7.05f, 9.8f, 6), 0); yield return Grab(future[A]);
+            yield return Fly(new Vector3(5.2f, 9.8f, 6), 0); yield return Fly(new Vector3(5, 8.6f, 4.4f), 90); yield return Drop(S2 + Vector3.up * .15f, 90);
+            yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(2.2f, 1.6f, 1.4f), 90);
+            yield return Grab(future[B]); yield return Drop(S1 + Vector3.up * .15f, 90);
+            Assert.That(Flag("Ready"), Is.True);
+            yield return Fly(new Vector3(-2.8f, 1.3f, 3.2f), 90); yield return Use("Exchanger console");
+            Assert.That(Flag("Completed"), Is.True);
+        }
+
+        // Legitimate alternative: preserve B first, use the still boiled-off A' as the 2176 counterweight to deliver B',
+        // then seal A in S1. The later valve and flange changes must not disturb the delivered B'.
+        [UnityTest] public IEnumerator StagedSolveReusesTheBoiledOffCellAsCounterweight()
+        {
+            yield return Tap(Key.Q); yield return Swap();
+            yield return Fly(new Vector3(-4, 1.3f, -4.8f), 90); yield return Use("Plant valve");
+            yield return Fly(new Vector3(-6, 1.3f, -4.8f), 90); yield return Fly(new Vector3(-6, 1.3f, 4.6f), 90); yield return Grab(past[A]);
+            yield return Fly(new Vector3(-6, 1.3f, -.6f), 270); yield return Fly(new Vector3(1.6f, 1.3f, -.6f), 90); yield return Drop(Pan + Vector3.up * .15f, 90);
+            yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(5, 8.5f, 4.2f), 90); yield return Grab(past[B]);
+            yield return Fly(new Vector3(6.8f, 9.8f, 6), 0); yield return Drop(new Vector3(8.7f, 9.8f, 6), 0, true); yield return new WaitForSeconds(1);
+            yield return Fly(new Vector3(6, 9.8f, 6), 0); yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(2.2f, 1.6f, 1.4f), 90);
+            yield return Grab(past[A]); yield return Drop(new Vector3(-1.5f, .95f, 1.2f), 90); // left on the open floor for now
+            yield return Swap();
+            Assert.That(Usable(B), Is.True); Assert.That(Reason(B), Is.EqualTo("PASSIVE COLD"));
+            Assert.That(Usable(A), Is.False); Assert.That(Reason(A), Is.EqualTo("UNSTORED"));
+            yield return Fly(new Vector3(-1.5f, 1.3f, -.4f), 90); yield return Grab(future[A]); yield return Drop(Pan + Vector3.up * .15f, 90);
+            Assert.That(Flag("HatchOpen"), Is.True, "A boiled-off cell is still a counterweight.");
+            yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(7.05f, 9.8f, 6), 0); yield return Grab(future[B]);
+            yield return Fly(new Vector3(5.2f, 9.8f, 6), 0); yield return Fly(new Vector3(5, 8.6f, 4.4f), 90); yield return Drop(S2 + Vector3.up * .15f, 90);
+            Assert.That(SiteOf(future[B]), Is.EqualTo("S2"));
+            yield return Fly(new Vector3(2.2f, 8.5f, 2.2f), 90); yield return Fly(new Vector3(-1.5f, 1.6f, -.4f), 90);
+            yield return Swap();
+            yield return Grab(past[A]); yield return Drop(S1 + Vector3.up * .15f, 90);
+            yield return Fly(new Vector3(2.2f, 4.6f, 6.4f), 90); yield return Fly(new Vector3(2.9f, 4.6f, 6.6f), 90); yield return Use("Flange F3");
+            yield return Fly(new Vector3(2.2f, 1.3f, 3), 90); yield return Fly(new Vector3(-1, 1.3f, -4.8f), 90); yield return Fly(new Vector3(-4, 1.3f, -4.8f), 90); yield return Use("Plant valve");
+            yield return Swap();
+            Assert.That(SiteOf(future[B]), Is.EqualTo("S2"), "B's history did not change: B' stays delivered."); Assert.That(Usable(B), Is.True);
+            Assert.That(Usable(A), Is.True); Assert.That(SiteOf(future[A]), Is.EqualTo("S1"), "A's history changed: A' re-placed, usable.");
+            yield return Physics2(); Assert.That(Flag("Ready"), Is.True);
+            yield return Fly(new Vector3(-1, 1.3f, -4.8f), 90); yield return Fly(new Vector3(-2.8f, 1.3f, 3.2f), 90); yield return Use("Exchanger console");
+            Assert.That(Flag("Completed"), Is.True);
+        }
+
+        // Moving usable 2176 equipment cannot make one preservation site serve two cells.
+        [UnityTest] public IEnumerator MovingAUsableFutureCellCannotStretchOneStorageSite()
+        {
+            yield return SealLoop(); yield return Teleport(past[A], S1);
+            yield return SwapTo(false); Assert.That(Usable(A), Is.True);
+            yield return Teleport(future[A], S2);
+            yield return SwapTo(true);
+            yield return Teleport(past[A], new Vector3(-1.5f, .45f, 1)); yield return Teleport(past[B], S1);
+            yield return SwapTo(false);
+            Assert.That(Usable(B), Is.True); Assert.That(SiteOf(future[B]), Is.EqualTo("S1"));
+            Assert.That(Usable(A), Is.False); Assert.That(Reason(A), Is.EqualTo("UNSTORED"));
+            Assert.That(SiteOf(future[A]), Is.EqualTo("Open"), "A's 2026 move rewrote the 2176 delivery.");
+            yield return Physics2(); Assert.That(Flag("Ready"), Is.False);
+        }
+
+        // Wrong orders and refused actions, each with its recovery.
+        [UnityTest] public IEnumerator WrongOrdersFailVisiblyAndRecover()
+        {
+            yield return SwapTo(true);
+            Operate("Console"); Assert.That(Flag("Completed"), Is.False, "Nothing to start in 2026.");
+            Operate("Valve"); yield return Physics2(); Assert.That(Flag("VaultOpen"), Is.True);
+            Operate("Valve"); yield return Physics2(); Assert.That(Flag("VaultOpen"), Is.False, "LOOP with A still inside locks the vault.");
+            Operate("Valve"); yield return Physics2(); Assert.That(Flag("VaultOpen"), Is.True, "SERVICE again reopens it.");
+            Operate("Valve");
+            yield return PlacePlayer(new Vector3(2.6f, 1.25f, 3)); yield return Physics2();
+            Assert.That(Flag("HatchOpen"), Is.False, "Standing on the pan does not lift the hatch.");
+            yield return PlacePlayer(new Vector3(0, 1.05f, -8));
+            yield return SwapTo(false);
+            yield return PlacePlayer(new Vector3(2.9f, 4.6f, 6.6f)); Operate("Flange");
+            Assert.That(Flag("FlangeRepaired"), Is.False, "F3 is beyond repair in 2176.");
+        }
+
+        // Entry from Cargo Bay: its real Continue button loads a fresh Cold Storage with one Settings instance.
+        [UnityTest] public IEnumerator CargoBayContinueLoadsAFreshColdStorage()
+        {
+            var menu = GameSettingsMenu.Instance;
+            yield return SceneManager.LoadSceneAsync("Level2_CargoBay"); yield return new WaitForSeconds(.3f);
+            var screen = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(m => m.GetType().Name == "TutorialCompletionScreen");
+            Call(screen, "ShowCompletion"); // navigation only; Cargo Bay's own tests solve it with normal controls
+            for (float t = 0; t < 6 && !(bool)Prop(screen, "IsReady"); t += Time.unscaledDeltaTime) yield return null;
+            GameObject.Find("CONTINUE").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            for (float t = 0; t < 6 && SceneManager.GetActiveScene().name != "Level3_ColdStorage"; t += Time.unscaledDeltaTime) yield return null;
+            yield return new WaitForSeconds(.3f);
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level3_ColdStorage"));
+            Assert.That(GameSettingsMenu.Instance, Is.SameAs(menu)); Assert.That(Object.FindObjectsByType<GameSettingsMenu>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
+            Assert.That(Time.timeScale, Is.EqualTo(1)); Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
+            Bind(); Assert.That(Flag("Completed"), Is.False); Assert.That(Past, Is.False);
+            Assert.That(Reason(A), Is.EqualTo("ACTIVE CHILL FAILED")); Assert.That(Reason(B), Is.EqualTo("UNSEALED SOCKET"));
+        }
+
         // ------------------------------------------------------------ ending and presentation
         [UnityTest] public IEnumerator FinalCompletionOffersRestartAndMainMenuOnly()
         {

@@ -158,14 +158,14 @@ public static class ColdStorageBuilder
         foreach (var x in new[] { -.8f, .8f })
             ColdStorageModels.Route("Primary trunk", new[] { new Vector3(x, 1.2f, 8.6f), new Vector3(x, 1.2f, 10.9f) }, .16f, coolant, plant);
         Label("Trunk sign", "PRIMARY LOOP <-> REACTOR HALL", new Vector3(0, 5.5f, 10.35f), 0, 7, 2.4f);
-        refs["reactorLabel"] = Label("Reactor loop repeater", "REACTOR LOOP\nCRITICAL · 612 K", new Vector3(0, 6.9f, 10.7f), 0, 7, 5.5f, title);
+        refs["reactorLabel"] = Label("Reactor loop repeater", "REACTOR LOOP\nCRITICAL · 612 K", new Vector3(0, 6.9f, 10.55f), 0, 6, 5.5f, title, 2);
 
         // S1 cartridge bay at the exchanger inlet.
         var s1 = Plate("S1 cartridge bay", new Vector3(0, .1f, 5), casing, structure);
         foreach (var x in new[] { -.68f, .68f }) ColdStorageModels.Box("S1 guide", new Vector3(x, .45f, 5), new Vector3(.08f, .7f, 1.2f), steel, plant, true);
         ColdStorageModels.Box("S1 back plate", new Vector3(0, .6f, 5.68f), new Vector3(1.4f, 1f, .08f), steel, plant, true);
         refs["s1"] = s1; refs["s1Lamp"] = Lamp("S1 lamp", new Vector3(.82f, 1.25f, 4.4f));
-        refs["s1Label"] = Label("S1 label", "S1 CARTRIDGE BAY", new Vector3(0, 1.75f, 4.3f), 0, 3.2f, 1.5f);
+        refs["s1Label"] = Label("S1 label", "S1 CARTRIDGE BAY", new Vector3(0, 1.75f, 4.3f), 0, 3.2f, 1.5f, null, 3);
         var s1Frost = ColdStorageModels.Box("S1 frost ring", new Vector3(0, .24f, 5), new Vector3(1.5f, .06f, 1.5f), frost, plant);
         refs["s1Frost"] = s1Frost;
 
@@ -173,12 +173,12 @@ public static class ColdStorageBuilder
         var console = Control(level, ColdStorageControl.Kind.Console, "Exchanger console", new Vector3(-2.8f, 1.1f, 4.6f), new Vector3(1.3f, .9f, .6f), interactable);
         ColdStorageModels.Box("Exchanger console base", new Vector3(-2.8f, .35f, 4.6f), new Vector3(.8f, .7f, .5f), steel, plant, true);
         refs["consoleLamp"] = Lamp("Console lamp", new Vector3(-2.35f, 1.62f, 4.28f));
-        refs["consoleLabel"] = Label("Console label", "EXCHANGER", new Vector3(-2.8f, 2.05f, 4.25f), 0, 3.2f, 1.5f);
+        refs["consoleLabel"] = Label("Console label", "EXCHANGER", new Vector3(-2.8f, 2.05f, 4.25f), 0, 3.2f, 1.5f, null, 2);
 
         // Balance pan P lifts R's plug hatch through a cable up the deck edge.
         refs["pan"] = Plate("Balance pan P", new Vector3(2.6f, .1f, 3), steel, structure);
         ColdStorageModels.Box("Pan rim", new Vector3(2.6f, .25f, 3), new Vector3(1.35f, .1f, 1.35f), cable, plant, true);
-        refs["panLabel"] = Label("Pan label", "BALANCE PAN", new Vector3(3.4f, 1.5f, 2.25f), 0, 3.2f, 1.4f);
+        refs["panLabel"] = Label("Pan label", "BALANCE PAN", new Vector3(2.3f, 1.5f, 2.25f), 0, 3.2f, 1.4f, null, 3);
         ColdStorageModels.Route("Hatch balance cable", new[] { new Vector3(2.6f, .3f, 3.62f), new Vector3(2.6f, 11.3f, 3.62f), new Vector3(7.85f, 11.3f, 3.62f), new Vector3(7.85f, 11.3f, 6), new Vector3(7.85f, 10.75f, 6) }, .035f, cable, plant);
         foreach (var p in new[] { new Vector3(2.6f, 11.3f, 3.62f), new Vector3(7.85f, 11.3f, 3.62f), new Vector3(7.85f, 11.3f, 6) })
             ColdStorageModels.Box("Cable pulley", p, Vector3.one * .22f, steel, plant, true);
@@ -210,13 +210,13 @@ public static class ColdStorageBuilder
         ColdStorageModels.Box("R hatch inspection glass", new Vector3(8.02f, 10.1f, 6), new Vector3(.02f, .4f, 1.2f), glass, hatch.transform);
         ColdStorageModels.Box("R hatch balance arm", new Vector3(8.0f, 10.8f, 6), new Vector3(.1f, .1f, 1.9f), steel, hatch.transform, true);
         refs["hatch"] = hatch; refs["rLamp"] = Lamp("R lamp", new Vector3(8.0f, 9.0f, 6.95f));
-        refs["rLabel"] = Label("R label", "R RADIATOR SINK", new Vector3(7.95f, 11.5f, 6), 90, 4, 1.6f);
+        refs["rLabel"] = Label("R label", "R RADIATOR SINK", new Vector3(7.95f, 11.5f, 6), 90, 4, 1.6f, null, 4);
 
         // S2: the exchanger's open hot-side cradle on the deck.
         refs["s2"] = Plate("S2 hot socket", new Vector3(5, 7.1f, 5.8f), casing, structure);
         foreach (var x in new[] { -.68f, .68f }) ColdStorageModels.Box("S2 lip", new Vector3(5 + x, 7.3f, 5.8f), new Vector3(.08f, .25f, 1.2f), steel, plant, true);
         refs["s2Lamp"] = Lamp("S2 lamp", new Vector3(5.8f, 7.6f, 5.15f));
-        refs["s2Label"] = Label("S2 label", "S2 HOT SOCKET", new Vector3(5, 8.4f, 5.1f), 0, 3.2f, 1.5f);
+        refs["s2Label"] = Label("S2 label", "S2 HOT SOCKET", new Vector3(5, 8.4f, 5.1f), 0, 3.2f, 1.5f, null, 3);
         refs["tankCoolant"] = ColdStorageModels.Tank(new Vector3(4.15f, 7, 8.15f), steel, casing, glass, coolant, plant);
 
         // Loop riser from S1 to the deck, with flange F3 at hover height.
@@ -225,7 +225,7 @@ public static class ColdStorageBuilder
         var flange = Control(level, ColdStorageControl.Kind.Flange, "Flange F3", new Vector3(2.9f, 4.6f, 8.15f), new Vector3(.55f, .4f, .55f), interactable);
         flange.GetComponent<Renderer>().enabled = false;
         refs["flange"] = flange.transform; refs["flangeLamp"] = Lamp("F3 lamp", new Vector3(2.9f, 4.05f, 7.85f));
-        refs["flangeLabel"] = Label("F3 label", "F3", new Vector3(2.9f, 5.5f, 7.7f), 0, 3, 1.8f);
+        refs["flangeLabel"] = Label("F3 label", "F3", new Vector3(2.9f, 5.5f, 7.7f), 0, 3, 1.8f, null, 3);
         var crack = new GameObject("F3 crack vapour (2026)").transform; crack.SetParent(plant);
         for (int i = 0; i < 3; i++) ColdStorageModels.Box("Vapour wisp", new Vector3(2.75f - i * .12f, 4.75f + i * .18f, 7.95f), new Vector3(.25f + i * .08f, .05f, .05f), glass, crack);
         var burst = new GameObject("F3 burst and ice (2176)").transform; burst.SetParent(plant);
@@ -242,7 +242,7 @@ public static class ColdStorageBuilder
         ColdStorageModels.Handwheel(new Vector3(-4, 1.05f, -3.42f), cable, steel, plant);
         ColdStorageModels.Route("Service line to vault", new[] { new Vector3(-4.6f, .3f, -2.7f), new Vector3(-6, .3f, -2.7f), new Vector3(-6, .3f, 2.6f) }, .08f, cable, plant);
         refs["valveLamp"] = Lamp("Valve lamp", new Vector3(-3.3f, 1.5f, -3.32f));
-        refs["valveLabel"] = Label("Valve label", "PLANT VALVE", new Vector3(-4, 2.05f, -3.35f), 0, 3.2f, 1.4f);
+        refs["valveLabel"] = Label("Valve label", "PLANT VALVE", new Vector3(-4, 2.05f, -3.35f), 0, 3.4f, 1.4f, null, 3);
         var ice = ColdStorageModels.Box("Valve ice crust", new Vector3(-4, 1.05f, -3.5f), new Vector3(.75f, .7f, .1f), frost, dressing);
         futureOnly.Add(ice);
 
@@ -263,7 +263,7 @@ public static class ColdStorageBuilder
         for (int i = 0; i < 9; i++) ColdStorageModels.Box("Vault door bar", new Vector3(-7.9f + i * .475f, 2.25f, 3), new Vector3(.08f, 4.3f, .08f), steel, gate.transform, true);
         foreach (float y in new[] { .15f, 2.25f, 4.3f }) ColdStorageModels.Box("Vault door rail", new Vector3(-6, y, 3), new Vector3(4.6f, .12f, .12f), casing, gate.transform, true);
         refs["vaultGate"] = gate;
-        refs["vaultLabel"] = Label("Vault label", "ACTIVE-CHILL VAULT", new Vector3(-6, 5.35f, 2.8f), 0, 5, 2.4f);
+        refs["vaultLabel"] = Label("Vault label", "ACTIVE-CHILL VAULT", new Vector3(-6, 5.35f, 2.8f), 0, 4.2f, 2f, null, 3);
         var vaultLamp = new GameObject("Vault chill lamp", typeof(Light)).GetComponent<Light>(); vaultLamp.transform.SetParent(dressing);
         vaultLamp.transform.position = new Vector3(-6, 3.8f, 6); vaultLamp.type = LightType.Point; vaultLamp.color = new Color(.55f, .85f, 1); vaultLamp.range = 6; vaultLamp.intensity = 1.2f;
         pastOnly.Add(vaultLamp.gameObject);
@@ -381,10 +381,14 @@ public static class ColdStorageBuilder
         light.transform.position = p; light.type = LightType.Point; light.color = color; light.intensity = intensity; light.range = range; return light;
     }
     // World signage in main's style (Oxanium, white; the controller turns satisfied states green), sized for 1080p at ~6 m.
-    static TMP_Text Label(string name, string text, Vector3 p, float yaw, float width, float size, TMP_FontAsset font = null)
+    static TMP_Text Label(string name, string text, Vector3 p, float yaw, float width, float size, TMP_FontAsset font = null, int backingLines = 0)
     {
         var go = new GameObject(name, typeof(TextMeshPro)); go.transform.SetParent(plant);
         go.transform.SetPositionAndRotation(p, Quaternion.Euler(0, yaw, 0));
+        // A dark plate behind state signs keeps white/green text readable against the bright 2026 cladding.
+        if (backingLines > 0)
+            ColdStorageModels.Box(name + " backing", p + go.transform.forward * .04f, new Vector3(width + .2f, size * .12f * backingLines + .16f, .03f), rubber, plant, true)
+                .transform.rotation = go.transform.rotation;
         var label = go.GetComponent<TextMeshPro>(); label.text = text; label.font = font != null ? font : title; label.fontSize = size;
         label.alignment = TextAlignmentOptions.Center; label.textWrappingMode = TextWrappingModes.NoWrap;
         label.rectTransform.sizeDelta = new Vector2(width, 1.6f); label.color = new Color(.85f, .92f, .96f);
