@@ -90,7 +90,7 @@ public static class CargoBaySetup
         var screen = root.GetComponent<TutorialCompletionScreen>() ?? root.AddComponent<TutorialCompletionScreen>();
         using (var data = new SerializedObject(screen))
         {
-            data.FindProperty("nextScene").stringValue = "Level3_MaintenanceShaft";
+            data.FindProperty("nextScene").stringValue = ColdStorageBuilder.SceneName;
             data.FindProperty("completionTitle").stringValue = "CARGO BAY COMPLETE";
             data.FindProperty("completionDescription").stringValue = "The cargo transfer restored maintenance access.";
             data.FindProperty("finalMessage").stringValue = "Continue to the maintenance shaft.";
@@ -587,7 +587,7 @@ public static class CargoBaySetup
         SetObject(completion, "secondaryFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/Space_Mono/SpaceMono-Regular SDF.asset"));
         using (var screen = new SerializedObject(completion))
         {
-            screen.FindProperty("nextScene").stringValue = "Level3_MaintenanceShaft";
+            screen.FindProperty("nextScene").stringValue = ColdStorageBuilder.SceneName;
             screen.FindProperty("allowCompletionShortcut").boolValue = false;
             screen.ApplyModifiedPropertiesWithoutUndo();
         }

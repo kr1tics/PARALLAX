@@ -125,7 +125,7 @@ namespace Parallax.Gameplay.Tests
             var cargo = root.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "CargoBayController");
             completion = root.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "TutorialCompletionScreen");
             Assert.That(Flag(cargo, "CargoDelivered"), Is.False);
-            Assert.That(completion.GetType().GetField("nextScene", Flags).GetValue(completion), Is.EqualTo("Level3_MaintenanceShaft"));
+            Assert.That(completion.GetType().GetField("nextScene", Flags).GetValue(completion), Is.EqualTo("Level3_ColdStorage"));
             // Drive the real exit check after supplying the already-tested delivery prerequisite.
             Set(cargo, "<CargoDelivered>k__BackingField", true);
             // The expanded bay's maintenance exit zone is centred at (10.5, 0.25, 16).

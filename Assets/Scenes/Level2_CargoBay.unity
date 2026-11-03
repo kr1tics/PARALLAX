@@ -19612,7 +19612,7 @@ MonoBehaviour:
   cargoLevel: {fileID: 1383297424}
   primaryFont: {fileID: 11400000, guid: d006551d96cdf48d39739dfe3c748d6c, type: 2}
   secondaryFont: {fileID: 11400000, guid: 5ab9449966a174634bb20e4c7e5bc291, type: 2}
-  nextScene: Level3_MaintenanceShaft
+  nextScene: Level3_ColdStorage
   completionTitle: CARGO BAY COMPLETE
   completionDescription: The cargo transfer restored maintenance access.
   finalMessage: Continue to the maintenance shaft.

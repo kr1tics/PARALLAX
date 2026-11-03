@@ -21,6 +21,8 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     [SerializeField] string completionDescription = "You've learned the basics of time manipulation and gravity control.";
     [SerializeField] string finalMessage = "The investigation begins now.";
     [SerializeField] string replayLabel = "REPLAY TUTORIAL";
+    [Tooltip("Last level: show the final message with Restart and Main Menu only; never Continue or an unavailable-level notice.")]
+    [SerializeField] bool finalLevel;
     [SerializeField, Min(0)] float completionDelay = 1f;
     [SerializeField, Min(.01f)] float fadeDuration = .8f;
     [Header("Tutorial shortcut")]
@@ -90,14 +92,15 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
         var content = Rect(screen.transform, "Completion content", new Vector2(0, 10), new Vector2(760, 350));
         copy = content.gameObject.AddComponent<CanvasGroup>(); copy.alpha = 0;
         // Power Restoration keeps its own copy (its scene does not serialize the text fields); other scenes configure theirs.
-        bool destinationMissing = string.IsNullOrWhiteSpace(nextScene) || !Application.CanStreamedLevelBeLoaded(nextScene);
+        bool destinationMissing = !finalLevel && (string.IsNullOrWhiteSpace(nextScene) || !Application.CanStreamedLevelBeLoaded(nextScene));
         Text(content, "Completion title", reactor != null ? "POWER RESTORED" : completionTitle, primaryFont, 44, 115, 72, true);
         Text(content, "Completion description", reactor != null ? "Both modules repaired. Reactor successfully activated." : completionDescription, secondaryFont, 22, 32, 88, false);
         Text(content, "Completion final message", destinationMissing ? "The next level is not available in this build." : reactor != null ? "Level 1 complete." : finalMessage, secondaryFont, 23, -66, 50, false);
         var row = Rect(screen.transform, "Completion actions", new Vector2(0, -155), new Vector2(520, 48));
         actions = row.gameObject.AddComponent<CanvasGroup>(); actions.alpha = 0; actions.interactable = false;
         replayButton = MakeButton(row, reactor != null ? "RESTART LEVEL" : replayLabel, -138, RestartLevel);
-        MakeButton(row, destinationMissing ? "MAIN MENU" : "CONTINUE", 138, Continue);
+        if (finalLevel) MakeButton(row, "MAIN MENU", 138, ReturnToMainMenu);
+        else MakeButton(row, destinationMissing ? "MAIN MENU" : "CONTINUE", 138, Continue);
     }
     static RectTransform Rect(Transform parent, string name, Vector2 position, Vector2 size)
     {
@@ -135,6 +138,11 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
         // A forthcoming level need not exist in this build; keep the completed level navigable.
         string destination = !string.IsNullOrWhiteSpace(nextScene) && Application.CanStreamedLevelBeLoaded(nextScene) ? nextScene : "MainMenu";
         Navigate(destination);
+    }
+    public void ReturnToMainMenu()
+    {
+        if (!IsReady || navigating) return;
+        Navigate("MainMenu");
     }
     void Navigate(string destination)
     {
