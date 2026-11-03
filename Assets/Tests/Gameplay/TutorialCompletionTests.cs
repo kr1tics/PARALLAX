@@ -156,6 +156,10 @@ namespace Parallax.Gameplay.Tests
             GameObject.Find("CONTINUE").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
             yield return null; yield return null;
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level1_PowerRestoration"));
+            Assert.That(GameObject.Find("Power Restoration narrative"), Is.Not.Null);
+            float deadline = Time.realtimeSinceStartup + 35;
+            while (GameObject.Find("Power Restoration narrative") != null && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(GameObject.Find("Power Restoration narrative"), Is.Null);
             Assert.That(GameSettingsMenu.StartupInputBlocked, Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
             Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
             Assert.That(GameSettingsMenu.Instance, Is.SameAs(menu));

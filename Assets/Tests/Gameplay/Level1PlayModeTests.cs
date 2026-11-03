@@ -86,6 +86,89 @@ namespace Parallax.Gameplay.Tests
             camera.targetTexture = previousTarget; RenderTexture.active = previous;
             Object.Destroy(image); Object.Destroy(rt);
         }
+        [UnityTest] public IEnumerator LayoutReadabilityCapturesBothTimelines()
+        {
+            player.enabled = false; playerBody.isKinematic = true;
+            player.GetComponent<Renderer>().enabled = false;
+            var camera = Camera.main;
+            foreach (var behaviour in camera.GetComponents<MonoBehaviour>()) if (behaviour.GetType().Name == "Look") behaviour.enabled = false;
+            string version = GameObject.Find("Tutorial navigation cladding") != null ? "after" : "before";
+            camera.transform.position = new Vector3(3.5f, 1.4f, 7.5f);
+            camera.transform.LookAt(new Vector3(0, 1, 10.6f));
+            yield return null;
+            Scene01PresentationTests.Capture(camera, "navigation-" + version + "-future", 1280, 720);
+            yield return Swap();
+            Scene01PresentationTests.Capture(camera, "navigation-" + version + "-past", 1280, 720);
+            camera.transform.position = new Vector3(3.6f, 1.25f, 11.8f);
+            camera.transform.LookAt(new Vector3(0, 1, 13.45f)); yield return null;
+            Scene01PresentationTests.Capture(camera, "navigation-" + version + "-access-door", 1280, 720);
+        }
+
+        [UnityTest] public IEnumerator ObservationWindowShowsEarthAcrossTimelinesWithoutChangingBoundary()
+        {
+            var pane = GameObject.Find("Solid wall | Arrival airlock sealed").GetComponent<Renderer>();
+            Assert.That(pane.sharedMaterial.name, Is.EqualTo("TutorialObservationGlass"));
+            Assert.That(pane.sharedMaterial.color.a, Is.LessThan(.15f));
+            Assert.That(GameObject.Find("Arrival airlock sealed").GetComponentInChildren<Collider>().enabled, Is.True);
+            player.enabled = false; playerBody.isKinematic = true; player.GetComponent<Renderer>().enabled = false;
+            var camera = Camera.main;
+            foreach(var behaviour in camera.GetComponents<MonoBehaviour>()) if(behaviour.GetType().Name=="Look")behaviour.enabled=false;
+            camera.transform.position = new Vector3(3.5f,.9f,8.95f);
+            camera.transform.LookAt(GameObject.Find("Distant Earth").transform.position);
+            yield return null;
+            Scene01PresentationTests.Capture(camera,"observation-earth-future",1280,720);
+            yield return Swap();
+            Assert.That(pane.sharedMaterial.name, Is.EqualTo("TutorialObservationGlass"));
+            Assert.That(pane.sharedMaterial.color.a, Is.LessThan(.15f));
+            Scene01PresentationTests.Capture(camera,"observation-earth-past",1280,720);
+        }
+
+        [UnityTest] public IEnumerator WallFinishUsesStationTexturesAndFollowsTimeline()
+        {
+            var panel = GameObject.Find("Solid wall | Access bulkhead 3").GetComponent<Renderer>();
+            var original = GameObject.Find("Access bulkhead 3").GetComponentInChildren<Renderer>();
+            Assert.That(panel.sharedMaterial.name, Is.EqualTo("TutorialWallFinishFuture"));
+            Assert.That(panel.sharedMaterial.mainTexture, Is.SameAs(original.sharedMaterial.mainTexture));
+            yield return Swap();
+            Assert.That(panel.sharedMaterial.name, Is.EqualTo("TutorialWallFinish"));
+            Assert.That(panel.sharedMaterial.shader.name, Is.EqualTo("Standard"));
+            Assert.That(panel.sharedMaterial.GetTexture("_BumpMap"), Is.Not.Null);
+            Assert.That(panel.sharedMaterial.GetTexture("_MetallicGlossMap"), Is.Not.Null);
+            var properties = new MaterialPropertyBlock(); panel.GetPropertyBlock(properties);
+            Assert.That(properties.GetColor("_Color"), Is.EqualTo(new Color(.68f,.69f,.68f)));
+            yield return Swap();
+            Assert.That(panel.sharedMaterial.name, Is.EqualTo("TutorialWallFinishFuture"));
+            panel.GetPropertyBlock(properties);
+            Assert.That(properties.GetColor("_Color"), Is.EqualTo(new Color(.62f,.64f,.63f)));
+            Assert.That(properties.GetFloat("_FlickerStrength"),Is.Zero,"Tutorial walls retain decay without flicker.");
+            Assert.That(GameObject.Find("Panel seam | Access bulkhead 5").GetComponent<Renderer>().enabled,Is.False);
+            Assert.That(GameObject.Find("Panel seam | Engineering bulkhead 2").GetComponent<Renderer>().enabled,Is.False);
+            Assert.That(GameObject.Find("Industrial kickplate | Access bulkhead 3").GetComponent<Renderer>().sharedMaterial.name,
+                Is.EqualTo("TutorialWallTrimFuture"));
+        }
+
+        [UnityTest] public IEnumerator SolidCladdingMatchesOriginalCollisionAndKeepsDoorOpenings()
+        {
+            var root = GameObject.Find("Tutorial navigation cladding");
+            Assert.That(root, Is.Not.Null);
+            var panels = root.GetComponentsInChildren<Renderer>().Where(x => x.name.StartsWith("Solid wall | ")).ToArray();
+            Assert.That(panels.Length, Is.GreaterThanOrEqualTo(14));
+            foreach (var panel in panels)
+            {
+                var original = GameObject.Find(panel.name.Substring("Solid wall | ".Length));
+                var collider = original.GetComponentInChildren<BoxCollider>();
+                Assert.That(collider, Is.Not.Null, original.name);
+                Assert.That(Vector3.Distance(collider.bounds.center, panel.bounds.center), Is.LessThan(.01f), original.name);
+                Assert.That(Vector3.Distance(collider.bounds.size, panel.bounds.size), Is.LessThan(.01f), original.name);
+                Assert.That(original.GetComponentInChildren<Renderer>().enabled, Is.False);
+            }
+            Assert.That(Physics.Raycast(new Vector3(1, .8f, 4.45f), Vector3.left, 2), Is.True, "Sealed access wall must remain solid.");
+            yield return SolveIntro();
+            Assert.That(Physics.Raycast(new Vector3(.7f, .8f, 13.45f), Vector3.left, 1.4f), Is.False, "The true access doorway must remain clear after unlocking.");
+            yield return SolveMain();
+            Assert.That(Physics.Raycast(new Vector3(-8.3f, .8f, 4.45f), Vector3.left, 1.4f), Is.False, "The true west exit must remain clear after unlocking.");
+        }
+
         IEnumerator SolveIntro()
         {
             yield return Swap(); Assert.That(Get(state, "now").ToString(), Is.EqualTo("Past"));
@@ -139,6 +222,11 @@ namespace Parallax.Gameplay.Tests
             GameObject.Find("CONTINUE").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
             yield return null; yield return null;
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level1_PowerRestoration"));
+            Assert.That(GameObject.Find("Power Restoration narrative"), Is.Not.Null);
+            Assert.That(GameSettingsMenu.NarrativeInputBlocked, Is.True);
+            float deadline = Time.realtimeSinceStartup + 35;
+            while (GameObject.Find("Power Restoration narrative") != null && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(GameObject.Find("Power Restoration narrative"), Is.Null);
             Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
             Assert.That(Time.timeScale, Is.EqualTo(1));
             Assert.That(Component(GameObject.Find("Player"), "PlayerController").enabled, Is.True);
@@ -465,8 +553,8 @@ namespace Parallax.Gameplay.Tests
             Assert.That(root.GetComponentsInChildren<Collider>(true), Is.Empty, "Projections must not block walking or interaction rays.");
             var projections = root.GetComponentsInChildren<Renderer>(true)
                 .Where(r => r.sharedMaterial != null && r.sharedMaterial.shader.name == "Unlit/SimpleHologram").ToArray();
-            Assert.That(projections.Length, Is.EqualTo(3), "Only two panels and one objective projection are needed.");
-            foreach (var renderer in projections)
+            Assert.That(projections.Count(r => r.enabled), Is.EqualTo(2), "Only the two task chevrons are enabled; legacy panels stay hidden.");
+            foreach (var renderer in projections.Where(r => !r.enabled))
             {
                 Assert.That(renderer.sharedMaterial.shader.isSupported, Is.True);
                 Assert.That(renderer.sharedMaterial.GetFloat("_FlickerStrength"), Is.LessThanOrEqualTo(0.03f));

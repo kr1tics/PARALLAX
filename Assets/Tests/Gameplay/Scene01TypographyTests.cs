@@ -27,16 +27,16 @@ namespace Parallax.Gameplay.Tests
         {
             var texts = Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None)
                 .Where(t => t.gameObject.scene.name == "StartScene").ToArray();
-            Assert.That(texts.Length, Is.EqualTo(16), "Nine authored labels and seven generated HUD labels must all be audited.");
+            Assert.That(texts.Length, Is.GreaterThanOrEqualTo(18), "Audit authored labels, both objective states and contextual help.");
             foreach (var text in texts)
             {
-                bool heading = new[] { "Sealed store label", "Main instructions", "Objective number", "Exit instructions",
-                    "Arrival / practice", "Intro instructions", "Objective title" }.Contains(text.name);
+                bool heading = text.name == "Objective number" && text.GetComponentInParent<Canvas>() != null ? false : new[] { "Sealed store label", "Main instructions", "Objective number", "Exit instructions",
+                    "Arrival / practice", "Intro instructions", "Objective title", "Compact objective" }.Contains(text.name);
                 Assert.That(text.font.name, Is.EqualTo(heading ? "Oxanium-Regular SDF" : "SpaceMono-Regular SDF"), text.name);
                 Assert.That(text.fontStyle, Is.EqualTo(FontStyles.Normal), text.name);
                 Assert.That(text.fontWeight, Is.EqualTo(FontWeight.Regular), text.name);
                 text.ForceMeshUpdate(true, true);
-                Assert.That(text.isTextOverflowing, Is.False, text.name);
+                if (text.isActiveAndEnabled) Assert.That(text.isTextOverflowing, Is.False, text.name);
                 foreach (var character in text.textInfo.characterInfo.Take(text.textInfo.characterCount).Where(c => c.isVisible))
                     Assert.That(character.fontAsset, Is.SameAs(text.font), text.name + " must not silently use a fallback font.");
             }

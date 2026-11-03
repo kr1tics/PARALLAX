@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using Parallax.Settings;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 /// <summary>Scene-only observer. Never changes physics, puzzle state, or time travel.</summary>
 [DefaultExecutionOrder(300)]
@@ -30,8 +32,25 @@ public sealed class Level1Presentation : MonoBehaviour
     [SerializeField] Material hologramAmber;
     readonly List<Renderer>[] hologramEdges = { new(), new() };
     readonly List<Mesh> hologramMeshes = new();
-    readonly float[] hologramOpacity = { 1f, 1f };
-    GameplayHud hud;
+    readonly float[] hologramOpacity = { 0f, 0f };
+    TutorialObjectiveHud hud;
+    Rigidbody playerBody;
+    public enum GuidanceStage { AccessRelay, FindConsole, UnlockStorage, FindCube, MoveCube, RestoreGravity, ReturnFuture, Exit, Complete }
+    public GuidanceStage Stage { get; private set; }
+    public bool PlayerInStorage => InStorage(playerBody.position);
+    public Rigidbody CurrentEngineeringCube => engineeringCubes[GlobalState.get().now == TimeState.Past ? 0 : 1];
+    public bool EngineeringCubeInStorage => InStorage(CurrentEngineeringCube.position);
+    public Transform CueTarget { get; private set; }
+    public string CueLabel { get; private set; }
+    public Material PlacementHologram => hologramAmber;
+    public bool ShowAccessPlacement { get; private set; }
+    public bool ShowEngineeringPlacement { get; private set; }
+    bool consoleDiscovered, cubeDiscovered, hadStorageAccess;
+    Transform consoleTarget, storageTarget, exitTarget;
+    readonly List<Renderer> routeGuides = new();
+    public string ObjectiveTitle => hud == null ? "" : hud.Title;
+    public bool ObjectiveExpanded => hud != null && hud.Expanded;
+    public int ObjectiveRevision => hud == null ? 0 : hud.Revision;
     TMP_Text instruction, status, prompt;
     AudioSource audioSource;
     MovableObject previousHeld;
@@ -48,12 +67,18 @@ public sealed class Level1Presentation : MonoBehaviour
     void Start()
     {
         properties = new MaterialPropertyBlock();
+        playerBody = interaction.GetComponent<Rigidbody>();
         BuildHud();
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false; audioSource.spatialBlend = 0;
         DecorateCubes(accessCubes); DecorateCubes(engineeringCubes);
         DecoratePlate(accessPlate, accessDetails); DecoratePlate(engineeringPlate, engineeringDetails);
         BuildHolograms();
+        consoleTarget = transform.Find("EntangledGravSwitch");
+        storageTarget = transform.Find("Door - Gravity interlock");
+        exitTarget = transform.Find("Level 1 Completion Zone");
+        foreach (var item in GetComponentsInChildren<Renderer>(true))
+            if (item.name == "Floor route guide") { routeGuides.Add(item); item.enabled = false; }
         // Local pools of light reveal the placement zones without flooding the room.
         AddLight(accessPlate.transform.position + Vector3.up * 3.8f);
         AddLight(engineeringPlate.transform.position + Vector3.up * 3.8f);
@@ -66,11 +91,15 @@ public sealed class Level1Presentation : MonoBehaviour
 
     void LateUpdate()
     {
-        UpdateHolograms();
         if (hud == null) return;
         bool blocked = GameSettingsMenu.GameplayInputBlocked;
         hud.SetVisible(!blocked);
         if (blocked) return;
+        if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
+        {
+            consoleDiscovered = cubeDiscovered = false;
+            hud.Reannounce();
+        }
         var state = GlobalState.get();
         if (state.now != previousTime)
         {
@@ -85,45 +114,125 @@ public sealed class Level1Presentation : MonoBehaviour
         { Play(relayRestoration, systemVolume); Play(doorUnlock, systemVolume); }
         previousIntroSolved = level.IntroSolved; previousMainSolved = level.MainSolved;
         UpdateObjective();
+        UpdateHolograms();
+        for (int i = 0; i < localLights.Count; i++)
+            localLights[i].enabled = i == 0 ? ShowAccessPlacement : ShowEngineeringPlacement;
         var cast = interaction.fireInteractRay(true);
         Interactable target = cast.Item1 ? cast.Item2.collider.GetComponentInParent<Interactable>() : null;
         // Reuse the exact occlusion-aware interaction ray, rather than a proximity-only prompt.
         bool actionableCube = target is MovableObject movable && !movable.GetComponent<Rigidbody>().isKinematic;
+        string timelinePrompt = state.now == TimeState.Past ? "T — Switch to Future" : "T — Switch to Past";
         prompt.text = held != null ? "E — Place" : actionableCube ? "E — Pick up" : target is Switch ?
-            (state.now == TimeState.Past ? "E — Toggle gravity" : "F — Switch Timeline") :
-            instruction.text.StartsWith("Switch") || instruction.text == "Return to the Future." ||
-            (state.now == TimeState.Future && instruction.text.StartsWith("Return to")) ? "F — Switch Timeline" : "";
-        foreach (var item in cubeDetails) SetDetail(item.Value, item.Key == held || (actionableCube && item.Key == target));
+            (state.now == TimeState.Past ? "E — Toggle gravity" : timelinePrompt) :
+            instruction.text.StartsWith("Switch") || instruction.text.StartsWith("T —") || instruction.text == "Return to the Future." ? timelinePrompt : "";
+        foreach (var item in cubeDetails)
+        {
+            bool taskCube = !level.IntroSolved ? item.Key == accessCubes[state.now == TimeState.Past ? 0 : 1].GetComponent<MovableObject>() :
+                (Stage == GuidanceStage.FindCube && PlayerInStorage || Stage == GuidanceStage.MoveCube) &&
+                item.Key == CurrentEngineeringCube.GetComponent<MovableObject>();
+            SetDetail(item.Value, item.Key == held || (actionableCube && item.Key == target) || taskCube);
+        }
         SetDetail(accessDetails, access); SetDetail(engineeringDetails, engineering);
         status.text = (state.now == TimeState.Past ? "2026 / PAST" : "2176 / FUTURE") +
             (state.gravity < .1f ? "  ·  GRAVITY OFF" : "  ·  GRAVITY ON");
+        hud.Tick(Time.unscaledDeltaTime);
     }
+
+    static readonly Bounds EngineeringStorage = new Bounds(new Vector3(-6, .9f, 15), new Vector3(4.8f, 4.2f, 6.6f));
+
+    public static bool InStorage(Vector3 position)
+    { position.y = EngineeringStorage.center.y; return EngineeringStorage.Contains(position); }
 
     void UpdateObjective()
     {
         bool past = GlobalState.get().now == TimeState.Past;
         bool gravityOn = GlobalState.get().gravity > 4.5f;
-        if (level.Completed) { SetObjective("COMPLETE", "Access restored", "Tutorial complete. R — Replay"); return; }
+        if (!level.IntroSolved || (hadStorageAccess && !level.StorageAccessGranted))
+            consoleDiscovered = cubeDiscovered = false;
+        hadStorageAccess = level.StorageAccessGranted;
+        CueTarget = null; CueLabel = "";
+        ShowAccessPlacement = ShowEngineeringPlacement = false;
+        foreach (var route in routeGuides) route.enabled = false;
+        if (level.Completed) { Present(GuidanceStage.Complete, "Access restored", "Tutorial complete. R — Replay"); return; }
         if (!level.IntroSolved)
         {
-            bool placed = interaction.HeldObject == null && CubeOnPlate(accessCubes[0], accessPlate);
+            var cube = accessCubes[past ? 0 : 1];
+            bool held = interaction.HeldObject == cube.GetComponent<MovableObject>();
+            bool placed = !held && CubeOnPlate(cube, accessPlate);
             string next = !past ? "Switch to the Past." : placed ?
-                (gravityOn ? "Switch to the Future." : "Restore station gravity.") :
-                interaction.HeldObject == accessCubes[0].GetComponent<MovableObject>() ?
+                (gravityOn ? "Switch to the Future." : "Restore station gravity.") : held ?
                 "Place the cube on the relay plate." : "Locate the power cube.";
-            SetObjective("OBJECTIVE 01", "Restore the Access Relay", next); return;
+            ShowAccessPlacement = past && held && !placed;
+            if (past && !held && !placed) { CueTarget = cube.transform; CueLabel = "POWER CUBE"; }
+            Present(GuidanceStage.AccessRelay, "Restore the Access Relay", next); return;
         }
         if (!level.StorageAccessGranted)
-        { SetObjective("OBJECTIVE 02", "Release the Engineering Cube", past ? "Turn gravity OFF at the console." : "Switch to the Past."); return; }
-        if (!level.MainSolved)
         {
-            bool placed = interaction.HeldObject == null && CubeOnPlate(engineeringCubes[past ? 0 : 1], engineeringPlate);
-            string next = !placed ? (interaction.HeldObject == engineeringCubes[0].GetComponent<MovableObject>() ? "Place the cube on relay plate 02." :
-                level.StorageReleased ? "Take the cube out of storage." : "Return to the Past; turn gravity OFF.") :
-                !gravityOn ? "Return to the Past console.\nTurn station gravity ON." : past ? "Switch to the Future." : "Wait for the relay to engage.";
-            SetObjective("OBJECTIVE 02", "Restore the Engineering Relay", next); return;
+            if (consoleTarget != null && Vector3.Distance(playerBody.position, consoleTarget.position) < 3.3f)
+                consoleDiscovered = true;
+            CueTarget = consoleTarget; CueLabel = "GRAVITY CONSOLE";
+            if (!consoleDiscovered)
+                Present(GuidanceStage.FindConsole, "Find the Gravity Console", "Storage is locked. Find the gravity console.");
+            else Present(GuidanceStage.UnlockStorage, "Unlock the Storage Area", past ?
+                "Turn station gravity OFF at the console." : "T — Switch to Past; turn gravity OFF.");
+            return;
         }
-        SetObjective("OBJECTIVE 03", "Access restored", past ? "Return to the Future." : "Proceed through the west exit.");
+        if (level.MainSolved)
+        {
+            CueTarget = exitTarget; CueLabel = "EXIT";
+            Present(GuidanceStage.Exit, "Reach the West Exit", past ? "Return to the Future." : "Proceed through the west exit."); return;
+        }
+        var engineeringCube = CurrentEngineeringCube;
+        var movable = engineeringCube.GetComponent<MovableObject>();
+        bool carrying = interaction.HeldObject == movable;
+        bool onPlate = !carrying && CubeOnPlate(engineeringCube, engineeringPlate);
+        var cast = interaction.fireInteractRay(true);
+        bool discovered = cast.Item1 && cast.Item2.collider.GetComponentInParent<MovableObject>() == movable;
+        cubeDiscovered |= carrying || discovered || !EngineeringCubeInStorage;
+        if (carrying)
+        {
+            ShowEngineeringPlacement = true;
+            Present(GuidanceStage.MoveCube, "Power the Engineering Relay", "Move the cube to Relay Station 02.");
+        }
+        else if (onPlate)
+        {
+            if (!gravityOn)
+            {
+                CueTarget = consoleTarget; CueLabel = "GRAVITY CONSOLE";
+                Present(GuidanceStage.RestoreGravity, "Restore Station Gravity", past ?
+                    "Return to the gravity console.\nTurn station gravity ON." :
+                    "T — Return to the Past console.\nTurn station gravity ON.");
+            }
+            else Present(GuidanceStage.ReturnFuture, "Activate the Engineering Relay", past ? "Switch to the Future." : "Wait for the relay to engage.");
+        }
+        else if (EngineeringCubeInStorage && !level.StorageReleased)
+        {
+            CueTarget = consoleTarget; CueLabel = "GRAVITY CONSOLE";
+            Present(GuidanceStage.UnlockStorage, "Reopen the Storage Area", past ?
+                "Storage locked: find the console.\nTurn station gravity OFF." :
+                "Storage locked: T — Switch to Past.\nTurn gravity OFF at the console.");
+        }
+        else if (cubeDiscovered)
+        {
+            CueTarget = engineeringCube.transform; CueLabel = "POWER CUBE";
+            ShowEngineeringPlacement = true;
+            Present(GuidanceStage.MoveCube, "Power the Engineering Relay", EngineeringCubeInStorage ?
+                "Retrieve the power cube for Relay Station 02." :
+                "Locate the cube outside Storage.\nMove it to Relay Station 02.");
+        }
+        else
+        {
+            CueTarget = PlayerInStorage ? engineeringCube.transform : storageTarget;
+            CueLabel = PlayerInStorage ? "POWER CUBE" : "STORAGE AREA";
+            Present(GuidanceStage.FindCube, "Locate the Power Cube", PlayerInStorage ?
+                "Locate the power cube inside Storage." : "Enter Storage and locate the power cube.");
+        }
+    }
+
+    void Present(GuidanceStage stage, string title, string detail)
+    {
+        Stage = stage;
+        hud.SetObjective(stage.ToString(), title, detail);
     }
 
     public static bool CubeOnPlate(Rigidbody cube, PressureButton plate)
@@ -204,7 +313,7 @@ public sealed class Level1Presentation : MonoBehaviour
         go.transform.SetParent(parent, false); go.GetComponent<MeshFilter>().sharedMesh = mesh;
         var renderer = go.GetComponent<MeshRenderer>(); renderer.sharedMaterial = hologramAmber;
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        renderer.receiveShadows = false;
+        renderer.receiveShadows = false; renderer.enabled = false;
         return renderer;
     }
 
@@ -221,7 +330,7 @@ public sealed class Level1Presentation : MonoBehaviour
         go.GetComponent<MeshFilter>().sharedMesh = accessPlate.GetComponent<MeshFilter>().sharedMesh;
         var renderer = go.GetComponent<MeshRenderer>(); renderer.sharedMaterial = hologramAmber;
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        renderer.receiveShadows = false; return renderer;
+        renderer.receiveShadows = false; renderer.enabled = false; return renderer;
     }
 
     void UpdateHolograms()
@@ -234,7 +343,7 @@ public sealed class Level1Presentation : MonoBehaviour
         for (int i = 0; i < 2; i++)
         {
             bool placed = interaction.HeldObject != cubes[i].GetComponent<MovableObject>() && CubeOnPlate(cubes[i], plates[i]);
-            float target = solved[i] || placed ? 0 : 1;
+            float target = solved[i] || placed || !(i == 0 ? ShowAccessPlacement : ShowEngineeringPlacement) ? 0 : 1;
             hologramOpacity[i] = Mathf.MoveTowards(hologramOpacity[i], target, Time.deltaTime / .6f);
             foreach (var edge in hologramEdges[i])
             {
@@ -246,8 +355,6 @@ public sealed class Level1Presentation : MonoBehaviour
         }
     }
 
-    void SetObjective(string id, string title, string detail)
-    { hud.SetObjective(id, title, detail); }
     void Play(AudioClip clip, float volume) { if (clip != null) audioSource.PlayOneShot(clip, volume); }
 
     void ApplyTimeline()
@@ -263,7 +370,7 @@ public sealed class Level1Presentation : MonoBehaviour
             properties.SetColor("_Color", past ? new Color(.68f, .69f, .68f) : new Color(.62f, .64f, .63f));
             properties.SetFloat("_DecayAmount", futureDecay);
             properties.SetFloat("_GrimeStrength", .7f);
-            properties.SetFloat("_FlickerStrength", .025f);
+            properties.SetFloat("_FlickerStrength", 0f);
             properties.SetColor("_DecayColor", new Color(.22f, .23f, .22f));
             surface.SetPropertyBlock(properties);
         }
@@ -330,7 +437,125 @@ public sealed class Level1Presentation : MonoBehaviour
 
     void BuildHud()
     {
-        hud = new GameplayHud(transform, "Scene 01 Objective UI", titleFont, supportingFont, titleSize, instructionSize);
+        hud = new TutorialObjectiveHud(transform, titleFont, supportingFont);
         instruction = hud.Instruction; status = hud.Status; prompt = hud.Prompt;
+    }
+}
+
+sealed class TutorialObjectiveHud
+{
+    readonly RectTransform root, expandedRect, compactRect;
+    readonly CanvasGroup visibility, expanded, compact;
+    readonly TMP_Text heading, number, compactText;
+    readonly RectTransform promptPanel, promptKeycap;
+    readonly Image accent;
+    string stage;
+    float age;
+    public TMP_Text Instruction { get; }
+    public TMP_Text Status { get; }
+    public TMP_Text Prompt { get; }
+    public string Title => heading.text;
+    public bool Expanded => expanded.alpha > .5f;
+    public int Revision { get; private set; }
+    static readonly Color Cyan = new Color(.43f, .79f, .88f);
+
+    public TutorialObjectiveHud(Transform parent, TMP_FontAsset titleFont, TMP_FontAsset bodyFont)
+    {
+        var go = new GameObject("Scene 01 Objective UI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(CanvasGroup));
+        go.transform.SetParent(parent, false); root = go.GetComponent<RectTransform>();
+        var canvas = go.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = 10;
+        var scaler = go.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080); scaler.matchWidthOrHeight = .5f;
+        visibility = go.GetComponent<CanvasGroup>(); visibility.blocksRaycasts = false; visibility.interactable = false;
+        expandedRect = Panel(root, "Expanded objective card", new Vector2(780, 158), new Color(.025f, .055f, .075f, .92f));
+        expanded = expandedRect.gameObject.AddComponent<CanvasGroup>(); expanded.alpha = 0;
+        number = Text(expandedRect, "Objective number", bodyFont, 15, -14, 24); number.color = Cyan;
+        heading = Text(expandedRect, "Objective title", titleFont, 34, -43, 43);
+        Instruction = Text(expandedRect, "Current instruction", bodyFont, 20, -94, 54);
+        Instruction.color = new Color(.72f, .80f, .84f);
+        accent = Strip(expandedRect, "Cyan objective accent", new Vector2(0, 0), new Vector2(1, 0), 2);
+        compactRect = Panel(root, "Compact objective bar", new Vector2(780, 58), new Color(.025f, .055f, .075f, .86f));
+        compact = compactRect.gameObject.AddComponent<CanvasGroup>(); compact.alpha = 0;
+        compactText = Text(compactRect, "Compact objective", titleFont, 23, -10, 38);
+        Strip(compactRect, "Compact cyan accent", new Vector2(0, 0), new Vector2(0, 1), 2);
+        Status = Text(root, "Timeline status", bodyFont, 17, -22, 32);
+        Status.rectTransform.anchorMin = Status.rectTransform.anchorMax = Status.rectTransform.pivot = Vector2.one;
+        Status.rectTransform.anchoredPosition = new Vector2(-28, -22); Status.rectTransform.sizeDelta = new Vector2(600, 32);
+        Status.alignment = TextAlignmentOptions.TopRight;
+        promptPanel = Panel(root, "Interaction prompt backing", new Vector2(240, 50), new Color(.055f, .045f, .03f, .58f));
+        promptPanel.anchorMin = promptPanel.anchorMax = promptPanel.pivot = new Vector2(.5f, .5f);
+        promptPanel.anchoredPosition = Vector2.zero;
+        promptPanel.anchorMin = promptPanel.anchorMax = new Vector2(.5f, .20f);
+        promptKeycap = Panel(promptPanel, "Interaction keycap", new Vector2(38, 38), new Color(.31f, .23f, .12f, .92f));
+        promptKeycap.anchorMin = promptKeycap.anchorMax = new Vector2(0, .5f);
+        promptKeycap.pivot = new Vector2(0, .5f); promptKeycap.anchoredPosition = new Vector2(8, 0);
+        var outline = promptKeycap.gameObject.AddComponent<Outline>();
+        outline.effectColor = new Color(.80f, .62f, .33f, .65f); outline.effectDistance = new Vector2(1, -1);
+        Prompt = Text(promptPanel, "Contextual interaction prompt", bodyFont, 22, 0, 38);
+        Prompt.alignment = TextAlignmentOptions.MidlineLeft;
+        Prompt.color = new Color(.98f, .91f, .77f);
+        Prompt.rectTransform.anchorMin = new Vector2(0, .5f); Prompt.rectTransform.anchorMax = new Vector2(1, .5f);
+        Prompt.rectTransform.pivot = new Vector2(.5f, .5f); Prompt.rectTransform.sizeDelta = new Vector2(-40, 38);
+        var shadow = Prompt.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0, 0, 0, .9f); shadow.effectDistance = new Vector2(1, -1);
+    }
+
+    public void SetObjective(string key, string title, string detail)
+    {
+        if (stage != key)
+        {
+            stage = key; age = 0; Revision++;
+        }
+        heading.text = title; Instruction.text = detail;
+        number.text = key == "Complete" ? "OBJECTIVE COMPLETE" : key == "Exit" ? "RELAYS RESTORED" : "NEW OBJECTIVE";
+        compactText.text = detail.Split('\n')[0];
+    }
+
+    public void Reannounce() => stage = null;
+    public void SetVisible(bool value) => visibility.alpha = value ? 1 : 0;
+
+    public void Tick(float delta)
+    {
+        age += delta;
+        float enter = Mathf.SmoothStep(0, 1, Mathf.Clamp01(age / .25f));
+        float collapse = Mathf.SmoothStep(0, 1, Mathf.Clamp01((age - 3.6f) / .25f));
+        float compactEnter = Mathf.SmoothStep(0, 1, Mathf.Clamp01((age - 3.88f) / .22f));
+        expanded.alpha = enter * (1 - collapse); compact.alpha = compactEnter;
+        expandedRect.anchoredPosition = new Vector2(0, -74 + (1 - enter) * 12 - collapse * 8);
+        compactRect.anchoredPosition = new Vector2(0, -74 - (1 - compactEnter) * 8);
+        float width = Mathf.Min(780, Mathf.Max(280, root.rect.width - 56));
+        expandedRect.sizeDelta = new Vector2(width, 158); compactRect.sizeDelta = new Vector2(width, 58);
+        float promptWidth = Mathf.Clamp(Prompt.GetPreferredValues(Prompt.text, float.PositiveInfinity, 38).x + 40, 140, 440);
+        promptPanel.sizeDelta = new Vector2(Mathf.Min(promptWidth, root.rect.width - 56), 50);
+        promptKeycap.gameObject.SetActive(Prompt.text.StartsWith("E —") || Prompt.text.StartsWith("T —"));
+        promptPanel.gameObject.SetActive(!string.IsNullOrEmpty(Prompt.text));
+    }
+
+    static RectTransform Panel(Transform parent, string name, Vector2 size, Color color)
+    {
+        var go = new GameObject(name, typeof(RectTransform), typeof(Image)); go.transform.SetParent(parent, false);
+        var rect = go.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, 1);
+        rect.sizeDelta = size; rect.anchoredPosition = new Vector2(0, -74);
+        go.GetComponent<Image>().color = color; go.GetComponent<Image>().raycastTarget = false; return rect;
+    }
+    static Image Strip(Transform parent, string name, Vector2 min, Vector2 max, float thickness)
+    {
+        var go = new GameObject(name, typeof(RectTransform), typeof(Image)); go.transform.SetParent(parent, false);
+        var image = go.GetComponent<Image>(); image.color = Cyan; image.raycastTarget = false;
+        var rect = go.GetComponent<RectTransform>(); rect.anchorMin = min; rect.anchorMax = max;
+        rect.offsetMin = Vector2.zero; rect.offsetMax = Vector2.zero;
+        rect.sizeDelta = min.x == max.x ? new Vector2(thickness, 0) : new Vector2(0, thickness);
+        return image;
+    }
+    static TMP_Text Text(Transform parent, string name, TMP_FontAsset font, float size, float y, float height)
+    {
+        var go = new GameObject(name, typeof(RectTransform)); go.transform.SetParent(parent, false);
+        var text = go.AddComponent<TextMeshProUGUI>(); text.font = font; text.fontSize = size;
+        text.enableAutoSizing = true; text.fontSizeMin = size - 3; text.fontSizeMax = size;
+        text.color = new Color(.89f, .94f, .96f); text.alignment = TextAlignmentOptions.Center;
+        text.raycastTarget = false; text.richText = false;
+        var rect = text.rectTransform; rect.anchorMin = new Vector2(0, 1); rect.anchorMax = Vector2.one; rect.pivot = new Vector2(.5f, 1);
+        rect.sizeDelta = new Vector2(-48, height); rect.anchoredPosition = new Vector2(0, y);
+        return text;
     }
 }

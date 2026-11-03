@@ -12,7 +12,9 @@ public sealed class Scene01Guidance : MonoBehaviour
     [SerializeField] ArtificialGravity playerGravity;
     [SerializeField] TMP_FontAsset supportingFont;
     GameObject recoveryPanel;
-    TMP_Text controls, recovery;
+    TMP_Text controls, recovery, pauseTip;
+    float pauseTipElapsed;
+    bool pauseTipDismissed;
     readonly RaycastHit[] floorHits = new RaycastHit[32];
     public string RecoveryHint => recovery == null ? "" : recovery.text;
     public string ControlHint => controls == null ? "" : controls.text;
@@ -21,11 +23,16 @@ public sealed class Scene01Guidance : MonoBehaviour
     {
         var hud = transform.Find("Scene 01 Objective UI");
         controls = GameplayHud.CreateControlHint(hud, supportingFont);
+        pauseTip = Label(hud, "Pause shortcut introduction", new Vector2(0, 75), new Vector2(600, 32), 19);
+        pauseTip.rectTransform.anchorMin = pauseTip.rectTransform.anchorMax = pauseTip.rectTransform.pivot = new Vector2(.5f, 0);
+        pauseTip.alignment = TextAlignmentOptions.Center;
+        pauseTip.text = "ESC / P — Pause and open Settings";
+        pauseTip.gameObject.SetActive(false);
         recoveryPanel = new GameObject("Objective 02 flight help", typeof(RectTransform), typeof(Image));
         recoveryPanel.transform.SetParent(hud, false);
         var panelRect = recoveryPanel.GetComponent<RectTransform>();
-        panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0, 1);
-        panelRect.anchoredPosition = new Vector2(28, -188);
+        panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0, 0);
+        panelRect.anchoredPosition = new Vector2(28, 90);
         panelRect.sizeDelta = new Vector2(470, 88);
         var background = recoveryPanel.GetComponent<Image>();
         background.color = new Color(0, 0, 0, .78f); background.raycastTarget = false;
@@ -36,14 +43,17 @@ public sealed class Scene01Guidance : MonoBehaviour
     }
     void LateUpdate()
     {
-        if (controls == null || GameSettingsMenu.GameplayInputBlocked) return;
+        if (controls == null) return;
+        if (GameSettingsMenu.Instance != null && GameSettingsMenu.Instance.IsOpen) pauseTipDismissed = true;
+        if (GameSettingsMenu.GameplayInputBlocked) return;
+        pauseTipElapsed += Time.unscaledDeltaTime;
+        pauseTip.gameObject.SetActive(!pauseTipDismissed && pauseTipElapsed < 8f && !level.Completed);
         bool floating = !playerGravity.IsGravityActive;
         bool showRecovery = level.IntroSolved && !level.MainSolved && !level.Completed && floating && !HasFloor();
         recovery.text = showRecovery ? "Hold CTRL to descend while floating.\nSPACE — Thrust up" : "";
         recoveryPanel.SetActive(showRecovery);
-        controls.text = "ESC / P — Settings / Resume" +
-            (level.Completed ? "    ·    R — Replay" : floating ? "    ·    Q — Toggle jetpack" : "") +
-            (showRecovery ? "    ·    R — Reset checkpoint" : "");
+        controls.text = level.Completed ? "R — Replay" : floating ? "Q — Toggle jetpack" +
+            (showRecovery ? "    ·    R — Reset checkpoint" : "") : "";
     }
     bool HasFloor()
     {

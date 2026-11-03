@@ -48,7 +48,7 @@ namespace Parallax.Gameplay.Tests
             yield return null; Assert.That(Hint, Does.Contain("Hold CTRL to descend while floating."));
             var help = Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None).Single(x => x.name == "Hover recovery hint");
             Assert.That(help.rectTransform.anchorMax.y, Is.EqualTo(1));
-            Assert.That(help.rectTransform.parent.GetComponent<RectTransform>().anchoredPosition, Is.EqualTo(new Vector2(28, -188)));
+            Assert.That(help.rectTransform.parent.GetComponent<RectTransform>().anchoredPosition, Is.EqualTo(new Vector2(28, 90)));
             help.ForceMeshUpdate(); Assert.That(help.isTextOverflowing, Is.False);
             Scene01PresentationTests.Capture(Camera.main, "objective02-flight-help-small", 960, 540);
             Scene01PresentationTests.Capture(Camera.main, "objective02-flight-help", 1280, 720);
@@ -62,16 +62,38 @@ namespace Parallax.Gameplay.Tests
             yield return new WaitForSeconds(.2f); Assert.That(Hint, Is.Not.Empty);
             Set(level, "<MainSolved>k__BackingField", true); yield return null; Assert.That(Hint, Is.Empty);
         }
-        [UnityTest] public IEnumerator SettingsLauncherMovesBelowStatusAndRestoresItsOriginalPlacementOutsideTheScene()
+        [UnityTest] public IEnumerator PauseIntroductionWaitsForGameplayAndDismissesAfterSettings()
+        {
+            var tip = guidance.GetType().GetField("pauseTip", Flags).GetValue(guidance) as TMP_Text;
+            Set(guidance, "pauseTipElapsed", 0f);
+            GameSettingsMenu.StartupInputBlocked = true;
+            yield return new WaitForSecondsRealtime(.2f);
+            Assert.That((float)guidance.GetType().GetField("pauseTipElapsed", Flags).GetValue(guidance), Is.Zero);
+            GameSettingsMenu.StartupInputBlocked = false;
+            yield return null;
+            Assert.That(tip.gameObject.activeSelf, Is.True);
+            tip.ForceMeshUpdate(); Assert.That(tip.isTextOverflowing, Is.False);
+            Set(guidance, "pauseTipElapsed", 8f); yield return null;
+            Assert.That(tip.gameObject.activeSelf, Is.False);
+            Set(guidance, "pauseTipElapsed", 0f); yield return null;
+            GameSettingsMenu.Instance.Open(); yield return null;
+            GameSettingsMenu.Instance.Close(); yield return null; yield return null;
+            Assert.That(tip.gameObject.activeSelf, Is.False, "Do not repeat the introduction after Settings has been used.");
+        }
+
+        [UnityTest] public IEnumerator SettingsLauncherMovesToTopLeftAndRestoresItsOriginalPlacementOutsideTheScene()
         {
             var menu = GameSettingsMenu.Instance; var root = menu.GetComponent<UIDocument>().rootVisualElement;
             yield return new WaitForSecondsRealtime(.35f);
             var launcher = root.Q<Button>("open-settings");
-            Assert.That(launcher.style.top.keyword, Is.EqualTo(StyleKeyword.Auto));
-            Assert.That(launcher.style.bottom.value.value, Is.EqualTo(24));
-            Assert.That(launcher.worldBound.yMin, Is.GreaterThan(root.layout.height * .5f));
+            Assert.That(launcher.text, Is.EqualTo("Settings · Esc / P"));
+            Assert.That(launcher.style.top.value.value, Is.EqualTo(24));
+            Assert.That(launcher.style.left.value.value, Is.EqualTo(24));
+            Assert.That(launcher.style.right.keyword, Is.EqualTo(StyleKeyword.Auto));
+            Assert.That(launcher.style.bottom.keyword, Is.EqualTo(StyleKeyword.Auto));
+            Assert.That(launcher.worldBound.yMin, Is.LessThan(root.layout.height * .5f));
             var text = Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None).Single(x => x.name == "Contextual control hints");
-            Assert.That(text.text, Does.Contain("ESC / P — Settings / Resume"));
+            Assert.That(text.text, Does.Not.Contain("Settings").And.Not.Contain("Resume"));
             Assert.That(text.font.name, Is.EqualTo("SpaceMono-Regular SDF"));
             yield return SceneManager.LoadSceneAsync("MainMenu"); yield return null;
             Assert.That(launcher.style.top.keyword, Is.EqualTo(StyleKeyword.Null));

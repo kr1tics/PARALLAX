@@ -148,7 +148,7 @@ public sealed class Level1Controller : MonoBehaviour
         GUI.Label(new Rect(30, 124, 430, 30), GlobalState.get().now.ToString().ToUpperInvariant() +
             (GlobalState.get().gravity > 0 ? "  /  STATION GRAVITY ON" : "  /  STATION GRAVITY OFF"), bodyStyle);
         GUI.Label(new Rect(20, Screen.height / scale - 38, 900, 30),
-            "F / T  Switch time     E / Click  Interact     R  " + (Completed ? "Replay level" : "Reset checkpoint") + "     Esc / P  Settings & controls", bodyStyle);
+            "T  Switch time     E / Click  Interact     R  " + (Completed ? "Replay level" : "Reset checkpoint") + "     Esc / P  Settings & controls", bodyStyle);
         GUI.matrix = previous;
     }
 }

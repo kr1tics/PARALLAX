@@ -26,11 +26,11 @@ public sealed class Scene01Typography : MonoBehaviour
         public StyleFontDefinition font;
         public StyleEnum<FontStyle> weight;
         public StyleColor color;
-        public StyleLength spacing, top, bottom, height, size;
+        public StyleLength spacing, top, bottom, left, right, height, size;
         public OriginalStyle(IStyle style)
-        { font = style.unityFontDefinition; weight = style.unityFontStyleAndWeight; color = style.color; spacing = style.letterSpacing; top = style.top; bottom = style.bottom; height = style.height; size = style.fontSize; }
+        { font = style.unityFontDefinition; weight = style.unityFontStyleAndWeight; color = style.color; spacing = style.letterSpacing; top = style.top; bottom = style.bottom; left = style.left; right = style.right; height = style.height; size = style.fontSize; }
         public void Restore(IStyle style)
-        { style.unityFontDefinition = font; style.unityFontStyleAndWeight = weight; style.color = color; style.letterSpacing = spacing; style.top = top; style.bottom = bottom; style.height = height; style.fontSize = size; }
+        { style.unityFontDefinition = font; style.unityFontStyleAndWeight = weight; style.color = color; style.letterSpacing = spacing; style.top = top; style.bottom = bottom; style.left = left; style.right = right; style.height = height; style.fontSize = size; }
     }
 
     void Start()
@@ -51,7 +51,8 @@ public sealed class Scene01Typography : MonoBehaviour
         foreach (var root in roots)
         foreach (var text in root.GetComponentsInChildren<TMP_Text>(true))
         {
-            if (text.GetComponentInParent<ContextIntro>() != null ||
+            if (text.GetComponentInParent<Canvas>()?.name is "Scene 01 Objective UI" or "Power Restoration Opening" ||
+                text.GetComponentInParent<ContextIntro>() != null ||
                 text.GetComponentInParent<Canvas>()?.name is "Tutorial Completion Screen" or "Power Restoration Completion Screen" ||
                 !configured.Add(text)) continue;
             bool heading = headings.Contains(text) || text.name == "Objective title" || text.name == "Objective number" ||
@@ -87,8 +88,15 @@ public sealed class Scene01Typography : MonoBehaviour
         var launcher = document.rootVisualElement.Q<Button>("open-settings");
         if (launcher != null)
         {
-            launcher.style.top = StyleKeyword.Auto;
-            launcher.style.bottom = 24;
+            if (gameObject.scene.name == "StartScene")
+            {
+                launcher.style.top = 24; launcher.style.bottom = StyleKeyword.Auto;
+                launcher.style.left = 24; launcher.style.right = StyleKeyword.Auto;
+            }
+            else
+            {
+                launcher.style.top = StyleKeyword.Auto; launcher.style.bottom = 24;
+            }
             launcher.style.height = 32;
             launcher.style.fontSize = 14;
         }

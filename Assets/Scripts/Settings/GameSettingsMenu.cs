@@ -20,7 +20,8 @@ namespace Parallax.Settings
         private bool manualDistortionControl = true, checkpointControl = true;
         // Ignore the click/key that resumes the game until the next frame.
         public static bool StartupInputBlocked { get; set; }
-        public static bool GameplayInputBlocked => StartupInputBlocked || (Instance != null &&
+        public static bool NarrativeInputBlocked { get; set; }
+        public static bool GameplayInputBlocked => StartupInputBlocked || NarrativeInputBlocked || (Instance != null &&
             (Instance.IsMainMenuContext || Instance.IsOpen || Instance.lastClosedFrame == Time.frameCount));
         private int lastClosedFrame = -1;
         public event Action<bool> OpenChanged;

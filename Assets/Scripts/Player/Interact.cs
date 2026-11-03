@@ -8,6 +8,7 @@ public class Interact : MonoBehaviour
     [SerializeField] public float reachDistance = 1.2f;
     [SerializeField] private LayerMask interactibleLayers;
     [SerializeField] private GameObject interactIndicator;
+    [SerializeField] private bool automaticInteractionEffects = true;
     private readonly RaycastHit[] hits = new RaycastHit[32];
     public MovableObject HeldObject { get; private set; }
 
@@ -55,7 +56,7 @@ public class Interact : MonoBehaviour
             var target = cast.Item2.collider.GetComponentInParent<Interactable>();
             target.onInteract(this);
             // Carrying controls the effect for movable objects; switches get a brief pulse.
-            if (target != null && !(target is MovableObject))
+            if (automaticInteractionEffects && target != null && !(target is MovableObject))
                 InteractionDistortion.Play(target.gameObject);
         }
     }
@@ -63,13 +64,13 @@ public class Interact : MonoBehaviour
     internal void Hold(MovableObject value)
     {
         HeldObject = value;
-        InteractionDistortion.BeginHolding(value.gameObject);
+        if (automaticInteractionEffects) InteractionDistortion.BeginHolding(value.gameObject);
     }
     internal void Release(MovableObject value)
     {
         if (HeldObject != value) return;
         HeldObject = null;
-        InteractionDistortion.EndHolding(value.gameObject);
+        if (automaticInteractionEffects) InteractionDistortion.EndHolding(value.gameObject);
     }
     public void DropHeldObject() { if (HeldObject != null) HeldObject.Drop(); }
     private void OnDisable() => DropHeldObject();
