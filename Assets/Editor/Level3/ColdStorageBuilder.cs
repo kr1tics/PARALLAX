@@ -56,13 +56,16 @@ public static class ColdStorageBuilder
         Dressing(refs);
         Lighting(refs);
         Cells(refs);
+        // Main's stock completion card; Continue to MainMenu hands over to the Restored memory (MemoryRecoveryFlow).
         var completion = root.AddComponent<TutorialCompletionScreen>();
         Set(completion, "primaryFont", title); Set(completion, "secondaryFont", mono);
-        Set(completion, "finalLevel", true); Set(completion, "nextScene", "");
+        Set(completion, "nextScene", "MainMenu");
         Set(completion, "completionTitle", "STATION STABLE");
         Set(completion, "completionDescription", "Power and cooling restored. The station can sustain itself again.");
-        Set(completion, "finalMessage", "Final level complete.");
-        Set(completion, "replayLabel", "RESTART LEVEL"); Set(completion, "allowCompletionShortcut", false);
+        Set(completion, "finalMessage", "The core archive is cooling. Continue to recover the final memory.");
+        Set(completion, "replayLabel", "RESTART LEVEL"); Set(completion, "allowCompletionShortcut", true);
+        var signage = root.AddComponent<ColdStorageSignage>();
+        Set(signage, "plant", level); Set(signage, "titleFont", title); Set(signage, "bodyFont", mono);
         refs["completion"] = completion;
         refs["player"] = Object.FindFirstObjectByType<PlayerController>();
         refs["sounds"] = Resources.Load<ParallaxAudioPalette>("Audio/ParallaxAudioPalette");
@@ -157,31 +160,42 @@ public static class ColdStorageBuilder
         ColdStorageModels.Exchanger(new Vector3(0, 0, 7.7f), casing, steel, coolant, plant);
         foreach (var x in new[] { -.8f, .8f })
             ColdStorageModels.Route("Primary trunk", new[] { new Vector3(x, 1.2f, 8.6f), new Vector3(x, 1.2f, 10.9f) }, .16f, coolant, plant);
-        Label("Trunk sign", "PRIMARY LOOP <-> REACTOR HALL", new Vector3(0, 5.5f, 10.35f), 0, 7, 2.4f);
-        refs["reactorLabel"] = Label("Reactor loop repeater", "REACTOR LOOP\nCRITICAL · 612 K", new Vector3(0, 6.9f, 10.55f), 0, 6, 5.5f, title, 2);
+        // Identification lives on mounted plates (ColdStorageSignage); only the reactor repeater stays a wall display.
+        refs["reactorLabel"] = Label("Reactor loop repeater", "REACTOR LOOP\nCRITICAL · 612 K", new Vector3(0, 6.9f, 10.74f), 0, 4.4f, 4.5f, title, 2);
 
         // S1 cartridge bay at the exchanger inlet.
         var s1 = Plate("S1 cartridge bay", new Vector3(0, .1f, 5), casing, structure);
         foreach (var x in new[] { -.68f, .68f }) ColdStorageModels.Box("S1 guide", new Vector3(x, .45f, 5), new Vector3(.08f, .7f, 1.2f), steel, plant, true);
         ColdStorageModels.Box("S1 back plate", new Vector3(0, .6f, 5.68f), new Vector3(1.4f, 1f, .08f), steel, plant, true);
-        refs["s1"] = s1; refs["s1Lamp"] = Lamp("S1 lamp", new Vector3(.82f, 1.25f, 4.4f));
-        refs["s1Label"] = Label("S1 label", "S1 CARTRIDGE BAY", new Vector3(0, 1.75f, 4.3f), 0, 3.2f, 1.5f, null, 3);
+        ColdStorageModels.Box("S1 plate mount", new Vector3(0, 1.45f, 5.72f), new Vector3(1.4f, .7f, .08f), casing, plant, true);
+        refs["s1"] = s1;
         var s1Frost = ColdStorageModels.Box("S1 frost ring", new Vector3(0, .24f, 5), new Vector3(1.5f, .06f, 1.5f), frost, plant);
         refs["s1Frost"] = s1Frost;
 
         // Exchanger console beside S1: start-up happens in 2176.
         var console = Control(level, ColdStorageControl.Kind.Console, "Exchanger console", new Vector3(-2.8f, 1.1f, 4.6f), new Vector3(1.3f, .9f, .6f), interactable);
         ColdStorageModels.Box("Exchanger console base", new Vector3(-2.8f, .35f, 4.6f), new Vector3(.8f, .7f, .5f), steel, plant, true);
-        refs["consoleLamp"] = Lamp("Console lamp", new Vector3(-2.35f, 1.62f, 4.28f));
-        refs["consoleLabel"] = Label("Console label", "EXCHANGER", new Vector3(-2.8f, 2.05f, 4.25f), 0, 3.2f, 1.5f, null, 2);
+        refs["consoleLamp"] = Lamp("Console lamp", new Vector3(-2.3f, 1.49f, 4.28f));
 
-        // Balance pan P lifts R's plug hatch through a cable up the deck edge.
-        refs["pan"] = Plate("Balance pan P", new Vector3(2.6f, .1f, 3), steel, structure);
-        ColdStorageModels.Box("Pan rim", new Vector3(2.6f, .25f, 3), new Vector3(1.35f, .1f, 1.35f), cable, plant, true);
-        refs["panLabel"] = Label("Pan label", "BALANCE PAN", new Vector3(2.3f, 1.5f, 2.25f), 0, 3.2f, 1.4f, null, 3);
-        ColdStorageModels.Route("Hatch balance cable", new[] { new Vector3(2.6f, .3f, 3.62f), new Vector3(2.6f, 11.3f, 3.62f), new Vector3(7.85f, 11.3f, 3.62f), new Vector3(7.85f, 11.3f, 6), new Vector3(7.85f, 10.75f, 6) }, .035f, cable, plant);
-        foreach (var p in new[] { new Vector3(2.6f, 11.3f, 3.62f), new Vector3(7.85f, 11.3f, 3.62f), new Vector3(7.85f, 11.3f, 6) })
-            ColdStorageModels.Box("Cable pulley", p, Vector3.one * .22f, steel, plant, true);
+        // Balance pan P lifts R's plug hatch: the collider stays put, a visual deck dips under load.
+        var pan = Plate("Balance pan P", new Vector3(2.6f, .1f, 3), steel, structure);
+        pan.GetComponent<Renderer>().enabled = false; refs["pan"] = pan;
+        var panDeck = ColdStorageModels.Box("Balance pan deck", new Vector3(2.6f, .1f, 3), new Vector3(1.2f, .2f, 1.2f), steel, plant, true);
+        ColdStorageModels.Box("Pan rim", new Vector3(2.6f, .25f, 3), new Vector3(1.35f, .1f, 1.35f), cable, panDeck.transform, true);
+        ColdStorageModels.Box("Pan hazard edge", new Vector3(2.6f, .31f, 2.34f), new Vector3(1.35f, .03f, .05f), amberStripe, panDeck.transform);
+        refs["panVisual"] = panDeck.transform;
+        ColdStorageModels.Box("Pan plate mount", new Vector3(2.6f, .36f, 2.26f), new Vector3(1.2f, .5f, .06f), casing, plant, true);
+        // The balance cable runs from the pan along the deck front edge to R's hatch arm, banded and on yellow pulleys.
+        var cableRoute = new[] { new Vector3(2.6f, .3f, 3.72f), new Vector3(2.6f, 6.2f, 3.72f), new Vector3(2.6f, 6.2f, 2.75f), new Vector3(8, 6.2f, 2.75f),
+            new Vector3(8, 11.6f, 2.75f), new Vector3(8, 11.6f, 6), new Vector3(8, 10.85f, 6) };
+        ColdStorageModels.Route("Hatch balance cable", cableRoute, .06f, cable, plant);
+        for (int i = 1; i < cableRoute.Length; i++)
+        {
+            var from = cableRoute[i - 1]; var to = cableRoute[i]; float length = Vector3.Distance(from, to);
+            for (float d = 1.2f; d < length - .6f; d += 1.4f)
+                ColdStorageModels.Box("Cable hazard band", Vector3.Lerp(from, to, d / length), Vector3.one * .15f, amberStripe, plant);
+            if (i < cableRoute.Length - 1) ColdStorageModels.Box("Cable pulley", to, Vector3.one * .32f, amberStripe, plant, true);
+        }
 
         // R: a vacuum-insulated alcove on the hull radiator, sealed by a plug hatch.
         void RPart(string name, Vector3 p, Vector3 size, Quaternion rotation)
@@ -204,19 +218,21 @@ public static class ColdStorageBuilder
         ColdStorageModels.Box("R hull backing", new Vector3(9.85f, 10, 6), new Vector3(.1f, 4, 4.8f), casing, plant, true);
         ColdStorageModels.Box("R radiator window",new Vector3(9.76f, 9.95f, 6), new Vector3(.04f, 1.2f, 1.6f), glass, plant);
         ColdStorageModels.Box("R permanent frost", new Vector3(9.7f, 9.95f, 6), new Vector3(.05f, 1.3f, 1.7f), frost, plant);
+        foreach (var z in new[] { 5.06f, 6.94f }) ColdStorageModels.Box("R hatch frame trim", new Vector3(7.99f, 9.9f, z), new Vector3(.05f, 1.6f, .07f), amberStripe, plant);
+        ColdStorageModels.Box("R plate mount", new Vector3(8.15f, 8.75f, 6), new Vector3(.1f, .5f, 1.9f), casing, plant, true);
+        // The hatch collider never moves; the plug visual lifts clear of the opening while it is open.
         var hatch = GameObject.CreatePrimitive(PrimitiveType.Cube); hatch.name = "R plug hatch"; hatch.transform.SetParent(plant);
         hatch.transform.position = new Vector3(8.1f, 9.95f, 6); hatch.transform.localScale = new Vector3(.15f, 1.6f, 1.8f); hatch.layer = structure;
-        hatch.GetComponent<Renderer>().sharedMaterial = casing; ColdStorageModels.Weather(hatch.GetComponent<Renderer>(), casing);
-        ColdStorageModels.Box("R hatch inspection glass", new Vector3(8.02f, 10.1f, 6), new Vector3(.02f, .4f, 1.2f), glass, hatch.transform);
-        ColdStorageModels.Box("R hatch balance arm", new Vector3(8.0f, 10.8f, 6), new Vector3(.1f, .1f, 1.9f), steel, hatch.transform, true);
-        refs["hatch"] = hatch; refs["rLamp"] = Lamp("R lamp", new Vector3(8.0f, 9.0f, 6.95f));
-        refs["rLabel"] = Label("R label", "R RADIATOR SINK", new Vector3(7.95f, 11.5f, 6), 90, 4, 1.6f, null, 4);
+        hatch.GetComponent<Renderer>().enabled = false;
+        var plug = ColdStorageModels.Box("R plug", new Vector3(8.1f, 9.95f, 6), new Vector3(.15f, 1.6f, 1.8f), casing, plant, true);
+        ColdStorageModels.Box("R hatch inspection glass", new Vector3(8.02f, 10.1f, 6), new Vector3(.02f, .4f, 1.2f), glass, plug.transform);
+        ColdStorageModels.Box("R hatch balance arm", new Vector3(8.0f, 10.8f, 6), new Vector3(.1f, .1f, 1.9f), amberStripe, plug.transform);
+        refs["hatch"] = hatch; refs["hatchVisual"] = plug.transform;
 
         // S2: the exchanger's open hot-side cradle on the deck.
         refs["s2"] = Plate("S2 hot socket", new Vector3(5, 7.1f, 5.8f), casing, structure);
         foreach (var x in new[] { -.68f, .68f }) ColdStorageModels.Box("S2 lip", new Vector3(5 + x, 7.3f, 5.8f), new Vector3(.08f, .25f, 1.2f), steel, plant, true);
-        refs["s2Lamp"] = Lamp("S2 lamp", new Vector3(5.8f, 7.6f, 5.15f));
-        refs["s2Label"] = Label("S2 label", "S2 HOT SOCKET", new Vector3(5, 8.4f, 5.1f), 0, 3.2f, 1.5f, null, 3);
+        ColdStorageModels.Box("S2 plate mount", new Vector3(5, 7.33f, 5.18f), new Vector3(1.1f, .5f, .05f), casing, plant, true);
         refs["tankCoolant"] = ColdStorageModels.Tank(new Vector3(4.15f, 7, 8.15f), steel, casing, glass, coolant, plant);
 
         // Loop riser from S1 to the deck, with flange F3 at hover height.
@@ -224,8 +240,8 @@ public static class ColdStorageBuilder
         ColdStorageModels.Ring("Flange F3", new Vector3(2.9f, 4.6f, 8.15f), .2f, .06f, steel, plant);
         var flange = Control(level, ColdStorageControl.Kind.Flange, "Flange F3", new Vector3(2.9f, 4.6f, 8.15f), new Vector3(.55f, .4f, .55f), interactable);
         flange.GetComponent<Renderer>().enabled = false;
-        refs["flange"] = flange.transform; refs["flangeLamp"] = Lamp("F3 lamp", new Vector3(2.9f, 4.05f, 7.85f));
-        refs["flangeLabel"] = Label("F3 label", "F3", new Vector3(2.9f, 5.5f, 7.7f), 0, 3, 1.8f, null, 3);
+        refs["flange"] = flange.transform;
+        ColdStorageModels.Box("F3 tag clamp", new Vector3(2.9f, 4.12f, 8.02f), new Vector3(.55f, .32f, .04f), steel, plant, true);
         var crack = new GameObject("F3 crack vapour (2026)").transform; crack.SetParent(plant);
         for (int i = 0; i < 3; i++) ColdStorageModels.Box("Vapour wisp", new Vector3(2.75f - i * .12f, 4.75f + i * .18f, 7.95f), new Vector3(.25f + i * .08f, .05f, .05f), glass, crack);
         var burst = new GameObject("F3 burst and ice (2176)").transform; burst.SetParent(plant);
@@ -237,13 +253,13 @@ public static class ColdStorageBuilder
         refs["flangeCrack"] = crack.gameObject; refs["flangeBurst"] = burst.gameObject; refs["flangeIntact"] = intact.gameObject;
 
         // Plant valve: LOOP or SERVICE. Seized by 2176.
-        var valve = Control(level, ColdStorageControl.Kind.Valve, "Plant valve", new Vector3(-4, 1.1f, -3), new Vector3(1.7f, 1f, .6f), interactable);
+        var valve = Control(level, ColdStorageControl.Kind.Valve, "Plant valve", new Vector3(-4, 1.1f, -3), new Vector3(2.2f, 1f, .6f), interactable);
         ColdStorageModels.Box("Valve footing", new Vector3(-4, .3f, -3), new Vector3(.8f, .6f, .5f), steel, plant, true);
-        ColdStorageModels.Handwheel(new Vector3(-4, 1.05f, -3.42f), cable, steel, plant);
+        ColdStorageModels.Handwheel(new Vector3(-4.5f, 1.05f, -3.42f), cable, steel, plant);
         ColdStorageModels.Route("Service line to vault", new[] { new Vector3(-4.6f, .3f, -2.7f), new Vector3(-6, .3f, -2.7f), new Vector3(-6, .3f, 2.6f) }, .08f, cable, plant);
         refs["valveLamp"] = Lamp("Valve lamp", new Vector3(-3.3f, 1.5f, -3.32f));
-        refs["valveLabel"] = Label("Valve label", "PLANT VALVE", new Vector3(-4, 2.05f, -3.35f), 0, 3.4f, 1.4f, null, 3);
-        var ice = ColdStorageModels.Box("Valve ice crust", new Vector3(-4, 1.05f, -3.5f), new Vector3(.75f, .7f, .1f), frost, dressing);
+        var ice = new GameObject("Valve frost (2176)"); ice.transform.SetParent(dressing);
+        ColdStorageModels.Ring("Valve frost ring", new Vector3(-4.5f, 1.05f, -3.44f), .3f, .07f, frost, ice.transform, Quaternion.Euler(90, 0, 0), false);
         futureOnly.Add(ice);
 
         // Active-chill vault: barred hydraulic door in 2026, buckled open by 2176.
@@ -257,13 +273,13 @@ public static class ColdStorageBuilder
         VaultWall("Vault starboard wall", new Vector3(-3.5f, 2.25f, 6), new Vector3(.3f, 4.5f, 6));
         VaultWall("Vault rear wall", new Vector3(-6, 2.25f, 9), new Vector3(5, 4.5f, .3f));
         VaultWall("Vault roof", new Vector3(-6, 4.5f, 6), new Vector3(5, .3f, 6));
+        ColdStorageModels.Box("Vault fascia", new Vector3(-6, 4.95f, 2.92f), new Vector3(5, .6f, .16f), casing, plant, true);
         var gate = GameObject.CreatePrimitive(PrimitiveType.Cube); gate.name = "Vault door"; gate.transform.SetParent(plant);
         gate.transform.position = new Vector3(-6, 2.25f, 3); gate.transform.localScale = new Vector3(4.8f, 4.5f, .3f); gate.layer = structure;
         gate.GetComponent<Renderer>().enabled = false;
         for (int i = 0; i < 9; i++) ColdStorageModels.Box("Vault door bar", new Vector3(-7.9f + i * .475f, 2.25f, 3), new Vector3(.08f, 4.3f, .08f), steel, gate.transform, true);
         foreach (float y in new[] { .15f, 2.25f, 4.3f }) ColdStorageModels.Box("Vault door rail", new Vector3(-6, y, 3), new Vector3(4.6f, .12f, .12f), casing, gate.transform, true);
         refs["vaultGate"] = gate;
-        refs["vaultLabel"] = Label("Vault label", "ACTIVE-CHILL VAULT", new Vector3(-6, 5.35f, 2.8f), 0, 4.2f, 2f, null, 3);
         var vaultLamp = new GameObject("Vault chill lamp", typeof(Light)).GetComponent<Light>(); vaultLamp.transform.SetParent(dressing);
         vaultLamp.transform.position = new Vector3(-6, 3.8f, 6); vaultLamp.type = LightType.Point; vaultLamp.color = new Color(.55f, .85f, 1); vaultLamp.range = 6; vaultLamp.intensity = 1.2f;
         pastOnly.Add(vaultLamp.gameObject);
@@ -271,17 +287,6 @@ public static class ColdStorageBuilder
         // Flow lamps light in loop order during the start-up.
         refs["loopLamps"] = new[] { new Vector3(0, .26f, 5.75f), new Vector3(0, 1.4f, 9.1f), new Vector3(.8f, 1.5f, 10.6f), new Vector3(1.6f, .58f, 8.15f), new Vector3(2.9f, 2f, 7.95f), new Vector3(2.9f, 6.2f, 7.95f), new Vector3(4.6f, 7.65f, 7.4f) }
             .Select(p => (Object)Lamp("Loop flow lamp", p)).ToArray();
-
-        // Topology and storage notes: the rules of the plant, never the steps.
-        ColdStorageModels.Box("Plant board", new Vector3(4.5f, 2.35f, -1.5f), new Vector3(3.8f, 2.8f, .15f), casing, plant, true);
-        Label("Plant board heading", "PRIMARY COOLANT PLANT", new Vector3(4.5f, 3.45f, -1.59f), 0, 3.6f, 3f, title);
-        Label("Plant board body",
-            "LOOP:  REACTOR <-> EXCHANGER <-> S1 BAY -> RISER F3 -> S2\n" +
-            "LOOP CLOSED:  S1 CARTRIDGES SEALED IN\n" +
-            "SERVICE:  LOOP VENTED · VAULT HYDRAULICS LIVE\n" +
-            "UNSEALED CARTRIDGES BOIL OFF\n" +
-            "R RADIATOR SINK:  PASSIVE COLD, NO POWER",
-            new Vector3(4.5f, 2.2f, -1.59f), 0, 3.6f, 1.55f);
     }
 
     // ---------------------------------------------------------------- dressing and light
@@ -321,7 +326,6 @@ public static class ColdStorageBuilder
     static void Cells(Dictionary<string, object> refs)
     {
         var entanglers = new Object[2]; var past = new Object[2]; var future = new Object[2]; var windows = new Object[2];
-        var pastTags = new List<Object>(); var futureTags = new List<Object>();
         var starts = new[] { new Vector3(-6, .45f, 6.6f), new Vector3(5, 7.65f, 5.8f) };
         for (int i = 0; i < 2; i++)
         {
@@ -331,7 +335,7 @@ public static class ColdStorageBuilder
             using (var data = new SerializedObject(causality))
             { var types = data.FindProperty("_backingCausalityTypes"); types.arraySize = 1; types.GetArrayElementAtIndex(0).enumValueIndex = (int)Causality.CausalityType.Spatial; data.ApplyModifiedPropertiesWithoutUndo(); }
             var entangler = root.AddComponent<Entangler>();
-            GameObject Copy(string era, List<Object> tags, out Renderer window)
+            GameObject Copy(string era, out Renderer window)
             {
                 var cell = GameObject.CreatePrimitive(PrimitiveType.Cube); cell.name = "Cell " + id + " - " + era;
                 cell.transform.SetParent(root.transform); cell.transform.position = starts[i]; cell.transform.localScale = Vector3.one * .9f;
@@ -340,23 +344,14 @@ public static class ColdStorageBuilder
                 body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                 cell.AddComponent<ArtificialGravity>(); cell.AddComponent<MovableObject>();
                 window = ColdStorageModels.Cell(cell.transform, casing, steel, coolant, i == 0 ? amberStripe : cyanStripe, rubber);
-                for (int side = 0; side < 4; side++)
-                {
-                    var tag = Label("Cell tag", "CELL " + id, Vector3.zero, side * 90, 1, 1.1f, mono);
-                    tag.transform.SetParent(cell.transform, false);
-                    tag.transform.localRotation = Quaternion.Euler(0, side * 90, 0);
-                    tag.transform.localPosition = tag.transform.localRotation * new Vector3(0, .08f, -.5f);
-                    tags.Add(tag);
-                }
                 return cell;
             }
-            var pastCopy = Copy("2026", pastTags, out _); var futureCopy = Copy("2176", futureTags, out var futureWindow);
+            var pastCopy = Copy("2026", out _); var futureCopy = Copy("2176", out var futureWindow);
             pastCopy.SetActive(false);
             Set(entangler, "pastObject", pastCopy); Set(entangler, "futureObject", futureCopy); Set(entangler, "causalityController", causality);
             entanglers[i] = entangler; past[i] = pastCopy.GetComponent<Rigidbody>(); future[i] = futureCopy.GetComponent<Rigidbody>(); windows[i] = futureWindow;
         }
         refs["cells"] = entanglers; refs["pastCells"] = past; refs["futureCells"] = future; refs["futureCoolant"] = windows;
-        refs["pastTags"] = pastTags.ToArray(); refs["futureTags"] = futureTags.ToArray();
     }
 
     // ---------------------------------------------------------------- helpers

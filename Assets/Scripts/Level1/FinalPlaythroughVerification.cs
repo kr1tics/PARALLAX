@@ -99,8 +99,8 @@ public sealed class FinalPlaythroughVerification : MonoBehaviour
     IEnumerator Swap()
     {
         var previous = GlobalState.get().now;
-        yield return Tap(Key.F); yield return new WaitForSeconds(1.1f);
-        Require(GlobalState.get().now != previous, "F must swap timelines");
+        yield return Tap(Key.T); yield return new WaitForSeconds(1.1f);
+        Require(GlobalState.get().now != previous, "T must swap timelines");
     }
     void Face(Vector3 target)
     {
@@ -257,9 +257,16 @@ public sealed class FinalPlaythroughVerification : MonoBehaviour
         yield return Fly(new Vector3(-2.8f, 1.3f, 3.2f), 90); Face(GameObject.Find("Exchanger console").transform.position); yield return Tap(Key.E);
         yield return Until(() => plant.GetComponent<TutorialCompletionScreen>().IsReady, "Cold Storage completion missing", 12);
         Mark("Exchanger started; final completion shown"); yield return Snapshot("cold-complete");
-        Require(GameObject.Find("CONTINUE") == null, "The final level must not offer Continue");
-        yield return Click("MAIN MENU"); yield return Until(() => SceneManager.GetActiveScene().name == "MainMenu", "Main Menu navigation failed");
-        Finish(true, "Cold Storage solved with movement, jetpack, carrying, interaction and time input; final completion to Main Menu.");
+        Require(GameObject.Find("RESTART LEVEL") != null && GameObject.Find("MAIN MENU") == null, "The final level offers Restart Level and Continue");
+        yield return Click("CONTINUE"); yield return Until(() => MemoryRecoveryCinematic.IsPlaying, "Continue must play the Restored memory");
+        var memory = FindFirstObjectByType<MemoryRecoveryCinematic>();
+        Require(memory.Stage == MemoryRecoveryStage.Restored && GameSettingsMenu.NarrativeInputBlocked, "Restored memory must own input");
+        yield return new WaitForSecondsRealtime(1); yield return Snapshot("cold-restored");
+        yield return Tap(Key.Space); yield return Until(() => memory.EndCardReady, "Restored end card missing", 12);
+        yield return new WaitForSecondsRealtime(2.5f); yield return Snapshot("cold-ending");
+        yield return Click("Return to Main Menu"); yield return Until(() => SceneManager.GetActiveScene().name == "MainMenu", "Main Menu navigation failed");
+        Require(Time.timeScale == 1 && !GameSettingsMenu.NarrativeInputBlocked && !GameSettingsMenu.StartupInputBlocked, "Main Menu input state wrong");
+        Finish(true, "Cold Storage solved with movement, jetpack, carrying, interaction and time input; Continue played Restored and returned to Main Menu.");
     }
     void Body(out MovableObject pastA, out MovableObject pastB, out MovableObject futureA, out MovableObject futureB)
     {

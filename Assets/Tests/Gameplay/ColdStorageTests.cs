@@ -239,7 +239,7 @@ namespace Parallax.Gameplay.Tests
             yield return Fly(new Vector3(-4, 1.3f, -4.8f), 90); Look(GameObject.Find("Plant valve").transform.position); yield return Tap(Key.E);
             yield return Fly(new Vector3(-6, 1.3f, -4.8f), 90); yield return Fly(new Vector3(-6, 1.3f, 4.6f), 90); yield return Grab(past[A]);
             yield return Fly(new Vector3(-6, 2.2f, 1.2f), 270);
-            yield return Tap(Key.F); yield return new WaitForSeconds(1.2f);
+            yield return Tap(Key.T); yield return new WaitForSeconds(1.2f);
             Assert.That(Held, Is.Null); Assert.That(Usable(A), Is.False); Assert.That(Reason(A), Is.EqualTo("UNSTORED"));
         }
 
@@ -284,7 +284,7 @@ namespace Parallax.Gameplay.Tests
 
         // ------------------------------------------------------------ input-only play
         IEnumerator Tap(Key key) { Keys(key); yield return null; yield return null; Keys(); yield return null; yield return null; }
-        IEnumerator Swap() { var was = Past; yield return Tap(Key.F); yield return new WaitForSeconds(1.15f); Assert.That(Past, Is.Not.EqualTo(was)); }
+        IEnumerator Swap() { var was = Past; yield return Tap(Key.T); yield return new WaitForSeconds(1.15f); Assert.That(Past, Is.Not.EqualTo(was)); }
         void Look(Vector3 target)
         {
             var pivot = Camera.main.transform.parent.position; var d = target - pivot;
@@ -484,18 +484,24 @@ namespace Parallax.Gameplay.Tests
             Assert.That(Flag("FlangeRepaired"), Is.False, "F3 is beyond repair in 2176.");
         }
 
-        // Entry from Cargo Bay: its real Continue button loads a fresh Cold Storage with one Settings instance.
-        [UnityTest] public IEnumerator CargoBayContinueLoadsAFreshColdStorage()
+        // ------------------------------------------------------------ narrative handover
+        MonoBehaviour Memory() => Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).SingleOrDefault(m => m.GetType().Name == "MemoryRecoveryCinematic");
+        IEnumerator SkipMemory() { Keys(); yield return new WaitForSecondsRealtime(.35f); Keys(Key.Space); yield return null; yield return null; Keys(); yield return null; }
+
+        // Entry from Cargo Bay: its real Continue plays the Fragment memory, then loads a fresh Cold Storage with one Settings instance.
+        [UnityTest] public IEnumerator CargoBayContinuePlaysFragmentThenLoadsAFreshColdStorage()
         {
             var menu = GameSettingsMenu.Instance;
             yield return SceneManager.LoadSceneAsync("Level2_CargoBay"); yield return new WaitForSeconds(.3f);
             var screen = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(m => m.GetType().Name == "TutorialCompletionScreen");
             Call(screen, "ShowCompletion"); // navigation only; Cargo Bay's own tests solve it with normal controls
             for (float t = 0; t < 6 && !(bool)Prop(screen, "IsReady"); t += Time.unscaledDeltaTime) yield return null;
-            GameObject.Find("CONTINUE").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            GameObject.Find("CONTINUE").GetComponent<UnityEngine.UI.Button>().onClick.Invoke(); yield return null; yield return null;
+            Assert.That(Prop(Memory(), "Stage").ToString(), Is.EqualTo("Fragment")); Assert.That(GameSettingsMenu.NarrativeInputBlocked, Is.True);
+            yield return SkipMemory();
             for (float t = 0; t < 6 && SceneManager.GetActiveScene().name != "Level3_ColdStorage"; t += Time.unscaledDeltaTime) yield return null;
             yield return new WaitForSeconds(.3f);
-            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level3_ColdStorage"));
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level3_ColdStorage")); Assert.That(Memory(), Is.Null);
             Assert.That(GameSettingsMenu.Instance, Is.SameAs(menu)); Assert.That(Object.FindObjectsByType<GameSettingsMenu>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
             Assert.That(Time.timeScale, Is.EqualTo(1)); Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
             Bind(); Assert.That(Flag("Completed"), Is.False); Assert.That(Past, Is.False);
@@ -503,24 +509,67 @@ namespace Parallax.Gameplay.Tests
         }
 
         // ------------------------------------------------------------ ending and presentation
-        [UnityTest] public IEnumerator FinalCompletionOffersRestartAndMainMenuOnly()
+        [UnityTest] public IEnumerator FinalCompletionOffersRestartAndContinue()
         {
             yield return SolveWithInput();
             var buttons = Object.FindObjectsByType<UnityEngine.UI.Button>(FindObjectsSortMode.None).Select(b => b.name).OrderBy(n => n).ToArray();
-            Assert.That(buttons, Is.EqualTo(new[] { "MAIN MENU", "RESTART LEVEL" }));
-            Assert.That(GameObject.Find("Completion final message").GetComponent<TMP_Text>().text, Is.EqualTo("Final level complete."));
+            Assert.That(buttons, Is.EqualTo(new[] { "CONTINUE", "RESTART LEVEL" }));
+            Assert.That(GameObject.Find("Completion final message").GetComponent<TMP_Text>().text, Is.EqualTo("The core archive is cooling. Continue to recover the final memory."));
             Assert.That(Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None).Any(t => t.text.Contains("not available")), Is.False);
             Assert.That(Time.timeScale, Is.Zero);
             GameObject.Find("RESTART LEVEL").GetComponent<UnityEngine.UI.Button>().onClick.Invoke(); yield return null; yield return null; yield return new WaitForSeconds(.3f);
             Bind(); Assert.That(Flag("Completed"), Is.False); Assert.That(Time.timeScale, Is.EqualTo(1)); Assert.That(Reason(A), Is.EqualTo("ACTIVE CHILL FAILED"));
         }
 
-        [UnityTest] public IEnumerator FinalCompletionMainMenuReleasesInput()
+        [UnityTest] public IEnumerator FinalContinuePlaysRestoredThenReturnsToMainMenu()
         {
             yield return SolveWithInput();
-            GameObject.Find("MAIN MENU").GetComponent<UnityEngine.UI.Button>().onClick.Invoke(); yield return null; yield return null;
+            GameObject.Find("CONTINUE").GetComponent<UnityEngine.UI.Button>().onClick.Invoke(); yield return null; yield return null;
+            var memory = Memory(); Assert.That(memory, Is.Not.Null);
+            Assert.That(Prop(memory, "Stage").ToString(), Is.EqualTo("Restored")); Assert.That(GameSettingsMenu.NarrativeInputBlocked, Is.True);
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level3_ColdStorage"));
+            yield return SkipMemory();
+            for (float t = 0; t < 12 && !(bool)Prop(memory, "EndCardReady"); t += Time.unscaledDeltaTime) yield return null;
+            Assert.That((bool)Prop(memory, "EndCardReady"), Is.True); yield return new WaitForSecondsRealtime(2.5f);
+            GameObject.Find("Return to Main Menu").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            for (float t = 0; t < 6 && SceneManager.GetActiveScene().name != "MainMenu"; t += Time.unscaledDeltaTime) yield return null;
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("MainMenu"));
-            Assert.That(Time.timeScale, Is.EqualTo(1)); Assert.That(GameSettingsMenu.StartupInputBlocked, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1)); Assert.That(GameSettingsMenu.NarrativeInputBlocked, Is.False); Assert.That(GameSettingsMenu.StartupInputBlocked, Is.False);
+        }
+
+        // Main's puzzle HUD and mounted plates: Settings top-left, status top-right, no information board or floating slabs,
+        // every displayed glyph present, and a cell's history explained once when it is picked up in 2176.
+        [UnityTest] public IEnumerator HudMatchesThePuzzleLayoutAndPickupExplainsHistoryOnce()
+        {
+            yield return null; yield return null; Canvas.ForceUpdateCanvases();
+            var document = GameSettingsMenu.Instance.GetComponent<UnityEngine.UIElements.UIDocument>();
+            var launcher = UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.Button>(document.rootVisualElement, "open-settings");
+            Assert.That(launcher.style.left.value.value, Is.EqualTo(24)); Assert.That(launcher.style.top.value.value, Is.EqualTo(24));
+            var hud = GameObject.Find("Cold Storage Objective UI"); Assert.That(hud, Is.Not.Null);
+            var status = hud.GetComponentsInChildren<TMP_Text>(true).Single(t => t.text.StartsWith("2176 / FUTURE"));
+            Assert.That(status.rectTransform.position.x, Is.GreaterThan(Screen.width * .5f)); Assert.That(status.rectTransform.position.y, Is.GreaterThan(Screen.height * .5f));
+            Assert.That(GameObject.Find("Plant board"), Is.Null);
+            var backings = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Where(t => t.name.EndsWith(" backing") && t.name != "R hull backing").Select(t => t.name).ToArray();
+            Assert.That(backings, Is.EqualTo(new[] { "Reactor loop repeater backing" }), "Only the reactor wall display keeps a backing.");
+            Assert.That(GameObject.Find("Balance pan plate"), Is.Not.Null); Assert.That(GameObject.Find("R plate"), Is.Not.Null);
+            foreach (bool era in new[] { false, true })
+            {
+                yield return SwapTo(era); yield return null;
+                foreach (var label in Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None).Where(t => t.isActiveAndEnabled && t.font != null))
+                {
+                    label.ForceMeshUpdate();
+                    var shown = new string(label.GetParsedText().Where(c => !char.IsWhiteSpace(c)).ToArray());
+                    Assert.That(label.font.HasCharacters(shown, out var missing, true, true), Is.True, label.name + " is missing " + string.Join(" ", (missing ?? new uint[0]).Select(u => "U+" + u.ToString("X4"))));
+                }
+            }
+            yield return SwapTo(false);
+            var feedback = Script(plant.gameObject, "PowerInteractionFeedback");
+            yield return PlacePlayer(new Vector3(-6, 1.3f, 4.6f)); yield return FreePlayer(); yield return Tap(Key.Q); yield return Fly(new Vector3(-6, 1.3f, 4.6f), 90);
+            yield return Grab(future[A]); yield return null;
+            Assert.That(Prop(feedback, "Message"), Is.EqualTo("Cell A boiled off — the vault's chillers died with the power."));
+            yield return Tap(Key.E); yield return new WaitForSeconds(1); Call(feedback, "Clear");
+            yield return Grab(future[A]); yield return null;
+            Assert.That(Prop(feedback, "Message"), Is.EqualTo(""), "An unchanged history is not repeated.");
         }
 
         [UnityTest] public IEnumerator HudAndSignageRenderWithoutOverflowInBothEras()
@@ -546,7 +595,7 @@ namespace Parallax.Gameplay.Tests
                     foreach (var c in canvases) c.renderMode = RenderMode.ScreenSpaceOverlay;
                 }
             }
-            var steps = Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None).Where(t => t.text.Contains("1 /") || t.text.Contains("STEP")).ToArray();
+            var steps = Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None).Where(t => System.Text.RegularExpressions.Regex.IsMatch(t.text, @"\b\d+ / \d+\b") || t.text.Contains("STEP")).ToArray();
             Assert.That(steps, Is.Empty, "No printed solution steps.");
         }
     }

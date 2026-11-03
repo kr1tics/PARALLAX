@@ -3,7 +3,7 @@ using UnityEngine.SceneManagement;
 
 public static class MemoryRecoveryFlow
 {
-    public const string Puzzle3Scene = "Puzzle3_Placeholder";
+    public const string Puzzle3Scene = "Level3_ColdStorage";
     static bool cyanQueued;
     public static string ResolveDestination(string source, string configured) =>
         source == "Level2_CargoBay" && configured == "Level3_MaintenanceShaft" ? Puzzle3Scene : configured;
@@ -39,6 +39,12 @@ public static class MemoryRecoveryFlow
         if (source == "Level2_CargoBay" && destination == Puzzle3Scene)
         {
             MemoryRecoveryCinematic.Play(MemoryRecoveryStage.Fragment, destination);
+            return true;
+        }
+        // Cooling restored: the final level's Continue plays the closing memory, which ends at Main Menu.
+        if (source == Puzzle3Scene && destination == "MainMenu")
+        {
+            PlayFinal();
             return true;
         }
         return false;

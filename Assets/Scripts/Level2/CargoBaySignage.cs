@@ -85,33 +85,8 @@ public sealed class CargoBaySignage : MonoBehaviour
     }
     Plate Make(string name, Transform parent, Vector3 position, float yaw, Vector2 size, string heading, string detail, bool header = false)
     {
-        var root = new GameObject(name, typeof(RectTransform), typeof(Canvas), typeof(Image)); roots.Add(root);
-        root.transform.SetParent(parent, false); root.transform.SetPositionAndRotation(position, Quaternion.Euler(0, yaw, 0));
-        var scale = parent.lossyScale; root.transform.localScale = new Vector3(.01f / scale.x, .01f / scale.y, .01f / scale.z);
-        root.GetComponent<RectTransform>().sizeDelta = size * 100;
-        root.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
-        var background = root.GetComponent<Image>(); background.color = new Color32(17, 24, 29, 246); background.raycastTarget = false;
-        var strip = new GameObject("Equipment accent", typeof(RectTransform), typeof(Image)); strip.transform.SetParent(root.transform, false);
-        var rect = strip.GetComponent<RectTransform>(); rect.anchorMin = Vector2.zero; rect.anchorMax = new Vector2(0, 1);
-        rect.anchoredPosition = new Vector2(3, 0); rect.sizeDelta = new Vector2(1, -8);
-        var accent = strip.GetComponent<Image>(); accent.color = Muted; accent.raycastTarget = false;
-        bool small = size.x < .8f;
-        var title = Label(root.transform, "Equipment title", titleFont, small ? 8.5f : header ? 10 : 8.5f, header ? -7 : -5, header ? 18 : 13); title.text = heading;
-        var body = Label(root.transform, "Equipment detail", bodyFont, small ? 4.6f : 6.5f, small ? -15 : -20, 10); body.text = detail; body.color = Muted;
-        var state = Label(root.transform, "Equipment state", bodyFont, small ? 4.8f : 7, -size.y * 100 + (small ? 8 : 14), small ? 8 : 12);
-        if (small) body.gameObject.SetActive(false);
-        if (header) { body.gameObject.SetActive(false); state.gameObject.SetActive(false); }
+        roots.Add(EquipmentPlate.Create(name, parent, position, yaw, size, heading, detail, titleFont, bodyFont, header, out var state, out var accent));
         return new Plate { State = state, Accent = accent };
-    }
-    static TMP_Text Label(Transform parent, string name, TMP_FontAsset font, float size, float top, float height)
-    {
-        var root = new GameObject(name, typeof(RectTransform)); root.transform.SetParent(parent, false);
-        var label = root.AddComponent<TextMeshProUGUI>(); label.font = font; label.fontSize = size;
-        label.enableAutoSizing = true; label.fontSizeMin = size * .8f; label.fontSizeMax = size;
-        label.textWrappingMode = TextWrappingModes.NoWrap; label.alignment = TextAlignmentOptions.TopLeft;
-        label.color = Ink; label.raycastTarget = false;
-        var rect = label.rectTransform; rect.anchorMin = new Vector2(0, 1); rect.anchorMax = Vector2.one; rect.pivot = new Vector2(.5f, 1);
-        rect.anchoredPosition = new Vector2(0, top); rect.sizeDelta = new Vector2(-14, height); return label;
     }
     void OnDestroy()
     {

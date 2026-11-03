@@ -126,35 +126,31 @@ namespace Parallax.Gameplay.Tests
             }
             try
             {
-                foreach (var scene in new[] { "StartScene", "Level1_PowerRestoration", "Level2_CargoBay", "Puzzle3_Placeholder" })
+                foreach (var scene in new[] { "StartScene", "Level1_PowerRestoration", "Level2_CargoBay", "Level3_ColdStorage" })
                 {
                     yield return SceneManager.LoadSceneAsync(scene); yield return null; yield return null;
-                    bool placeholder = scene == "Puzzle3_Placeholder";
-                    completion = placeholder ? null : Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "TutorialCompletionScreen");
-                    var target = placeholder ? Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "Puzzle3Placeholder") : completion;
-                    bool Open() => placeholder ? GameSettingsMenu.NarrativeInputBlocked : Flag(target, "IsOpen");
+                    completion = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "TutorialCompletionScreen");
+                    bool Open() => Flag(completion, "IsOpen");
                     Assert.That(Open(), Is.False);
                     GameSettingsMenu.NarrativeInputBlocked = true;
                     yield return Press(Key.LeftShift, Key.K);
-                    if (!placeholder) Assert.That(Open(), Is.False);
-                    else Assert.That(GameObject.Find("Memory Recovery Narrative"), Is.Null);
+                    Assert.That(Open(), Is.False);
                     GameSettingsMenu.NarrativeInputBlocked = false;
                     GameSettingsMenu.Instance.Open();
                     yield return Press(Key.LeftShift, Key.K); Assert.That(Open(), Is.False);
                     GameSettingsMenu.Instance.Close(); yield return null; yield return null;
                     yield return Press(Key.K); Assert.That(Open(), Is.False);
                     yield return Press(Key.LeftShift, Key.K); Assert.That(Open(), Is.True);
-                    if (!placeholder)
-                    {
-                        if (scene == "Level1_PowerRestoration")
-                            Assert.That(Flag(Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "PowerReactor"), "IsOnline"), Is.False);
-                        if (scene == "Level2_CargoBay")
-                            Assert.That(Flag(Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "CargoBayController"), "Completed"), Is.False);
-                        yield return new WaitForSecondsRealtime(2.7f);
-                        yield return Press(Key.LeftShift, Key.K);
-                        Assert.That(Flag(completion, "IsReady"), Is.True);
-                        Call(completion, "Continue"); yield return null; yield return null;
-                    }
+                    if (scene == "Level1_PowerRestoration")
+                        Assert.That(Flag(Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "PowerReactor"), "IsOnline"), Is.False);
+                    if (scene == "Level2_CargoBay")
+                        Assert.That(Flag(Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "CargoBayController"), "Completed"), Is.False);
+                    if (scene == "Level3_ColdStorage")
+                        Assert.That(Flag(Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "ColdStorageController"), "Completed"), Is.False);
+                    yield return new WaitForSecondsRealtime(2.7f);
+                    yield return Press(Key.LeftShift, Key.K);
+                    Assert.That(Flag(completion, "IsReady"), Is.True);
+                    Call(completion, "Continue"); yield return null; yield return null;
                     var narrative = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "MemoryRecoveryCinematic");
                     string expected = scene == "StartScene" ? "Signal" : scene == "Level1_PowerRestoration" ? "Trace" : scene == "Level2_CargoBay" ? "Fragment" : "Restored";
                     Assert.That(narrative.GetType().GetProperty("Stage").GetValue(narrative).ToString(), Is.EqualTo(expected));

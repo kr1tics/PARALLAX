@@ -13,6 +13,9 @@ public sealed class ColdStorageControl : Interactable
     {
         if (player == null || GameSettingsMenu.GameplayInputBlocked || player.HeldObject != null) return;
         var hit = player.fireInteractRay(true);
-        if (hit.Item1 && hit.Item2.collider.GetComponentInParent<ColdStorageControl>() == this) plant.Operate(kind);
+        if (!hit.Item1 || hit.Item2.collider.GetComponentInParent<ColdStorageControl>() != this) return;
+        // A refused action is explained once per press through the shared notice, as in the earlier levels.
+        string refusal = plant.Operate(kind);
+        if (refusal != null) PowerInteractionFeedback.Notify(player, this, refusal);
     }
 }
