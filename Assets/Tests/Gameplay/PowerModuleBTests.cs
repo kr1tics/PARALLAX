@@ -77,7 +77,7 @@ namespace Parallax.Gameplay.Tests
 
         [UnityTest] public IEnumerator RealQSpaceAndEInputsReachAndRepairTheElevatedPanel()
         {
-            Keys(Key.F); yield return null; Keys(); yield return new WaitForSeconds(.7f);
+            Keys(Key.T); yield return null; Keys(); yield return new WaitForSeconds(.7f);
             InstallA();
             player.position = new Vector3(6.5f, 1.05f, 1.4f); player.linearVelocity = Vector3.zero;
             Call(Component(Camera.main.gameObject, "Look"), "Rotate", new Vector2(0, 0));
@@ -92,6 +92,7 @@ namespace Parallax.Gameplay.Tests
             Assert.That(GameObject.Find("Contextual interaction prompt").GetComponent<TMP_Text>().text, Is.EqualTo("E — Repair Module B"));
             Keys(Key.E); yield return null; yield return null; Keys();
             Assert.That(Repaired, Is.True);
+            Assert.That(GameObject.Find("Interaction result").GetComponent<TMP_Text>().text, Is.EqualTo("Connection restored."));
             Assert.That(GameObject.Find("B / REPAIR").GetComponent<TextMesh>().text, Is.EqualTo("B / REPAIRED"));
             Assert.That(GameObject.Find("CONNECTION LOST").GetComponent<TextMesh>().text, Is.EqualTo("REPAIR COMPLETE"));
             Assert.That(GameObject.Find("B / REPAIR").GetComponent<TextMesh>().color.g, Is.GreaterThan(.9f));
@@ -136,7 +137,8 @@ namespace Parallax.Gameplay.Tests
                     Is.EqualTo((Color32)new Color(.35f, 1, .65f)));
                 Assert.That(GameObject.Find("CONNECTION LOST").GetComponent<TextMesh>().text, Is.EqualTo(cycle % 2 == 0 ? "NO FEED" : "REPAIR COMPLETE"));
                 Assert.That(GameObject.Find("Current instruction").GetComponent<TMP_Text>().text, Does.Contain("A repaired · B repaired"));
-                Assert.That(GameObject.Find("Contextual interaction prompt").GetComponent<TMP_Text>().text, Is.EqualTo("Module B repaired"));
+                Assert.That(GameObject.Find("Contextual interaction prompt").GetComponent<TMP_Text>().text, Is.Empty);
+                Assert.That(GameObject.Find("Interaction result").GetComponent<TMP_Text>().text, Is.Empty);
             }
         }
     }

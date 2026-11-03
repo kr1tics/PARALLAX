@@ -31,9 +31,18 @@ public sealed class PowerModuleB : Interactable
 
     public override void onInteract(Interact owner)
     {
-        if (owner != player || !CanRepair) return;
+        if (owner != player) return;
+        if (!CanRepair)
+        {
+            if (!IsRepaired && !Past)
+                PowerInteractionFeedback.Notify(owner, this, "Repair unavailable in this timeline.");
+            else if (!IsRepaired && !circuit.AFeed && Mathf.Abs(player.transform.position.y - transform.position.y) <= 1.5f)
+                PowerInteractionFeedback.Notify(owner, this, "Insufficient power.");
+            return;
+        }
         IsRepaired = true;
         RefreshFeedback();
+        PowerInteractionFeedback.Notify(owner, this, "Connection restored.", true);
     }
 
     void RefreshFeedback()

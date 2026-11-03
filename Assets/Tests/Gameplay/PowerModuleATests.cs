@@ -290,6 +290,118 @@ namespace Parallax.Gameplay.Tests
             Assert.That(Quaternion.Angle(body.rotation, initial), Is.LessThan(.01f), "The rails square the casing up.");
         }
 
+        MonoBehaviour Feedback => Component(GameObject.Find("08 / Scene presentation"), "PowerInteractionFeedback");
+        string Notice => (string)Prop(Feedback, "Message");
+        void ClearNotice() => Call(Feedback, "Clear");
+        void CaptureNotice(string name, int width = 1280, int height = 720)
+        {
+            System.IO.Directory.CreateDirectory(".utmp/power-feedback");
+            var canvas = GameObject.Find("Power Restoration Objective UI").GetComponent<Canvas>();
+            var camera = Camera.main; var rt = new RenderTexture(width, height, 24); camera.targetTexture = rt;
+            canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = camera; canvas.planeDistance = .5f;
+            Canvas.ForceUpdateCanvases();
+            var noticeLabel = GameObject.Find("Interaction result").GetComponent<TMPro.TMP_Text>(); noticeLabel.ForceMeshUpdate();
+            Assert.That(noticeLabel.isTextOverflowing, Is.False);
+            camera.Render();
+            var previous = RenderTexture.active; RenderTexture.active = rt;
+            var texture = new Texture2D(width, height, TextureFormat.RGB24, false); texture.ReadPixels(new Rect(0, 0, width, height), 0, 0); texture.Apply();
+            System.IO.File.WriteAllBytes(".utmp/power-feedback/" + name + ".png", texture.EncodeToPNG());
+            RenderTexture.active = previous; canvas.renderMode = RenderMode.ScreenSpaceOverlay; camera.targetTexture = null;
+            Object.Destroy(texture); Object.Destroy(rt);
+        }
+        [UnityTest] public IEnumerator CapacityNoticeRequiresARealEligibleAttemptAndFades()
+        {
+            Aim(body.position + Vector3.back * 1.8f, Vector3.forward); yield return null;
+            Assert.That(Notice, Is.Empty); Aim(body.position + Vector3.back * 1.8f, Vector3.forward); Interact();
+            Assert.That(Notice, Is.EqualTo("Something's different about this module here..."));
+            yield return Past(); Assert.That(Notice, Is.Empty);
+            Aim(body.position + Vector3.back * 1.8f, Vector3.forward); yield return new WaitForSeconds(.2f);
+            Assert.That(Notice, Is.Empty); Assert.That(Prompt, Is.Empty);
+            Interact(); Assert.That(Notice, Is.EqualTo("I can't lift it while it's this heavy."));
+            Assert.That(Prop(interaction, "HeldObject"), Is.Null);
+            yield return new WaitForSeconds(.2f); CaptureNotice("capacity-failure");
+            GameSettingsMenu.Instance.Open(); yield return null; yield return null;
+            Assert.That((float)Prop(Feedback, "Opacity"), Is.Zero);
+            yield return new WaitForSecondsRealtime(.3f); GameSettingsMenu.Instance.Close(); yield return null; yield return null;
+            yield return new WaitForSeconds(2.1f); Assert.That((float)Prop(Feedback, "Opacity"), Is.LessThan(1));
+            yield return new WaitForSeconds(.7f); Assert.That(Notice, Is.Empty);
+            ClearNotice(); Aim(body.position + Vector3.back * 4, Vector3.forward); Interact(); Assert.That(Notice, Is.Empty);
+            Aim(body.position + Vector3.back * 1.8f, Vector3.forward);
+            var blocker = GameObject.CreatePrimitive(PrimitiveType.Cube); blocker.transform.position = body.position + Vector3.back;
+            Physics.SyncTransforms(); Interact(); Call(module, "onInteract", interaction); Assert.That(Notice, Is.Empty);
+            Object.Destroy(blocker); yield return null;
+            GameSettingsMenu.NarrativeInputBlocked = true; Interact(); Assert.That(Notice, Is.Empty); GameSettingsMenu.NarrativeInputBlocked = false;
+            Aim(body.position + Vector3.back * 1.8f, Vector3.forward); Interact();
+            Assert.That(Notice, Is.EqualTo("There must be a way to make it easier to move."));
+            yield return StationGravityOff(); Assert.That(Notice, Is.Empty);
+            Aim(body.position + Vector3.back * 1.8f, Vector3.forward); Interact();
+            Assert.That(Prop(interaction, "HeldObject"), Is.SameAs(module)); Assert.That(Notice, Is.Empty);
+        }
+        [UnityTest] public IEnumerator ModuleAHintsProgressIndependentlyAndResetOnReload()
+        {
+            void AimModule() => Aim(body.position + Vector3.back * 1.8f, Vector3.forward);
+            AimModule(); yield return null; Assert.That(Notice, Is.Empty);
+            Aim(body.position + Vector3.back * 4, Vector3.forward); Call(module, "onInteract", interaction);
+            Assert.That(Notice, Is.Empty);
+            AimModule(); Interact(); Assert.That(Notice, Is.EqualTo("Something's different about this module here..."));
+            yield return null; AimModule(); Interact(); Assert.That(Notice, Is.EqualTo("Maybe I should try another timeline."));
+            yield return Past(); AimModule(); Interact(); Assert.That(Notice, Is.EqualTo("I can't lift it while it's this heavy."));
+            yield return null; AimModule(); Interact(); Assert.That(Notice, Is.EqualTo("There must be a way to make it easier to move."));
+            ClearNotice(); yield return new WaitForSeconds(.3f); AimModule(); Interact();
+            Assert.That(Notice, Is.EqualTo("There must be a way to make it easier to move."));
+            yield return Swap("Future"); AimModule(); Interact(); Assert.That(Notice, Is.EqualTo("Maybe I should try another timeline."));
+            yield return SceneManager.LoadSceneAsync("Level1_PowerRestoration"); yield return null; FindLevelComponents();
+            AimModule(); Interact(); Assert.That(Notice, Is.EqualTo("Something's different about this module here..."));
+            yield return Past(); AimModule(); Interact(); Assert.That(Notice, Is.EqualTo("I can't lift it while it's this heavy."));
+            yield return new WaitForSeconds(.2f); CaptureNotice("progressive-gravity-first");
+            AimModule(); Interact(); yield return new WaitForSeconds(.2f); CaptureNotice("progressive-gravity-second", 960, 540);
+        }
+        [UnityTest] public IEnumerator RepairNoticeRequiresPowerToBeTheActualBlockAndConfirmsSuccess()
+        {
+            var target = GameObject.Find("Repair panel");
+            Aim(target.transform.position + Vector3.left * 1.6f, Vector3.right); Interact();
+            Assert.That(Notice, Is.EqualTo("Repair unavailable in this timeline."));
+            yield return Past(); ClearNotice();
+            Aim(target.transform.position + Vector3.left * 4, Vector3.right); Interact(); Assert.That(Notice, Is.Empty);
+            var origin = target.transform.position + Vector3.left * 1.2f + Vector3.up * 1.8f;
+            Aim(origin, (target.transform.position - origin).normalized); Interact(); Assert.That(Notice, Is.Empty);
+            Aim(target.transform.position + Vector3.left * 1.6f, Vector3.right); yield return null;
+            Assert.That(Notice, Is.Empty); Interact();
+            Assert.That(Notice, Is.EqualTo("Insufficient power.")); Assert.That((bool)Prop(ModuleB, "IsRepaired"), Is.False);
+            yield return Install(); ClearNotice();
+            Aim(target.transform.position + Vector3.left * 1.6f, Vector3.right); yield return null;
+            Assert.That(Notice, Is.Empty);
+            Aim(target.transform.position + Vector3.left * 1.6f, Vector3.right); Interact();
+            Assert.That((bool)Prop(ModuleB, "IsRepaired"), Is.True); Assert.That(Notice, Is.EqualTo("Connection restored."));
+            yield return new WaitForSeconds(.2f); CaptureNotice("connection-success");
+            float age = (float)Get(Feedback, "age"); Interact(); yield return new WaitForSeconds(.2f);
+            Assert.That((float)Get(Feedback, "age"), Is.GreaterThan(age));
+        }
+        [UnityTest] public IEnumerator ReactorNoticeReportsOneVerifiedCheckAndPreservesStartup()
+        {
+            var target = GameObject.Find("Console housing"); var reactor = Component(target, "PowerReactor");
+            void AimConsole() => Aim(target.transform.position + Vector3.back * 1.5f, Vector3.forward);
+            AimConsole(); yield return null; Assert.That(Notice, Is.Empty); AimConsole(); Interact();
+            Assert.That(Notice, Is.EqualTo("Power routing incomplete.")); Assert.That((bool)Prop(reactor, "IsOnline"), Is.False);
+            ClearNotice(); Aim(target.transform.position + Vector3.back * 4, Vector3.forward); Interact(); Assert.That(Notice, Is.Empty);
+            yield return SolveIn2026(); ClearNotice(); AimConsole(); Interact();
+            Assert.That(Notice, Is.EqualTo("Reactor startup unavailable in this timeline.")); Assert.That((bool)Prop(reactor, "IsOnline"), Is.False);
+            yield return new WaitForSeconds(.2f);
+            CaptureNotice("timeline-unavailable-960", 960, 540); CaptureNotice("timeline-unavailable-1024", 1024, 768);
+            ToggleGravity(); yield return null; yield return Swap("Future"); ClearNotice(); AimConsole(); Interact();
+            Assert.That(Notice, Is.EqualTo("The reactor rods are still floating."));
+            Assert.That(GameObject.Find("Control rod status").GetComponent<TextMesh>().text, Is.EqualTo("The reactor rods are still floating."));
+            yield return new WaitForSeconds(.2f); CaptureNotice("rod-check-failure");
+            yield return Swap("Past"); SelectRoute(1); yield return Swap("Future"); ClearNotice(); AimConsole(); Interact();
+            Assert.That(Notice, Is.EqualTo("Power routing incomplete."), "Report one failure when routing and rods both fail.");
+            yield return Swap("Past"); SelectRoute(2); ToggleGravity(); yield return null; yield return Swap("Future");
+            Assert.That(GameObject.Find("Control rod status").GetComponent<TextMesh>().text, Is.EqualTo("Reactor rods secured."));
+            Assert.That(GameObject.Find("Current instruction").GetComponent<TMPro.TMP_Text>().text, Does.Contain("Reactor ready to start."));
+            ClearNotice(); AimConsole(); Assert.That((bool)Prop(reactor, "CanActivate"), Is.True); Interact();
+            Assert.That((bool)Prop(reactor, "IsOnline"), Is.True); Assert.That(Notice, Is.Empty);
+            Assert.That(GameSettingsMenu.StartupInputBlocked, Is.True);
+        }
+
         string Message => GameObject.Find("Power event message").GetComponent<TMPro.TMP_Text>().text;
         string Prompt => GameObject.Find("Contextual interaction prompt").GetComponent<TMPro.TMP_Text>().text;
 
@@ -456,7 +568,7 @@ namespace Parallax.Gameplay.Tests
             Assert.That(GameObject.Find("2176 truss collapse").activeInHierarchy, Is.True);
             Assert.That(GameObject.Find("Current instruction").GetComponent<TMPro.TMP_Text>().text, Does.Contain("B has no feed in 2176."));
             var rod = ((Transform[])Get(Circuit, "controlRods"))[0]; float floating = rod.position.y;
-            Assert.That(GameObject.Find("Control rod status").GetComponent<TextMesh>().text, Is.EqualTo("CONTROL RODS\nFLOATING"));
+            Assert.That(GameObject.Find("Control rod status").GetComponent<TextMesh>().text, Is.EqualTo("The reactor rods are still floating."));
             Assert.That(((Light)Get(Circuit, "rodWarning")).enabled, Is.True, "A pulsing warning while the rods float.");
             Assert.That(rod.GetComponent<Renderer>().sharedMaterial, Is.SameAs(Get(Circuit, "floatingRodMaterial")));
             Assert.That(Lit("rodSockets"), Is.False);
@@ -466,7 +578,7 @@ namespace Parallax.Gameplay.Tests
             yield return Swap("Past");
             SelectRoute(2); ToggleGravity(); yield return null;
             Assert.That(StationGravity, Is.GreaterThan(4.5f)); Assert.That(rod.position.y, Is.LessThan(floating - .5f), "Rods seat.");
-            Assert.That(GameObject.Find("Control rod status").GetComponent<TextMesh>().text, Is.EqualTo("CONTROL RODS\nSEATED"));
+            Assert.That(GameObject.Find("Control rod status").GetComponent<TextMesh>().text, Is.EqualTo("Reactor rods secured."));
             Assert.That(GameObject.Find("Control rod status").GetComponent<TextMesh>().color.g, Is.GreaterThan(.9f), "Seated reads green.");
             Assert.That(((Light)Get(Circuit, "rodWarning")).enabled, Is.False); Assert.That(Lit("rodSockets"), Is.True);
             Assert.That(Lit("routeTwoLamps", 4), Is.True); Assert.That(Lit("routeOneLamps", 0), Is.False);
@@ -508,7 +620,7 @@ namespace Parallax.Gameplay.Tests
             Assert.That((bool)Prop(Completion, "IsOpen"), Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
             yield return Swap("Past"); ToggleGravity(); yield return null; RepairB(); SelectRoute(2); // Route right, gravity off.
             yield return Swap("Future"); AimAtReactor(); RejectReactor();
-            Assert.That(GameObject.Find("Current instruction").GetComponent<TMPro.TMP_Text>().text, Does.Contain("Control rods are not seated."));
+            Assert.That(GameObject.Find("Current instruction").GetComponent<TMPro.TMP_Text>().text, Does.Contain("The reactor rods are still floating."));
         }
 
         [UnityTest] public IEnumerator CompletedReactorContinuesToCargoAndReentryStartsFresh()

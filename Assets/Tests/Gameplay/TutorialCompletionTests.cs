@@ -104,9 +104,75 @@ namespace Parallax.Gameplay.Tests
             }
             finally { InputSystem.RemoveDevice(keyboard); InputSystem.settings.backgroundBehavior = background; InputSystem.settings.editorInputBehaviorInPlayMode = editorInput; }
         }
+        static IEnumerator WaitForNarrativeHandoff()
+        {
+            float deadline = Time.realtimeSinceStartup + 25;
+            while (GameSettingsMenu.NarrativeInputBlocked && Time.realtimeSinceStartup < deadline) yield return null;
+            yield return null; yield return null;
+            Assert.That(GameSettingsMenu.NarrativeInputBlocked, Is.False);
+        }
+        [UnityTest] public IEnumerator DevelopmentSkipWorksAcrossTutorialAndAllPuzzleScenes()
+        {
+            var background = InputSystem.settings.backgroundBehavior;
+            var editorInput = InputSystem.settings.editorInputBehaviorInPlayMode;
+            InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+            InputSystem.settings.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+            var keyboard = InputSystem.AddDevice<Keyboard>(); keyboard.MakeCurrent();
+            IEnumerator Press(params Key[] keys)
+            {
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(keys));
+                yield return new WaitForSecondsRealtime(.06f);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null; yield return null;
+            }
+            try
+            {
+                foreach (var scene in new[] { "StartScene", "Level1_PowerRestoration", "Level2_CargoBay", "Puzzle3_Placeholder" })
+                {
+                    yield return SceneManager.LoadSceneAsync(scene); yield return null; yield return null;
+                    bool placeholder = scene == "Puzzle3_Placeholder";
+                    completion = placeholder ? null : Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "TutorialCompletionScreen");
+                    var target = placeholder ? Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "Puzzle3Placeholder") : completion;
+                    bool Open() => placeholder ? GameSettingsMenu.NarrativeInputBlocked : Flag(target, "IsOpen");
+                    Assert.That(Open(), Is.False);
+                    GameSettingsMenu.NarrativeInputBlocked = true;
+                    yield return Press(Key.LeftShift, Key.K);
+                    if (!placeholder) Assert.That(Open(), Is.False);
+                    else Assert.That(GameObject.Find("Memory Recovery Narrative"), Is.Null);
+                    GameSettingsMenu.NarrativeInputBlocked = false;
+                    GameSettingsMenu.Instance.Open();
+                    yield return Press(Key.LeftShift, Key.K); Assert.That(Open(), Is.False);
+                    GameSettingsMenu.Instance.Close(); yield return null; yield return null;
+                    yield return Press(Key.K); Assert.That(Open(), Is.False);
+                    yield return Press(Key.LeftShift, Key.K); Assert.That(Open(), Is.True);
+                    if (!placeholder)
+                    {
+                        if (scene == "Level1_PowerRestoration")
+                            Assert.That(Flag(Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "PowerReactor"), "IsOnline"), Is.False);
+                        if (scene == "Level2_CargoBay")
+                            Assert.That(Flag(Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "CargoBayController"), "Completed"), Is.False);
+                        yield return new WaitForSecondsRealtime(2.7f);
+                        yield return Press(Key.LeftShift, Key.K);
+                        Assert.That(Flag(completion, "IsReady"), Is.True);
+                        Call(completion, "Continue"); yield return null; yield return null;
+                    }
+                    var narrative = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "MemoryRecoveryCinematic");
+                    string expected = scene == "StartScene" ? "Signal" : scene == "Level1_PowerRestoration" ? "Trace" : scene == "Level2_CargoBay" ? "Fragment" : "Restored";
+                    Assert.That(narrative.GetType().GetProperty("Stage").GetValue(narrative).ToString(), Is.EqualTo(expected));
+                    Object.Destroy(narrative.gameObject); yield return null;
+                }
+            }
+            finally
+            {
+                InputSystem.RemoveDevice(keyboard);
+                InputSystem.settings.backgroundBehavior = background;
+                InputSystem.settings.editorInputBehaviorInPlayMode = editorInput;
+                GameSettingsMenu.NarrativeInputBlocked = false;
+            }
+        }
         [UnityTest] public IEnumerator ContinueVisitsLevel1ThenCargoBayAndCargoCompletionFallsBackToMenu()
         {
             yield return Complete(); Call(completion, "Continue"); yield return null; yield return null;
+            yield return WaitForNarrativeHandoff();
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level1_PowerRestoration"));
             Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
             Assert.That(GameObject.Find("Context Intro"), Is.Null);
@@ -118,6 +184,7 @@ namespace Parallax.Gameplay.Tests
             Call(completion, "TryShow"); yield return new WaitForSecondsRealtime(2.7f);
             Assert.That(Flag(completion, "IsReady"), Is.True);
             Call(completion, "Continue"); yield return null; yield return null;
+            yield return WaitForNarrativeHandoff();
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level2_CargoBay"));
             Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
             Assert.That(GameObject.Find("Context Intro"), Is.Null);
@@ -156,10 +223,10 @@ namespace Parallax.Gameplay.Tests
             GameObject.Find("CONTINUE").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
             yield return null; yield return null;
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level1_PowerRestoration"));
-            Assert.That(GameObject.Find("Power Restoration narrative"), Is.Not.Null);
+            Assert.That(GameObject.Find("Memory Recovery Narrative"), Is.Not.Null);
             float deadline = Time.realtimeSinceStartup + 35;
-            while (GameObject.Find("Power Restoration narrative") != null && Time.realtimeSinceStartup < deadline) yield return null;
-            Assert.That(GameObject.Find("Power Restoration narrative"), Is.Null);
+            while (GameObject.Find("Memory Recovery Narrative") != null && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(GameObject.Find("Memory Recovery Narrative"), Is.Null);
             Assert.That(GameSettingsMenu.StartupInputBlocked, Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
             Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
             Assert.That(GameSettingsMenu.Instance, Is.SameAs(menu));

@@ -21,11 +21,9 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     [SerializeField] string completionDescription = "You've learned the basics of time manipulation and gravity control.";
     [SerializeField] string finalMessage = "The investigation begins now.";
     [SerializeField] string replayLabel = "REPLAY TUTORIAL";
-    [Tooltip("Last level: show the final message with Restart and Main Menu only; never Continue or an unavailable-level notice.")]
-    [SerializeField] bool finalLevel;
     [SerializeField, Min(0)] float completionDelay = 1f;
     [SerializeField, Min(.01f)] float fadeDuration = .8f;
-    [Header("Tutorial shortcut")]
+    [Header("Development shortcut")]
     [Tooltip("Editor/development builds only: Shift + K previews completion without solving puzzles.")]
     [SerializeField] bool allowCompletionShortcut = true;
     CanvasGroup overlay, copy, actions;
@@ -38,12 +36,24 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     public bool IsOpen => ownsLock;
     public bool IsReady => actions != null && actions.interactable;
 
+    public static bool DevelopmentSkipPressed
+    {
+        get
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return Keyboard.current != null && Keyboard.current.shiftKey.isPressed && Keyboard.current.kKey.wasPressedThisFrame;
+#else
+            return false;
+#endif
+        }
+    }
+
     void LateUpdate() => TryShow();
 
     public void TryShow()
     {
         if (!isActiveAndEnabled || triggered || GameSettingsMenu.GameplayInputBlocked) return;
-        bool shortcut = Debug.isDebugBuild && reactor == null && cargoLevel == null && allowCompletionShortcut && Keyboard.current != null && Keyboard.current.shiftKey.isPressed && Keyboard.current.kKey.wasPressedThisFrame;
+        bool shortcut = allowCompletionShortcut && DevelopmentSkipPressed;
         bool completed = cargoLevel != null ? cargoLevel.Completed : reactor != null ? reactor.IsOnline : level != null && level.Completed;
         if (!completed && !shortcut) return;
         ShowCompletion();
@@ -92,15 +102,15 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
         var content = Rect(screen.transform, "Completion content", new Vector2(0, 10), new Vector2(760, 350));
         copy = content.gameObject.AddComponent<CanvasGroup>(); copy.alpha = 0;
         // Power Restoration keeps its own copy (its scene does not serialize the text fields); other scenes configure theirs.
-        bool destinationMissing = !finalLevel && (string.IsNullOrWhiteSpace(nextScene) || !Application.CanStreamedLevelBeLoaded(nextScene));
+        string next = MemoryRecoveryFlow.ResolveDestination(gameObject.scene.name, nextScene);
+        bool destinationMissing = string.IsNullOrWhiteSpace(next) || !Application.CanStreamedLevelBeLoaded(next);
         Text(content, "Completion title", reactor != null ? "POWER RESTORED" : completionTitle, primaryFont, 44, 115, 72, true);
         Text(content, "Completion description", reactor != null ? "Both modules repaired. Reactor successfully activated." : completionDescription, secondaryFont, 22, 32, 88, false);
         Text(content, "Completion final message", destinationMissing ? "The next level is not available in this build." : reactor != null ? "Level 1 complete." : finalMessage, secondaryFont, 23, -66, 50, false);
         var row = Rect(screen.transform, "Completion actions", new Vector2(0, -155), new Vector2(520, 48));
         actions = row.gameObject.AddComponent<CanvasGroup>(); actions.alpha = 0; actions.interactable = false;
         replayButton = MakeButton(row, reactor != null ? "RESTART LEVEL" : replayLabel, -138, RestartLevel);
-        if (finalLevel) MakeButton(row, "MAIN MENU", 138, ReturnToMainMenu);
-        else MakeButton(row, destinationMissing ? "MAIN MENU" : "CONTINUE", 138, Continue);
+        MakeButton(row, destinationMissing ? "MAIN MENU" : "CONTINUE", 138, Continue);
     }
     static RectTransform Rect(Transform parent, string name, Vector2 position, Vector2 size)
     {
@@ -136,15 +146,11 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
     {
         if (!IsReady || navigating) return;
         // A forthcoming level need not exist in this build; keep the completed level navigable.
-        string destination = !string.IsNullOrWhiteSpace(nextScene) && Application.CanStreamedLevelBeLoaded(nextScene) ? nextScene : "MainMenu";
-        Navigate(destination);
+        string next = MemoryRecoveryFlow.ResolveDestination(gameObject.scene.name, nextScene);
+        string destination = !string.IsNullOrWhiteSpace(next) && Application.CanStreamedLevelBeLoaded(next) ? next : "MainMenu";
+        Navigate(destination, true);
     }
-    public void ReturnToMainMenu()
-    {
-        if (!IsReady || navigating) return;
-        Navigate("MainMenu");
-    }
-    void Navigate(string destination)
+    void Navigate(string destination, bool narrative = false)
     {
         if (!Application.CanStreamedLevelBeLoaded(destination)) return;
         navigating = true; actions.interactable = false;
@@ -152,6 +158,11 @@ public sealed class TutorialCompletionScreen : MonoBehaviour
         Release();
         Time.timeScale = 1f;
         AudioListener.pause = false;
+        if (narrative && MemoryRecoveryFlow.Continue(gameObject.scene.name, destination))
+        {
+            if (screen != null) screen.SetActive(false);
+            return;
+        }
         SceneManager.LoadScene(destination);
     }
     void Release()

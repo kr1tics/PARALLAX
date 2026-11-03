@@ -51,7 +51,7 @@ public sealed class Scene01Typography : MonoBehaviour
         foreach (var root in roots)
         foreach (var text in root.GetComponentsInChildren<TMP_Text>(true))
         {
-            if (text.GetComponentInParent<Canvas>()?.name is "Scene 01 Objective UI" or "Power Restoration Opening" ||
+            if (text.GetComponentInParent<Canvas>()?.name is "Power Restoration Equipment Signs" or "Scene 01 Objective UI" or "Power Restoration Opening" or "Memory Recovery Canvas" or "Power Restoration Objective UI" or "Cargo Bay Objective UI" ||
                 text.GetComponentInParent<ContextIntro>() != null ||
                 text.GetComponentInParent<Canvas>()?.name is "Tutorial Completion Screen" or "Power Restoration Completion Screen" ||
                 !configured.Add(text)) continue;

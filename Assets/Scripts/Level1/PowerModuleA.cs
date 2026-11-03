@@ -18,6 +18,7 @@ public sealed class PowerModuleA : MovableObject
     Quaternion initialRotation, seatFromRotation;
     float seatProgress = 1;
     bool wasPast;
+    int timelineFailures, gravityFailures;
     readonly Collider[] overlaps = new Collider[16];
     // Both timelines share this object; the repair lasts until this scene is unloaded.
     public bool IsRepaired { get; private set; }
@@ -93,7 +94,18 @@ public sealed class PowerModuleA : MovableObject
 
     public override void onInteract(Interact owner)
     {
-        if (GameSettingsMenu.GameplayInputBlocked || owner != player || !Past || IsRepaired) return;
+        if (GameSettingsMenu.GameplayInputBlocked || owner != player || IsRepaired) return;
+        if (!Past)
+        {
+            if (PowerInteractionFeedback.Notify(owner, this, timelineFailures == 0 ?
+                "Something's different about this module here..." : "Maybe I should try another timeline.")) timelineFailures++;
+            return;
+        }
+        if (player.HeldObject == null && !StationZeroG)
+        {
+            if (PowerInteractionFeedback.Notify(owner, this, gravityFailures == 0 ?
+                "I can't lift it while it's this heavy." : "There must be a way to make it easier to move.")) gravityFailures++;
+        }
         if (CanInstall)
         {
             Drop();

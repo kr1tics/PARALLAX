@@ -34,7 +34,12 @@ public sealed class PowerReactor : Interactable
 
     public override void onInteract(Interact owner)
     {
-        if (owner != player || !CanActivate) return;
+        if (owner != player) return;
+        if (!CanActivate)
+        {
+            if (!IsOnline) PowerInteractionFeedback.Notify(owner, this, presentation.ReactorFailureReason);
+            return;
+        }
         IsOnline = true;
         // Hold the shared input lock now, before another input can open Settings; it passes to the completion screen.
         GameSettingsMenu.StartupInputBlocked = true; holdingInput = true;

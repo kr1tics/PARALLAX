@@ -451,6 +451,8 @@ sealed class TutorialObjectiveHud
     readonly Image accent;
     string stage;
     float age;
+    readonly float expandedSeconds;
+    readonly bool compactUsesTitle, compactUsesThought;
     public TMP_Text Instruction { get; }
     public TMP_Text Status { get; }
     public TMP_Text Prompt { get; }
@@ -459,13 +461,15 @@ sealed class TutorialObjectiveHud
     public int Revision { get; private set; }
     static readonly Color Cyan = new Color(.43f, .79f, .88f);
 
-    public TutorialObjectiveHud(Transform parent, TMP_FontAsset titleFont, TMP_FontAsset bodyFont)
+    public TutorialObjectiveHud(Transform parent, TMP_FontAsset titleFont, TMP_FontAsset bodyFont, string rootName = "Scene 01 Objective UI", float expandedDuration = 3.6f, bool compactTitle = false, bool compactThought = false, Color? theme = null)
     {
-        var go = new GameObject("Scene 01 Objective UI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(CanvasGroup));
+        expandedSeconds = expandedDuration; compactUsesTitle = compactTitle; compactUsesThought = compactThought;
+        var go = new GameObject(rootName, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(CanvasGroup));
         go.transform.SetParent(parent, false); root = go.GetComponent<RectTransform>();
         var canvas = go.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = 10;
         var scaler = go.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080); scaler.matchWidthOrHeight = .5f;
+        if (compactTitle) go.AddComponent<PuzzleSettingsPlacement>();
         visibility = go.GetComponent<CanvasGroup>(); visibility.blocksRaycasts = false; visibility.interactable = false;
         expandedRect = Panel(root, "Expanded objective card", new Vector2(780, 158), new Color(.025f, .055f, .075f, .92f));
         expanded = expandedRect.gameObject.AddComponent<CanvasGroup>(); expanded.alpha = 0;
@@ -476,8 +480,14 @@ sealed class TutorialObjectiveHud
         accent = Strip(expandedRect, "Cyan objective accent", new Vector2(0, 0), new Vector2(1, 0), 2);
         compactRect = Panel(root, "Compact objective bar", new Vector2(780, 58), new Color(.025f, .055f, .075f, .86f));
         compact = compactRect.gameObject.AddComponent<CanvasGroup>(); compact.alpha = 0;
-        compactText = Text(compactRect, "Compact objective", titleFont, 23, -10, 38);
-        Strip(compactRect, "Compact cyan accent", new Vector2(0, 0), new Vector2(0, 1), 2);
+        compactText = Text(compactRect, "Compact objective", compactThought ? bodyFont : titleFont, compactThought ? 17 : 23, -10, compactThought ? 70 : 38);
+        var compactAccent = Strip(compactRect, "Compact cyan accent", new Vector2(0, 0), new Vector2(0, 1), 2);
+        if (theme.HasValue)
+        {
+            number.color = accent.color = compactAccent.color = theme.Value;
+            expandedRect.GetComponent<Image>().color = new Color32(16, 15, 32, 235);
+            compactRect.GetComponent<Image>().color = new Color32(16, 15, 32, 220);
+        }
         Status = Text(root, "Timeline status", bodyFont, 17, -22, 32);
         Status.rectTransform.anchorMin = Status.rectTransform.anchorMax = Status.rectTransform.pivot = Vector2.one;
         Status.rectTransform.anchoredPosition = new Vector2(-28, -22); Status.rectTransform.sizeDelta = new Vector2(600, 32);
@@ -500,7 +510,7 @@ sealed class TutorialObjectiveHud
         shadow.effectColor = new Color(0, 0, 0, .9f); shadow.effectDistance = new Vector2(1, -1);
     }
 
-    public void SetObjective(string key, string title, string detail)
+    public void SetObjective(string key, string title, string detail, string compactDetail = null)
     {
         if (stage != key)
         {
@@ -508,7 +518,7 @@ sealed class TutorialObjectiveHud
         }
         heading.text = title; Instruction.text = detail;
         number.text = key == "Complete" ? "OBJECTIVE COMPLETE" : key == "Exit" ? "RELAYS RESTORED" : "NEW OBJECTIVE";
-        compactText.text = detail.Split('\n')[0];
+        compactText.text = compactDetail ?? (compactUsesTitle ? title : detail.Split('\n')[0]);
     }
 
     public void Reannounce() => stage = null;
@@ -518,16 +528,16 @@ sealed class TutorialObjectiveHud
     {
         age += delta;
         float enter = Mathf.SmoothStep(0, 1, Mathf.Clamp01(age / .25f));
-        float collapse = Mathf.SmoothStep(0, 1, Mathf.Clamp01((age - 3.6f) / .25f));
-        float compactEnter = Mathf.SmoothStep(0, 1, Mathf.Clamp01((age - 3.88f) / .22f));
+        float collapse = Mathf.SmoothStep(0, 1, Mathf.Clamp01((age - expandedSeconds) / .25f));
+        float compactEnter = Mathf.SmoothStep(0, 1, Mathf.Clamp01((age - expandedSeconds - .28f) / .22f));
         expanded.alpha = enter * (1 - collapse); compact.alpha = compactEnter;
         expandedRect.anchoredPosition = new Vector2(0, -74 + (1 - enter) * 12 - collapse * 8);
         compactRect.anchoredPosition = new Vector2(0, -74 - (1 - compactEnter) * 8);
         float width = Mathf.Min(780, Mathf.Max(280, root.rect.width - 56));
-        expandedRect.sizeDelta = new Vector2(width, 158); compactRect.sizeDelta = new Vector2(width, 58);
+        expandedRect.sizeDelta = new Vector2(width, 158); compactRect.sizeDelta = new Vector2(compactUsesThought ? Mathf.Min(width, 680) : compactUsesTitle ? Mathf.Min(width, 500) : width, compactUsesThought ? 90 : compactUsesTitle ? 48 : 58);
         float promptWidth = Mathf.Clamp(Prompt.GetPreferredValues(Prompt.text, float.PositiveInfinity, 38).x + 40, 140, 440);
         promptPanel.sizeDelta = new Vector2(Mathf.Min(promptWidth, root.rect.width - 56), 50);
-        promptKeycap.gameObject.SetActive(Prompt.text.StartsWith("E —") || Prompt.text.StartsWith("T —"));
+        promptKeycap.gameObject.SetActive((Prompt.text ?? "").StartsWith("E —") || (Prompt.text ?? "").StartsWith("T —"));
         promptPanel.gameObject.SetActive(!string.IsNullOrEmpty(Prompt.text));
     }
 

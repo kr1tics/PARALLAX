@@ -24,7 +24,7 @@ public sealed class FutureDecayControls : MonoBehaviour
         GUI.Label(new Rect(30, 28, 300, 30), GlobalState.get().now == TimeState.Future
             ? "FUTURE · 150 YEARS LATER" : "PAST · 2026", title);
         Row(68, "WASD / Mouse", "Move / look");
-        Row(98, "F / T", "Switch time");
+        Row(98, "T", "Switch time");
         Row(128, "E / Left click", "Interact / grab");
         Row(158, "Q", "Toggle jetpack");
         Row(188, "Space / Ctrl", "Jump / ascend / descend");

@@ -51,7 +51,17 @@ public sealed class CargoBayController : MonoBehaviour
     Vector3 pastStart, futureStart, rackPastStart, rackFutureStart;
     Quaternion pastRotation, futureRotation, rackPastRotation, rackFutureRotation;
     Interact interaction;
-    GameplayHud hud;
+    TutorialObjectiveHud hud;
+    PowerInteractionFeedback feedback;
+    readonly int[] failedAttempts = new int[5];
+    bool rackHandled, rackWasClamped;
+    string displayedObjective;
+    int receivingStatus, receivingSeen;
+    bool clampReleaseAnnounced;
+    Bounds cageBounds;
+    bool hasCageBounds;
+    public bool ObjectiveExpanded => hud != null && hud.Expanded;
+    public int ObjectiveRevision => hud != null ? hud.Revision : 0;
     TMP_Text controls;
     ArtificialGravity playerGravity;
     AudioSource events, ambience;
@@ -86,7 +96,15 @@ public sealed class CargoBayController : MonoBehaviour
         // Cargo Bay has no distortable objects (G hidden); R resets the bay, so its row stays in the controls list.
         var menu = GameSettingsMenu.Instance;
         if (menu != null) { menu.SetMainMenuContext(false); menu.SetGameplayControls(false, true); }
-        hud = new GameplayHud(transform, "Cargo Bay Objective UI", titleFont, supportingFont);
+        hud = new TutorialObjectiveHud(transform, titleFont, supportingFont, "Cargo Bay Objective UI", 5f, true, true, new Color32(181, 160, 255, 255));
+        feedback = gameObject.AddComponent<PowerInteractionFeedback>();
+        feedback.Initialize(hud.Instruction.GetComponentInParent<Canvas>().transform, supportingFont);
+        rackWasClamped = rackPast.isKinematic;
+        foreach (var surface in FindObjectsByType<Collider>(FindObjectsInactive.Include, FindObjectsSortMode.None).Where(IsCage))
+        {
+            if (!hasCageBounds) { cageBounds = surface.bounds; hasCageBounds = true; }
+            else cageBounds.Encapsulate(surface.bounds);
+        }
         controls = GameplayHud.CreateControlHint(hud.Instruction.GetComponentInParent<Canvas>().transform, supportingFont);
         playerGravity = player.GetComponent<ArtificialGravity>();
     }
@@ -134,18 +152,33 @@ public sealed class CargoBayController : MonoBehaviour
         hud.SetVisible(Completed || !GameSettingsMenu.GameplayInputBlocked);
         if (GameSettingsMenu.GameplayInputBlocked) return;
         bool past = GlobalState.get().now == TimeState.Past;
+        ObserveFailedInteractions(past);
+        hud.Tick(Time.deltaTime);
         bool anchored = PastCrateOnTarget(stagingPlate);
         if (!FreightAccessGranted && !past && stagingPlate.IsPressed && anchored)
         {
             FreightAccessGranted = true;
+            feedback.Clear();
             freightDoor.onStartTrigger();
             Play(sounds != null ? sounds.click : null);
         }
         bool c1 = plate.IsPressed, c2 = rackPlate.IsPressed;
+        if (!past)
+        {
+            receivingStatus = (c1 ? 1 : 0) | (c2 ? 2 : 0);
+            if (FreightAccessGranted)
+            {
+                if (receivingSeen == 0 && (receivingStatus == 1 || receivingStatus == 2))
+                    feedback.NotifyEnvironmentEvent("One down, one to go.", true);
+                receivingSeen |= receivingStatus;
+            }
+        }
         // Both weight scales read only in 2176, at the same time; the door then latches.
         if (!CargoDelivered && FreightAccessGranted && !past && c1 && c2)
         {
             CargoDelivered = true;
+            feedback.Clear();
+            feedback.NotifyEnvironmentEvent("The way forward is open.", true);
             exitDoor.onStartTrigger();
             Play(sounds != null ? sounds.click : null);
         }
@@ -158,15 +191,21 @@ public sealed class CargoBayController : MonoBehaviour
         if (previousTime != GlobalState.get().now)
         {
             previousTime = GlobalState.get().now;
+            feedback.Clear();
             Play(sounds != null ? sounds.timeSwitch : null); UpdateAmbience(); ApplyTimeline();
         }
         if (previousHeld != interaction.HeldObject)
         {
-            if (interaction.HeldObject != null) Play(sounds != null ? sounds.pickup : null);
+            if (interaction.HeldObject != null) { feedback.Clear(); Play(sounds != null ? sounds.pickup : null); }
             else if (previousHeld != null) previousHeld.GetComponent<ParallaxDropAudio>()?.Arm();
             previousHeld = interaction.HeldObject;
         }
         bool clampOpen = past && (counterweight.IsPressed || RackReleased);
+        if (!clampReleaseAnnounced && past && counterweight.IsPressed && !RackReleased)
+        {
+            clampReleaseAnnounced = true;
+            feedback.NotifyEnvironmentEvent("Looks like that worked.", true);
+        }
         UpdateObjective(past, c1, c2);
         hud.Status.text = (past ? "2026 / PAST" : "2176 / FUTURE") + (playerGravity.IsGravityActive ? "  ·  GRAVITY ON" : "  ·  GRAVITY OFF");
         controls.text = Completed ? "" : "ESC / P — Settings / Resume    ·    R — Reset cargo" +
@@ -174,7 +213,7 @@ public sealed class CargoBayController : MonoBehaviour
         var hit = interaction.fireInteractRay(true);
         var aimed = hit.Item1 ? hit.Item2.collider.GetComponentInParent<MovableObject>() : null;
         hud.Prompt.text = Completed ? "" : interaction.HeldObject != null ? "E — Place" : aimed == null ? "" :
-            aimed.GetComponent<Rigidbody>().isKinematic ? "Cargo clamped" : "E — Pick up";
+            aimed.GetComponent<Rigidbody>().isKinematic ? "" : "E — Pick up";
         doorLabel.text = CargoDelivered ? "MAINTENANCE ACCESS / OPEN" : "MAINTENANCE LIFT\nAWAITING C1 + C2";
         plateIndicator.sharedMaterial = CargoDelivered || (!past && c1) ? readyMaterial : waitingMaterial;
         rackPlateIndicator.sharedMaterial = CargoDelivered || (!past && c2) ? readyMaterial : waitingMaterial;
@@ -190,20 +229,55 @@ public sealed class CargoBayController : MonoBehaviour
         placementTarget.SetActive(FreightAccessGranted && !CargoDelivered);
     }
 
-    // Same shape as the earlier levels: a progress line, then what the current timeline shows. States, never the solution.
     void UpdateObjective(bool past, bool c1, bool c2)
     {
-        if (Completed) hud.SetObjective("COMPLETE", "Cargo Bay Complete", "Maintenance access restored.");
-        else if (CargoDelivered)
-            hud.SetObjective("OBJECTIVE 04", "Reach Maintenance Access", "Both manifests received\n" + (past ? "Return to the Future." : "Proceed to the maintenance lift."));
-        else if (!FreightAccessGranted)
-            hud.SetObjective("OBJECTIVE 01", "Open Freight Access", "Freight gate sealed\n" + (past ? "In 2026, manifest C1 is not caged." : "Manifest C1 is caged in 2176."));
-        else if (!RackReleased)
-            hud.SetObjective("OBJECTIVE 02", "Free Manifest C2", "Freight open · C2 on the archive rack\n" + (!past ? "The 2176 rack clamp has seized." :
-                counterweight.IsPressed ? "The rack clamp is open." : "The rack clamp is locked."));
-        else
-            hud.SetObjective("OBJECTIVE 03", "Load Both Manifests", past ? "C1 to R1 · C2 to R2\nReceiving scales read in 2176." :
-                "R1 " + (c1 ? "loaded" : "empty") + " · R2 " + (c2 ? "loaded" : "empty") + "\nBoth must be loaded at once.");
+        string stage = Completed ? "Complete" : CargoDelivered ? "Exit" : !FreightAccessGranted ? "Freight" : !RackReleased ? "Release" : "Transfer";
+        string title = stage == "Complete" ? "Cargo Bay Complete" : stage == "Exit" ? "Reach Maintenance Access" :
+            stage == "Freight" ? "Restore Freight Access" : stage == "Release" ? "Release the Secured Cargo" : "Complete the Cargo Transfer";
+        string status = stage == "Freight" ? "Freight access: locked" : stage == "Release" ?
+            (past && counterweight.IsPressed ? "C2: clamp released" : "C2: secured") :
+            stage == "Transfer" ? "C1: " + ((receivingStatus & 1) != 0 ? "received" : "pending") +
+                " · C2: " + ((receivingStatus & 2) != 0 ? "received" : "pending") : "Cargo transfer: complete";
+        string display = stage + "|" + status;
+        if (display == displayedObjective) return;
+        bool enteringTransfer = stage == "Transfer" && (displayedObjective == null || !displayedObjective.StartsWith(stage + "|"));
+        displayedObjective = display;
+        hud.SetObjective(stage, title, status, title.ToUpperInvariant() + "\n" + status);
+        if (enteringTransfer && string.IsNullOrEmpty(feedback.Message))
+            feedback.NotifyEnvironmentEvent("Both cargo units need to be delivered.");
+    }
+
+    bool IsCage(Collider surface) => surface.GetComponentsInParent<Transform>().Any(item => item.name.StartsWith("Sealed freight cage"));
+
+    void Hint(int condition, string first, string later, Collider surface = null)
+    {
+        string message = failedAttempts[condition] == 0 ? first : later;
+        bool shown = surface != null ? feedback.NotifySurfaceAttempt(interaction, surface, message) : feedback.NotifyEnvironmentEvent(message);
+        if (shown) failedAttempts[condition]++;
+    }
+
+    void ObserveFailedInteractions(bool past)
+    {
+        bool holdingRack = interaction.HeldObject == rackPast.GetComponent<MovableObject>();
+        rackHandled |= holdingRack;
+        if (past && rackHandled && !rackWasClamped && rackPast.isKinematic && cradle.Contains(rackPast.transform.position))
+            Hint(3, "Not quite free yet.", "I need to move it clear of the rack.");
+        rackWasClamped = rackPast.isKinematic;
+        bool attempted = player.enabled && Keyboard.current != null && Mouse.current != null &&
+            (Keyboard.current.eKey.wasPressedThisFrame || Mouse.current.leftButton.wasPressedThisFrame);
+        if (!attempted || interaction.HeldObject != null || previousHeld != null) return;
+        var cast = interaction.fireInteractRay(false);
+        if (!cast.Item1) return;
+        var surface = cast.Item2.collider;
+        var body = surface.attachedRigidbody;
+        if (!past && hasCageBounds && cageBounds.Contains(futureCrate.transform.position) && IsCage(surface))
+            Hint(0, "This cargo won't budge...", "Maybe things were different in the past.", surface);
+        else if (!FreightAccessGranted && surface.transform.IsChildOf(freightDoor.transform))
+            Hint(1, "Something must be keeping this gate locked.", "There must be something controlling it.", surface);
+        else if ((body == rackPast || body == rackFuture) && interaction.fireInteractRay(true).Item1 && body.isKinematic && cradle.Contains(body.transform.position))
+            Hint(2, "Something's holding C2 in place.", "I wonder what releases the clamp.", surface);
+        else if (!past && surface.transform.IsChildOf(futureDebris.transform))
+            Hint(4, "Looks like this section has collapsed.", "I wonder what this area looked like before...", surface);
     }
 
     bool PastCrateOnTarget(PressureButton targetPlate)
@@ -218,6 +292,10 @@ public sealed class CargoBayController : MonoBehaviour
     {
         if (GameSettingsMenu.GameplayInputBlocked) return;
         interaction.DropHeldObject();
+        System.Array.Clear(failedAttempts, 0, failedAttempts.Length); rackHandled = false;
+        rackWasClamped = true; previousHeld = null; displayedObjective = null;
+        receivingStatus = receivingSeen = 0; clampReleaseAnnounced = false;
+        feedback.Clear(); hud.Reannounce();
         plate.ResetButton();
         stagingPlate.ResetButton();
         counterweight.ResetButton(); rackPlate.ResetButton();

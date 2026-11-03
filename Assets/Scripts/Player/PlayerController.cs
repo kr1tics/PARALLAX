@@ -87,7 +87,7 @@ public class PlayerController : MonoBehaviour
         
         
         // Temporary setup to allow for timetravel swap
-        if (Keyboard.current.fKey.wasPressedThisFrame || Keyboard.current.tKey.wasPressedThisFrame)
+        if (Keyboard.current.tKey.wasPressedThisFrame)
         {
             GlobalState.get().SwapTime();
         }
