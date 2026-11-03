@@ -11,6 +11,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace Parallax.Gameplay.Tests
@@ -22,11 +23,14 @@ namespace Parallax.Gameplay.Tests
         Mouse mouse;
         InputSettings.BackgroundBehavior background;
         InputSettings.EditorInputBehaviorInPlayMode editorInput;
-        static object Field(object value, string name) => value.GetType().GetField(name, Fields).GetValue(value);
-        static void Set(object value, string name, object data) => value.GetType().GetField(name, Fields).SetValue(value, data);
         static MonoBehaviour Find(string name) => Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == name);
+        static void Set(object value, string name, object data) => value.GetType().GetField(name, Fields).SetValue(value, data);
+        static void Call(object value, string name) => value.GetType().GetMethod(name).Invoke(value, null);
+        static object Property(object value, string name) => value.GetType().GetProperty(name).GetValue(value);
+        static TMP_Text Text(string name) => GameObject.Find(name).GetComponent<TMP_Text>();
+        static MonoBehaviour Narrative => Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).FirstOrDefault(x => x.GetType().Name == "MemoryRecoveryCinematic");
+        static int Page => Narrative == null ? -1 : (int)Property(Narrative, "PageIndex");
         void Keys(params Key[] keys) => InputSystem.QueueStateEvent(keyboard, new KeyboardState(keys));
-
         [UnitySetUp] public IEnumerator Setup()
         {
             background = InputSystem.settings.backgroundBehavior; editorInput = InputSystem.settings.editorInputBehaviorInPlayMode;
@@ -36,134 +40,213 @@ namespace Parallax.Gameplay.Tests
             if (GameSettingsMenu.Instance != null) { Object.Destroy(GameSettingsMenu.Instance.gameObject); yield return null; }
             Time.timeScale = 1; GameSettingsMenu.StartupInputBlocked = GameSettingsMenu.NarrativeInputBlocked = false;
         }
-
         [UnityTearDown] public IEnumerator Cleanup()
         {
-            foreach (var item in Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Where(x => x.GetType().Name == "PowerRestorationIntro")) item.enabled = false;
-            if (GameSettingsMenu.Instance != null) { GameSettingsMenu.Instance.Close(); Object.Destroy(GameSettingsMenu.Instance.gameObject); }
-            InputSystem.RemoveDevice(keyboard); InputSystem.RemoveDevice(mouse); InputSystem.settings.backgroundBehavior = background;
-            InputSystem.settings.editorInputBehaviorInPlayMode = editorInput;
-            Time.timeScale = 1; AudioListener.pause = false; GameSettingsMenu.StartupInputBlocked = GameSettingsMenu.NarrativeInputBlocked = false;
-            yield return null;
+            if (Narrative != null) { Object.Destroy(Narrative.gameObject); yield return null; }
+            if (GameSettingsMenu.Instance != null) { GameSettingsMenu.Instance.Close(); Object.Destroy(GameSettingsMenu.Instance.gameObject); yield return null; }
+            InputSystem.RemoveDevice(keyboard); InputSystem.RemoveDevice(mouse);
+            InputSystem.settings.backgroundBehavior = background; InputSystem.settings.editorInputBehaviorInPlayMode = editorInput;
+            Time.timeScale = 1; AudioListener.pause = false;
+            GameSettingsMenu.StartupInputBlocked = GameSettingsMenu.NarrativeInputBlocked = false;
         }
-
-        IEnumerator ContinueFromTutorial()
+        static IEnumerator Until(Func<bool> condition, float seconds = 8)
         {
-            Keys(); yield return SceneManager.LoadSceneAsync("StartScene"); yield return null; yield return null;
+            float end = Time.realtimeSinceStartup + seconds;
+            while (!condition() && Time.realtimeSinceStartup < end) yield return null;
+            Assert.That(condition(), Is.True, "Timed out waiting for narrative progression.");
+        }
+        IEnumerator ContinueLevel()
+        {
+            var completion = Find("TutorialCompletionScreen");
+            Call(completion, "ShowCompletion");
+            yield return Until(() => (bool)Property(completion, "IsReady"));
+            GameObject.Find("CONTINUE").GetComponent<Button>().onClick.Invoke();
+            yield return null; yield return null;
+        }
+        IEnumerator EnterSignal()
+        {
+            yield return SceneManager.LoadSceneAsync("StartScene"); yield return null; yield return null;
             var level = Find("Level1Controller"); Set(level, "<IntroSolved>k__BackingField", true); Set(level, "<MainSolved>k__BackingField", true);
-            level.GetType().GetMethod("TryComplete").Invoke(level, null);
-            var completion = Find("TutorialCompletionScreen"); float deadline = Time.realtimeSinceStartup + 5;
-            while (!(bool)completion.GetType().GetProperty("IsReady").GetValue(completion) && Time.realtimeSinceStartup < deadline) yield return null;
-            yield return null;
-            GameObject.Find("CONTINUE").GetComponent<UnityEngine.UI.Button>().onClick.Invoke(); yield return null; yield return null;
+            Call(level, "TryComplete"); yield return Until(() => (bool)Property(Find("TutorialCompletionScreen"), "IsReady"));
+            GameObject.Find("CONTINUE").GetComponent<Button>().onClick.Invoke(); yield return null; yield return null;
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level1_PowerRestoration"));
             Assert.That(GameSettingsMenu.NarrativeInputBlocked, Is.True);
-            Assert.That(GameSettingsMenu.StartupInputBlocked, Is.False);
-            Assert.That(Time.timeScale, Is.Zero);
-            Assert.That(GameObject.Find("Power Restoration Objective UI").GetComponent<CanvasGroup>().alpha, Is.Zero);
         }
-
-        static IEnumerator Until(Func<bool> condition, float seconds = 6)
+        IEnumerator Skip()
         {
-            float deadline = Time.realtimeSinceStartup + seconds;
-            while (!condition() && Time.realtimeSinceStartup < deadline) yield return null;
-            Assert.That(condition(), Is.True, "Timed out waiting for the narrative state.");
+            Keys(); yield return new WaitForSecondsRealtime(.35f); Keys(Key.Space); yield return null; yield return null;
+            Keys(); yield return null;
         }
-
-        [UnityTest] public IEnumerator CompleteNarrativeRestoresCachesStateBasedHud()
+        static void Capture(string name, int width = 1280, int height = 720)
         {
-            yield return ContinueFromTutorial();
-            yield return new WaitForSecondsRealtime(1);
-            Assert.That(GameObject.Find("Terminal message").GetComponent<TMP_Text>().text, Is.EqualTo("Emergency interface… online."));
-            Capture("black-interface", 1280, 720);
-            yield return Until(() => GameObject.Find("Terminal status").GetComponent<TMP_Text>().text.Contains("READ FAILED"), 12);
-            yield return Until(() => GameObject.Find("Terminal message").GetComponent<TMP_Text>().text.Contains("final transmission"));
-            Assert.That(GameObject.Find("Station reveal blackout").GetComponent<UnityEngine.UI.Image>().color.a, Is.EqualTo(1));
-            yield return Until(() => !GameSettingsMenu.NarrativeInputBlocked, 12);
-            Assert.That(GameObject.Find("Terminal status").GetComponent<TMP_Text>().text, Is.EqualTo("FIRST OBJECTIVE — RESTORE POWER"));
-            Assert.That(GameObject.Find("Power Restoration Objective UI").GetComponent<CanvasGroup>().alpha, Is.Zero);
-            yield return new WaitForSecondsRealtime(.8f);
-            foreach (var size in new[] { new Vector2Int(960,540), new Vector2Int(1280,720), new Vector2Int(1024,768), new Vector2Int(1920,1080), new Vector2Int(2560,1080) }) Capture("objective-" + size.x, size.x, size.y);
-            yield return Until(() => GameObject.Find("Power Restoration Opening") == null);
-            Assert.That(GameObject.Find("Power Restoration Objective UI").GetComponent<CanvasGroup>().alpha, Is.EqualTo(1));
-            Assert.That(GameObject.Find("Objective title").GetComponent<TMP_Text>().text, Is.EqualTo("Restore Power Modules"));
-            Assert.That(Find("PowerRestorationPresentation").GetType().GetProperty("ReactorReady").GetValue(Find("PowerRestorationPresentation")), Is.False);
+            Directory.CreateDirectory(".utmp/memory-recovery");
+            var canvas = GameObject.Find("Memory Recovery Canvas")?.GetComponent<Canvas>() ?? GameObject.Find("Cooling System Test Interface").GetComponent<Canvas>();
+            var cameraObject = new GameObject("Narrative capture camera"); var camera = cameraObject.AddComponent<Camera>();
+            camera.cullingMask = 1 << 5; camera.clearFlags = CameraClearFlags.SolidColor; camera.backgroundColor = Color.black;
+            var target = new RenderTexture(width, height, 24); camera.targetTexture = target;
+            var oldMode = canvas.renderMode; var oldCamera = canvas.worldCamera;
+            var otherCanvases = Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None).Where(c => c != canvas && c.enabled).ToArray();
+            foreach (var other in otherCanvases) other.enabled = false;
+            var layers = canvas.GetComponentsInChildren<Transform>(true).ToDictionary(t => t, t => t.gameObject.layer);
+            foreach (var item in layers) item.Key.gameObject.layer = 5;
+            canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = camera; canvas.planeDistance = 1;
+            Canvas.ForceUpdateCanvases();
+            foreach (var label in canvas.GetComponentsInChildren<TMP_Text>())
+            { label.ForceMeshUpdate(); Assert.That(label.isTextOverflowing, Is.False, name + ": " + label.name); }
+            camera.Render(); var previous = RenderTexture.active; RenderTexture.active = target;
+            var texture = new Texture2D(width, height, TextureFormat.RGB24, false);
+            texture.ReadPixels(new Rect(0, 0, width, height), 0, 0); texture.Apply();
+            File.WriteAllBytes(".utmp/memory-recovery/" + name + ".png", texture.EncodeToPNG());
+            RenderTexture.active = previous; canvas.renderMode = oldMode; canvas.worldCamera = oldCamera;
+            foreach (var item in layers) item.Key.gameObject.layer = item.Value;
+            foreach (var other in otherCanvases) other.enabled = true;
+            camera.targetTexture = null; Object.Destroy(cameraObject); Object.Destroy(target); Object.Destroy(texture);
+        }
+        static void Palette(string hex)
+        {
+            ColorUtility.TryParseHtmlString(hex, out var expected);
+            Assert.That(GameObject.Find("Narrative background").GetComponent<Image>().color, Is.EqualTo(expected));
+        }
+        [UnityTest] public IEnumerator CompleteTemporaryStoryFlowAndCaptureAllThemes()
+        {
+            yield return EnterSignal(); yield return new WaitForSecondsRealtime(1);
+            Palette("#061016"); Assert.That(Text("Terminal message").text, Is.EqualTo("Emergency interface... online."));
+            Capture("01-cyan");
+            yield return Until(() => Page == 1); yield return new WaitForSecondsRealtime(.8f);
+            Assert.That(Text("Terminal message").text, Is.EqualTo("Unidentified memory signature detected."));
+            Assert.That(Text("Terminal detail").text, Is.EqualTo("Source unknown."));
+            yield return Until(() => Page == 2);
+            Assert.That(Text("Terminal message").text, Is.EqualTo("Restore main power to access the station's final transmission."));
+            yield return Until(() => Narrative == null, 10);
             Assert.That(Time.timeScale, Is.EqualTo(1)); Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
+            yield return ContinueLevel();
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Level1_PowerRestoration"));
+            Palette("#100F20"); yield return new WaitForSecondsRealtime(1); Capture("02-violet");
+            yield return Until(() => Page == 1);
+            Assert.That(Text("Terminal message").text, Is.EqualTo("Memory signature match found."));
+            yield return Until(() => Page == 2); yield return Skip();
+            yield return Until(() => SceneManager.GetActiveScene().name == "Level2_CargoBay"); yield return null; yield return null;
+            Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
+            yield return ContinueLevel(); Palette("#1C130D");
+            yield return new WaitForSecondsRealtime(1); Capture("03-amber");
+            yield return Until(() => Page == 1); Assert.That(Text("Terminal detail").text, Is.EqualTo("Current memory signature: identical."));
+            yield return Until(() => Page == 2); Assert.That(Text("Terminal message").text, Is.EqualTo("Core archive overheating."));
+            yield return Until(() => SceneManager.GetActiveScene().name == "Puzzle3_Placeholder", 10); yield return null; yield return null;
+            Capture("04-placeholder");
+            Assert.That(GameObject.Find("Complete Test Level"), Is.Not.Null);
+            GameObject.Find("Complete Test Level").GetComponent<Button>().onClick.Invoke(); yield return null;
+            Assert.That(GameSettingsMenu.NarrativeInputBlocked, Is.True); Palette("#17121B");
+            yield return Until(() => Page == 1); Assert.That(Text("Terminal message").text, Is.EqualTo("Research personnel evacuated."));
+            yield return Until(() => Page == 2); yield return new WaitForSecondsRealtime(1); Capture("05-identity-mismatch");
+            Assert.That(Text("Terminal detail").text, Is.EqualTo("Current host: Synthetic."));
+            yield return Until(() => Page == 3); Assert.That(Text("Terminal message").text, Is.EqualTo("You were never the researcher."));
+            yield return Until(() => Page == 4); yield return new WaitForSecondsRealtime(4); Capture("06-station-remembers");
+            yield return Until(() => Narrative != null && (bool)Property(Narrative, "EndCardReady"));
+            yield return new WaitForSecondsRealtime(2.5f); Capture("07-parallax-end");
+            GameObject.Find("Return to Main Menu").GetComponent<Button>().onClick.Invoke();
+            yield return Until(() => SceneManager.GetActiveScene().name == "MainMenu"); yield return null;
+            Assert.That(GameSettingsMenu.NarrativeInputBlocked, Is.False); Assert.That(Time.timeScale, Is.EqualTo(1));
         }
-
-        [UnityTest] public IEnumerator SkippingSettingsAndRestartKeepCachesGameplayAndProgression()
+        [UnityTest] public IEnumerator SkipPauseInputAndReplayAreSafe()
         {
-            foreach (float delay in new[] { .5f, 9f, 17f })
+            yield return EnterSignal(); yield return new WaitForSecondsRealtime(1);
+            var player = Find("PlayerController"); var body = player.GetComponent<Rigidbody>(); var position = body.position;
+            Keys(Key.W, Key.Q, Key.T, Key.E); yield return new WaitForSecondsRealtime(.4f); Keys(); yield return null;
+            Assert.That(body.position, Is.EqualTo(position)); Assert.That((bool)player.GetType().GetField("isInJetpack", Fields).GetValue(player), Is.False);
+            Keys(Key.P); yield return null; yield return null; Keys(); yield return null;
+            Assert.That(GameSettingsMenu.Instance.IsOpen, Is.True); int page = Page;
+            yield return new WaitForSecondsRealtime(4.5f); Assert.That(Page, Is.EqualTo(page));
+            Keys(Key.P); yield return null; yield return null; Keys(); yield return null;
+            Assert.That(GameSettingsMenu.Instance.IsOpen, Is.False);
+            yield return Skip(); yield return Until(() => Narrative == null);
+            Assert.That(Time.timeScale, Is.EqualTo(1)); Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
+            Assert.That(Cursor.visible, Is.False);
+            yield return SceneManager.LoadSceneAsync("Level1_PowerRestoration"); yield return null; yield return null;
+            Assert.That(Narrative, Is.Null);
+            yield return ContinueLevel(); yield return Skip();
+            yield return Until(() => SceneManager.GetActiveScene().name == "Level2_CargoBay"); yield return null; yield return null;
+            yield return ContinueLevel(); yield return Skip();
+            yield return Until(() => SceneManager.GetActiveScene().name == "Puzzle3_Placeholder"); yield return null; yield return null;
+            GameObject.Find("Complete Test Level").GetComponent<Button>().onClick.Invoke(); yield return null; yield return Skip();
+            yield return Until(() => Narrative != null && (bool)Property(Narrative, "EndCardReady")); yield return new WaitForSecondsRealtime(2.5f);
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Puzzle3_Placeholder"));
+            Assert.That(Cursor.visible, Is.True);
+            GameObject.Find("Return to Main Menu").GetComponent<Button>().onClick.Invoke();
+            yield return Until(() => SceneManager.GetActiveScene().name == "MainMenu");
+            yield return EnterSignal(); Assert.That(Page, Is.EqualTo(0));
+        }
+        [UnityTest] public IEnumerator AllStoryPagesAndEndCardFitCommonAspectRatios()
+        {
+            yield return EnterSignal();
+            var type = Narrative.GetType();
+            var stageType = type.Assembly.GetType("MemoryRecoveryStage");
+            foreach (var stage in new[] { "Signal", "Trace", "Fragment", "Restored" })
             {
-                yield return ContinueFromTutorial();
-                var player = GameObject.Find("Player").GetComponent<Rigidbody>(); var position = player.position;
-                var controller = player.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "PlayerController");
-                var state = controller.GetType().Assembly.GetType("GlobalState").GetMethod("get").Invoke(null, null);
-                var timeline = Field(state, "now"); var flight = Field(controller, "isInJetpack");
-                Keys(Key.W, Key.T, Key.Q, Key.E); yield return new WaitForSecondsRealtime(delay); Keys(); yield return null;
-                Assert.That(player.position, Is.EqualTo(position));
-                Assert.That(Field(state, "now"), Is.EqualTo(timeline));
-                Assert.That(Field(controller, "isInJetpack"), Is.EqualTo(flight));
-                var intro = Find("PowerRestorationIntro"); var view = Field(intro, "view");
-                var ageField = view.GetType().GetField("age", Fields);
-                GameSettingsMenu.Instance.Open(); yield return null; float age = (float)ageField.GetValue(view);
-                Assert.That(GameSettingsMenu.Instance.IsOpen, Is.True); Assert.That(Cursor.visible, Is.True);
-                Keys(Key.Space); yield return new WaitForSecondsRealtime(.2f); Keys(); yield return null;
-                Assert.That((float)ageField.GetValue(view), Is.EqualTo(age));
-                GameSettingsMenu.Instance.Close(); yield return null; yield return null;
-                Keys(Key.Space); yield return null; yield return null;
-                Assert.That(GameSettingsMenu.NarrativeInputBlocked, Is.True);
-                Keys(); yield return Until(() => !GameSettingsMenu.NarrativeInputBlocked);
-                Assert.That(player.linearVelocity.y, Is.LessThan(1));
-                yield return Until(() => GameObject.Find("Power Restoration Opening") == null);
-                Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
-                Assert.That(Cursor.lockState, Is.EqualTo((CursorLockMode)Field(view, "previousCursorLock")));
-                Assert.That(Cursor.visible, Is.EqualTo((bool)Field(view, "previousCursorVisible")));
-                Assert.That(Time.timeScale, Is.EqualTo(1)); Assert.That(AudioListener.pause, Is.False);
-                Assert.That(Find("PowerModuleA").GetType().GetProperty("IsRepaired").GetValue(Find("PowerModuleA")), Is.False);
-                Assert.That(Find("PowerModuleB").GetType().GetProperty("IsRepaired").GetValue(Find("PowerModuleB")), Is.False);
-                if (delay < 1)
+                Object.Destroy(Narrative.gameObject); yield return null;
+                type.GetMethod("Play").Invoke(null, new object[] { Enum.Parse(stageType, stage), null });
+                int pages = stage == "Restored" ? 5 : 3;
+                for (int page = 0; page < pages; page++)
                 {
-                    var reactor = Find("PowerReactor"); Set(reactor, "<IsOnline>k__BackingField", true);
-                    var completion = Find("TutorialCompletionScreen"); completion.GetType().GetMethod("TryShow").Invoke(completion, null);
-                    yield return new WaitForSecondsRealtime(2.7f);
-                    GameObject.Find("RESTART LEVEL").GetComponent<UnityEngine.UI.Button>().onClick.Invoke(); yield return null; yield return null;
+                    type.GetMethod("ShowPage", Fields).Invoke(Narrative, new object[] { page });
+                    yield return new WaitForSecondsRealtime(.85f);
+                    foreach (var size in new[] { new Vector2Int(960, 540), new Vector2Int(1024, 768), new Vector2Int(1920, 1080) })
+                        Capture(stage + "-page-" + page + "-" + size.x, size.x, size.y);
                 }
-                else { yield return SceneManager.LoadSceneAsync("Level1_PowerRestoration"); yield return null; }
-                Assert.That(GameObject.Find("Power Restoration Opening"), Is.Null);
-                Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.False);
             }
+            type.GetMethod("ShowEndCard", Fields).Invoke(Narrative, null);
+            yield return new WaitForSecondsRealtime(2.5f);
+            foreach (var size in new[] { new Vector2Int(960, 540), new Vector2Int(1024, 768), new Vector2Int(1920, 1080) })
+                Capture("ending-" + size.x, size.x, size.y);
+            Assert.That(GameObject.Find("Return to Main Menu").GetComponent<Button>().interactable, Is.True);
         }
 
-        [UnityTest] public IEnumerator TutorialEffectSettingDoesNotChangeOtherLevels()
+        static void AssertDisplayCamera()
         {
-            foreach (string scene in new[] { "StartScene", "Level1_PowerRestoration", "Level2_CargoBay" })
-            {
-                yield return SceneManager.LoadSceneAsync(scene); yield return null; yield return null;
-                var player = GameObject.Find("Player");
-                var interaction = player.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "Interact");
-                Assert.That(Field(interaction, "automaticInteractionEffects"), Is.EqualTo(scene != "StartScene"));
-                Assert.That(GameObject.Find("Power Restoration Opening"), Is.Null);
-                Assert.That(GameSettingsMenu.NarrativeInputBlocked, Is.False);
-            }
+            var cameras = Object.FindObjectsByType<Camera>(FindObjectsSortMode.None)
+                .Where(c => c.isActiveAndEnabled && c.targetTexture == null && c.targetDisplay == 0 && c.rect == new Rect(0, 0, 1, 1)).ToArray();
+            Assert.That(cameras, Has.Length.EqualTo(1), "A real scene camera must render Display 1 before any capture camera is created.");
+            Assert.That(Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None).Count(a => a.isActiveAndEnabled), Is.EqualTo(1));
+        }
+        [UnityTest] public IEnumerator CenteredTracePurpleCargoHudAndRealDisplayCamera()
+        {
+            yield return EnterSignal(); yield return Skip(); yield return Until(() => Narrative == null);
+            yield return ContinueLevel(); yield return new WaitForSecondsRealtime(.8f);
+            foreach (string label in new[] { "Terminal status", "Terminal message", "Terminal detail" })
+                Assert.That(Text(label).alignment, Is.EqualTo(TextAlignmentOptions.Center));
+            Capture("fixed-trace-centered");
+            yield return Skip(); yield return Until(() => SceneManager.GetActiveScene().name == "Level2_CargoBay"); yield return null; yield return null;
+            var hud = GameObject.Find("Cargo Bay Objective UI");
+            var labels = hud.GetComponentsInChildren<TMP_Text>(true);
+            Assert.That(labels.Single(x => x.name == "Objective number").color, Is.EqualTo((Color)new Color32(181, 160, 255, 255)));
+            Assert.That(hud.transform.Find("Objective panel").GetComponent<Image>().color, Is.EqualTo((Color)new Color32(16, 15, 32, 225)));
+            Assert.That(labels.Single(x => x.name == "Objective title").text, Is.EqualTo("Open Freight Access"));
+            yield return ContinueLevel(); yield return Skip();
+            yield return Until(() => SceneManager.GetActiveScene().name == "Puzzle3_Placeholder"); yield return null; yield return null;
+            AssertDisplayCamera(); Capture("fixed-placeholder-camera");
+            GameObject.Find("Complete Test Level").GetComponent<Button>().onClick.Invoke(); yield return new WaitForSecondsRealtime(.8f);
+            AssertDisplayCamera(); Capture("fixed-final-camera");
+            yield return Skip(); yield return Until(() => (bool)Property(Narrative, "EndCardReady"));
+            yield return new WaitForSecondsRealtime(2.5f); AssertDisplayCamera(); Capture("fixed-final-ending-camera");
+            GameObject.Find("Return to Main Menu").GetComponent<Button>().onClick.Invoke();
+            yield return Until(() => SceneManager.GetActiveScene().name == "MainMenu");
+            yield return SceneManager.LoadSceneAsync("Level1_PowerRestoration"); yield return null; yield return null;
+            var powerHud = GameObject.Find("Power Restoration Objective UI");
+            Assert.That(powerHud.GetComponentsInChildren<TMP_Text>(true).Single(x => x.name == "Objective number").color, Is.EqualTo(new Color(.38f, .76f, .83f)));
         }
 
-        static void Capture(string name, int width, int height)
+        [UnityTest] public IEnumerator NarrativeLayoutsFitCommonWebGLResolutions()
         {
-            Directory.CreateDirectory(".utmp/selective-intro");
-            var canvas = GameObject.Find("Power Restoration Opening").GetComponent<Canvas>();
-            var backdrop = GameObject.Find("Power Restoration Backdrop").GetComponent<Canvas>();
-            var camera = Camera.main; var rt = new RenderTexture(width,height,24);
-            camera.targetTexture = rt;
-            canvas.renderMode = backdrop.renderMode = RenderMode.ScreenSpaceCamera;
-            canvas.worldCamera = backdrop.worldCamera = camera; canvas.planeDistance = .8f; backdrop.planeDistance = .9f;
-            Canvas.ForceUpdateCanvases(); camera.Render();
-            foreach (var text in canvas.GetComponentsInChildren<TMP_Text>()) { text.ForceMeshUpdate(); Assert.That(text.isTextOverflowing, Is.False, text.name); }
-            var old = RenderTexture.active; RenderTexture.active = rt;
-            var image = new Texture2D(width,height,TextureFormat.RGB24,false); image.ReadPixels(new Rect(0,0,width,height),0,0); image.Apply();
-            File.WriteAllBytes(".utmp/selective-intro/"+name+".png",image.EncodeToPNG());
-            camera.targetTexture = null; canvas.renderMode = backdrop.renderMode = RenderMode.ScreenSpaceOverlay; RenderTexture.active = old;
-            Object.Destroy(image); Object.Destroy(rt);
+            yield return EnterSignal(); yield return new WaitForSecondsRealtime(.8f);
+            foreach (var size in new[] { new Vector2Int(960, 540), new Vector2Int(1024, 768), new Vector2Int(1920, 1080), new Vector2Int(2560, 1080) })
+                Capture("cyan-" + size.x, size.x, size.y);
+            yield return Skip(); yield return Until(() => Narrative == null);
+            yield return ContinueLevel(); yield return new WaitForSecondsRealtime(.8f);
+            foreach (var size in new[] { new Vector2Int(960, 540), new Vector2Int(1024, 768), new Vector2Int(1920, 1080) })
+                Capture("violet-" + size.x, size.x, size.y);
+            yield return Skip(); yield return Until(() => SceneManager.GetActiveScene().name == "Level2_CargoBay"); yield return null; yield return null;
+            yield return ContinueLevel(); yield return new WaitForSecondsRealtime(.8f);
+            foreach (var size in new[] { new Vector2Int(960, 540), new Vector2Int(1024, 768), new Vector2Int(1920, 1080) })
+                Capture("amber-" + size.x, size.x, size.y);
         }
     }
 }

@@ -67,7 +67,7 @@ public sealed class PowerCircuit : MonoBehaviour
             if (rod.sharedMaterial != finish) rod.sharedMaterial = finish;
         }
         foreach (var socket in rodSockets) Lamp(socket, seated);
-        string rods = "CONTROL RODS\n" + (seated ? "SEATED" : "FLOATING");
+        string rods = seated ? "Reactor rods secured." : "The reactor rods are still floating.";
         if (rodLabel.text != rods) { rodLabel.text = rods; rodLabel.color = seated ? new Color(.35f, 1, .65f) : new Color(1, .7f, .2f); }
         rodWarning.enabled = !seated;
         if (!seated) rodWarning.intensity = 1 + .8f * Mathf.Sin(Time.time * 4);

@@ -17,8 +17,9 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
     [SerializeField] private PowerCircuit circuit;
     private string previousObjective;
     private TimeState? displayedTime;
-    private GameplayHud hud;
+    private TutorialObjectiveHud hud;
     private TMP_Text controls, eventMessage;
+    private PowerInteractionFeedback interactionFeedback;
     private ParallaxAudioPalette sounds;
     private AudioSource events, ambience;
     // Last observed state, so each change is announced once with its sound and a short line under the prompt.
@@ -28,9 +29,15 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
     private TimeState lastTime;
     private float messageUntil;
     public string EventMessage => eventMessage.text;
+    public bool ObjectiveExpanded => hud != null && hud.Expanded;
+    public int ObjectiveRevision => hud != null ? hud.Revision : 0;
 
     // Read-only scene state for the HUD and reactor: the modules own the repair flags, the circuit the power path.
     public bool ReactorReady => circuit.ReactorReady;
+
+    public string ReactorFailureReason => !circuit.AFeed || !moduleB.IsRepaired || circuit.Route != 2 ?
+        "Power routing incomplete." : !circuit.RodsSeated ? "The reactor rods are still floating." :
+        GlobalState.get().now != TimeState.Future ? "Reactor startup unavailable in this timeline." : null;
 
     private void Awake()
     {
@@ -45,9 +52,11 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
         menu.SetGameplayControls(false, false);
         Time.timeScale = 1f;
         AudioListener.pause = false;
-        hud = new GameplayHud(transform, "Power Restoration Objective UI", titleFont, supportingFont);
+        hud = new TutorialObjectiveHud(transform, titleFont, supportingFont, "Power Restoration Objective UI", 5f, true, true);
         var canvas = hud.Instruction.GetComponentInParent<Canvas>().transform;
         controls = GameplayHud.CreateControlHint(canvas, supportingFont);
+        interactionFeedback = gameObject.AddComponent<PowerInteractionFeedback>();
+        interactionFeedback.Initialize(canvas, supportingFont);
         // A second line in the same style, centred under the interaction prompt, for what just changed.
         eventMessage = GameplayHud.CreateControlHint(canvas, supportingFont);
         eventMessage.name = "Power event message";
@@ -71,11 +80,13 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
         var time = GlobalState.get().now;
         UpdateObjective(time);
         hud.SetVisible(reactor.IsOnline || !GameSettingsMenu.GameplayInputBlocked);
+        if (!GameSettingsMenu.GameplayInputBlocked) hud.Tick(Time.deltaTime);
         hud.Status.text = (time == TimeState.Past ? "2026 / PAST" : "2176 / FUTURE") +
             (playerGravity.IsGravityActive ? "  ·  GRAVITY ON" : "  ·  GRAVITY OFF");
         // Flight is this level's core traversal, so its key stays listed (it replaced the old wall sign).
         controls.text = "ESC / P — Settings / Resume    ·    Q — Toggle jetpack";
         Announce(time);
+        eventMessage.alpha = string.IsNullOrEmpty(interactionFeedback.Message) ? 1 : 0;
         var cast = interaction.fireInteractRay(true);
         var target = cast.Item1 ? cast.Item2.collider.GetComponentInParent<Interactable>() : null;
         var module = interaction.HeldObject as PowerModuleA ?? target as PowerModuleA;
@@ -85,6 +96,9 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
             target is PowerRouteSelector selector ? selector.InteractionHint :
             target is MovableObject movable && !movable.GetComponent<Rigidbody>().isKinematic ? "E — Pick up" :
             target is Switch ? (PowerModuleA.StationZeroG ? "E — Restore station gravity" : "E — Cut station gravity") : "";
+        if (interaction.HeldObject is PowerModuleA heldA)
+            hud.Prompt.text = heldA.CanInstall ? "E — Install Module A" : "E — Place";
+        else if (!hud.Prompt.text.StartsWith("E —")) hud.Prompt.text = "";
         if (reactor.IsOnline) { controls.text = ""; hud.Prompt.text = ""; }
         if (displayedTime == time && !reactor.IsOnline) return;
         // Restored power lights the hall fully in 2176 too.
@@ -95,14 +109,17 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
 
     private void Announce(TimeState time)
     {
-        if (moduleA.IsRepaired && !wasRepairedA) Event("Module A seated · feed live", sounds?.click);
-        if (moduleB.IsRepaired && !wasRepairedB) Event("Module B repaired", sounds?.click);
-        if (circuit.Route != lastRoute) Event("B feed switched to route " + circuit.Route, sounds?.click);
-        if (PowerModuleA.StationZeroG != wasZeroG) Event(PowerModuleA.StationZeroG ? "Station gravity OFF" : "Station gravity ON",
-            PowerModuleA.StationZeroG ? sounds?.gravityOff : sounds?.gravityOn);
+        if (moduleA.IsRepaired && !wasRepairedA) { interactionFeedback.Clear(); Event("Module A seated · feed live", sounds?.click); }
+        if (moduleB.IsRepaired && !wasRepairedB) Play(sounds?.click);
+        if (circuit.Route != lastRoute) { interactionFeedback.Clear(); Event("B feed switched to route " + circuit.Route, sounds?.click); }
+        if (PowerModuleA.StationZeroG != wasZeroG)
+        {
+            interactionFeedback.Clear();
+            Event(PowerModuleA.StationZeroG ? "Station gravity OFF" : "Station gravity ON", PowerModuleA.StationZeroG ? sounds?.gravityOff : sounds?.gravityOn);
+        }
         if (moduleA.Returns != lastReturns) Event("Module A returned to its cradle", null);
         if (reactor.IsOnline && !wasOnline) Event("Reactor start-up", null);
-        if (time != lastTime) { Play(sounds?.timeSwitch); UpdateAmbience(); }
+        if (time != lastTime) { interactionFeedback.Clear(); Play(sounds?.timeSwitch); UpdateAmbience(); }
         if (interaction.HeldObject != lastHeld)
         {
             if (interaction.HeldObject != null) Play(sounds?.pickup);
@@ -133,24 +150,21 @@ public sealed class PowerRestorationPresentation : MonoBehaviour
 
     private void UpdateObjective(TimeState time)
     {
-        string progress = (moduleA.IsRepaired ? "A repaired" : "A pending") + " · " +
-            (moduleB.IsRepaired ? "B repaired" : "B pending");
         bool repaired = moduleA.IsRepaired && moduleB.IsRepaired;
-        // States, not steps: each line names what is wrong now, never the fix.
-        string next = reactor.IsOnline ? "Reactor online. Power restored." :
-            ReactorReady ? (time == TimeState.Future ? "Reactor ready. E — Activate console." : "Reactor ready in 2176.") :
-            repaired ? (time == TimeState.Past ? "Check the reactor in 2176." :
-                !circuit.BFeed ? "B has no feed in 2176." : "Control rods are not seated.") :
-            time != TimeState.Past ? "Repairs are made in 2026." :
-            !moduleA.IsRepaired ? (PowerModuleA.StationZeroG ? "Module A floats free." : "Module A is too heavy to lift.") :
-            "B's junction has power now.";
-        string instruction = progress + "\n" + next;
-        if (instruction == previousObjective) return;
-        previousObjective = instruction;
-        string number = reactor.IsOnline ? "04" : !repaired ? "01" : !ReactorReady ? "02" : "03";
-        string title = reactor.IsOnline ? "Power Restored" : !repaired ? "Restore Power Modules" :
-            !ReactorReady ? "Complete the Power Path" : "Activate the Reactor";
-        SetObjective("OBJECTIVE " + number, title, instruction);
+        string stage = reactor.IsOnline ? "Complete" : !repaired ? "Modules" : circuit.Route != 2 ? "PowerFlow" :
+            !circuit.RodsSeated ? "Stabilise" : "Ready";
+        string title = stage == "Complete" ? "Power Restored" : stage == "Modules" ? "Restore Power Modules" :
+            stage == "PowerFlow" ? "Restore the Power Flow" : stage == "Stabilise" ? "Stabilise the Reactor" : "Start the Reactor";
+        string thought = stage == "Complete" ? "Engineering is online. I should keep moving." :
+            stage == "Modules" ? (moduleA.IsRepaired ? "One connection restored. What else is missing?" : "I need to get these systems working again.") :
+            stage == "PowerFlow" ? "Both modules are repaired. Why isn't the reactor getting power?" :
+            stage == "Stabilise" ? "Those rods don't look secure yet." : "Everything seems stable. I can try starting the reactor.";
+        string progress = (moduleA.IsRepaired ? "A: repaired" : "A: pending") + " · " +
+            (moduleB.IsRepaired ? "B: repaired" : "B: pending");
+        string display = stage + "|" + progress;
         reactor.RefreshFeedback();
+        if (display == previousObjective) return;
+        previousObjective = display;
+        hud.SetObjective(stage, title, thought, progress + "\n" + thought);
     }
 }

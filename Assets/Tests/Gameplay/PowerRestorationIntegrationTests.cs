@@ -81,7 +81,7 @@ namespace Parallax.Gameplay.Tests
                 Assert.That(Cursor.visible, Is.True); Assert.That(Cursor.lockState, Is.EqualTo(CursorLockMode.None));
                 Assert.That(GameSettingsMenu.GameplayInputBlocked, Is.True);
                 var position = body.position; var rotation = Camera.main.transform.rotation;
-                Keys(Key.W, Key.Q, Key.F, Key.G);
+                Keys(Key.W, Key.Q, Key.T, Key.G);
                 InputSystem.QueueDeltaStateEvent(mouse.delta, new Vector2(100, 30));
                 yield return new WaitForSecondsRealtime(.15f);
                 Assert.That(body.position, Is.EqualTo(position));
@@ -116,7 +116,7 @@ namespace Parallax.Gameplay.Tests
             Assert.That(Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Any(x => x.GetType().Name == "DistortableObject"), Is.False);
             Keys(Key.G); yield return new WaitForSeconds(.25f);
             Keys(); yield return null;
-            Keys(Key.F); yield return null; yield return null;
+            Keys(Key.T); yield return null; yield return null;
             Assert.That(((Material)Field(state, "shader")).GetFloat("_StartTime"), Is.GreaterThanOrEqualTo(0), "Automatic timeline wipe still starts.");
             Keys(); yield return new WaitForSeconds(.7f);
             Assert.That(Timeline, Is.EqualTo("Past"));
@@ -165,10 +165,10 @@ namespace Parallax.Gameplay.Tests
                 }
                 var corners = new Vector3[4];
                 Label("Objective title").rectTransform.GetWorldCorners(corners);
-                float objectiveRight = camera.WorldToScreenPoint(corners[2]).x;
+                float objectiveTop = camera.WorldToScreenPoint(corners[1]).y;
                 Label("Timeline status").rectTransform.GetWorldCorners(corners);
-                Assert.That(camera.WorldToScreenPoint(corners[0]).x, Is.GreaterThan(objectiveRight));
-                Assert.That(Root.Q<Button>("open-settings").style.bottom.value.value, Is.EqualTo(24));
+                Assert.That(camera.WorldToScreenPoint(corners[0]).y, Is.GreaterThan(objectiveTop));
+                Assert.That(Root.Q<Button>("open-settings").style.top.value.value, Is.EqualTo(24));
                 Capture(rt, "hud-" + size.x);
                 menu.Open();
                 for (int i = 0; i < 8; i++) yield return null;
