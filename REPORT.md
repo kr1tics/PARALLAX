@@ -390,8 +390,8 @@ Counts and medians are calculated from the task records above. Each row accounts
 
 | Issue | Player evidence | Frequency | Priority and reason | Implementation status / proposed change | Follow-up status |
 | --- | --- | --- | --- | --- | --- |
-| The first object-handling task needed more explanation. | P1 and P4 needed help on T2 in the Think Aloud group; Chloe (P6) and Priya (P9) needed help on T2 in the Questionnaire group. Chloe (P6) and Priya (P9) also rated object interaction 2/5. | 2/5 in each group; 4/10 overall | Medium: affects early progress. | Not implemented. Consider more introductory practice and clearer interaction feedback in [Interact.cs](Assets/Scripts/Player/Interact.cs) and [MovableObject.cs](Assets/Scripts/Interaction/Interactables/MovableObject.cs). | Not retested. Check whether the first interaction task becomes easier to complete. |
-| The engineering task is harder to complete independently. | P1 and P3 needed T3 hints in the Think Aloud group; P4 did not complete T3. Chloe (P6) and Ethan (P8) needed T3 hints in the Questionnaire group; Priya (P9) did not complete T3. | 3/5 in each group; 6/10 overall | High: difficulty with a multi-step task can prevent progression. | Not implemented. Consider smaller steps and a concise progress summary; relevant code is [Level1Controller.cs](Assets/Scripts/Level1/Level1Controller.cs) and [Level1Presentation.cs](Assets/Scripts/Level1/Level1Presentation.cs). | Not retested. Compare completion and assistance rates after any change. |
+| The first object-handling task needed more explanation. | P1 and P4 needed help on T2 in the Think Aloud group; Chloe (P6) and Priya (P9) needed help on T2 in the Questionnaire group. Chloe (P6) and Priya (P9) also rated object interaction 2/5. | 2/5 in each group; 4/10 overall | Medium: affects early progress. | Improved interaction guidance to help players understand how to pick up, move and place objects. Consider more introductory practice and clearer interaction feedback in [Interact.cs](Assets/Scripts/Player/Interact.cs) and [MovableObject.cs](Assets/Scripts/Interaction/Interactables/MovableObject.cs). | Not formally retested. Further testing is needed to confirm whether object handling is easier. |
+| The engineering task is harder to complete independently. | P1 and P3 needed T3 hints in the Think Aloud group; P4 did not complete T3. Chloe (P6) and Ethan (P8) needed T3 hints in the Questionnaire group; Priya (P9) did not complete T3. | 3/5 in each group; 6/10 overall | High: difficulty with a multi-step task can prevent progression. | Added progressive objective guidance and clearer visual cues to help players follow the multi-step engineering puzzle. Consider smaller steps and a concise progress summary; relevant code is [Level1Controller.cs](Assets/Scripts/Level1/Level1Controller.cs) and [Level1Presentation.cs](Assets/Scripts/Level1/Level1Presentation.cs). | Not formally retested. Further testing is needed to see whether players can complete the task with less assistance. |
 | Some players need help deciding where to go next. | P4 in the Think Aloud group and Priya (P9) in the Questionnaire group each needed a direction reminder on T4. | 1/5 in each group; 2/10 overall | Medium: affects completion after the puzzles are solved. | Added clearer objective guidance and reduced unnecessary visual distractions to help players identify where to go next. | Not formally retested. Further testing is needed to confirm whether these changes improved navigation. |
 | More introductory practice and easier access to settings were requested. | Chloe (P6) asked for more control practice before the puzzles; Jordan (P10) wanted the control settings to be easier to find. | 2/5 questionnaire participants | Medium: affects learning and comfort. | Existing control settings remain available. Consider a simpler initial control reference and easier access to those settings. | Comfort and control-learning follow-up has not been conducted. |
 | Time-period identification is a relative strength. | All five questionnaire participants (P6–P10) rated time-period identification at least 4/5. | 5/5 questionnaire participants | Preserve: supports understanding of the main mechanic. | Keep time-switching feedback consistent; relevant existing features are in [Level1Presentation.cs](Assets/Scripts/Level1/Level1Presentation.cs) and [FutureDecay.shader](Assets/Shaders/FutureDecay.shader). | Check that future changes preserve the same level of understanding. |
@@ -403,6 +403,8 @@ The evaluation covers 10 distinct participants across two separate groups of fiv
 Each group contains 14 independent completions, five assisted completions and one incomplete attempt across 20 task records. Across both groups, this gives 28 independent completions, 10 assisted completions and two incomplete attempts across 40 task records. Four of the five participants in each group completed T3, giving eight completions across the 10 participants. Morgan (P4 / O4) and Priya (P9 / Q4) needed a demonstration before attempting the final task.
 
 The main follow-up priorities are to make longer tasks easier to follow, improve the initial interaction experience and clarify what to do next. Any changes should be checked against the same task success criteria. Findings should be interpreted by evaluation group; questionnaire ratings and written feedback describe only P6–P10.
+
+These findings highlighted the need for clearer objectives, better visual feedback and more intuitive guidance. We used this feedback to improve the game's UI, reduce unnecessary visual distractions and make puzzle progression easier to follow. However, these changes have not been formally retested, so their effectiveness still needs to be evaluated.
 
 ## Shaders and Special Effects
 
@@ -477,8 +479,7 @@ _Written by Cache Luk [1625615]_
 
 ##### Behaviour
 
-This shader creates a simple animated holographic surface using cyan colour, horizontal scanlines, periodic brightness flicker and transparency. I chose the effect for PARALLAX because the player is a maintenance worker exploring an abandoned space station. A small projected maintenance panel suits the science-fiction setting and suggests imperfect electronic equipment. The current panel is decorative: it does not display live power readings or change the time-travel mechanics.
-
+This shader creates a simple animated holographic surface using cyan colour, horizontal scanlines, periodic brightness flicker and transparency. I chose the effect for PARALLAX because the player is a maintenance worker exploring an abandoned space station. A small projected maintenance panel suits the science-fiction setting and suggests imperfect electronic equipment. The hologram is also used for gameplay guidance and equipment indicators, helping players notice important objects and understand their current status. Its animated scanlines and flickering reinforce the station's futuristic atmosphere.
 
 The shader uses one vertex program and one fragment program in a single ShaderLab pass. The vertex program uses `UnityObjectToClipPos` to transform the vertices into clip space so they can be rendered on screen. It also passes the UV coordinates to the fragment shader. I did not change the geometry of the object in the vertex shader.
 
@@ -518,7 +519,6 @@ as well as in the main game as a futuristic alternative to a status light.
 
 <img width="2212" height="1268" alt="Guidance indicators" src="https://github.com/user-attachments/assets/ea9b5671-2c6c-4142-a28d-c2472030d4d6" />
 
-The hologram shader is also used throughout the game for interactive guidance, equipment indicators and visual feedback. Its animated scanlines and flickering reinforce the station's futuristic atmosphere.
 
 #### Future Decay Shader
 
@@ -622,7 +622,7 @@ as well as providing feedback to the player that they are still holding the obje
 This is enabled when the player looks at a compatible object and presses the interact button (E or Left Mouse)
 The shader also becomes more intense over time, as if the longer the object is held, the more the physics-defying energy is destabilising it.
 
-In the final game, this effect is toned down and barely noticable.
+The effect was made more subtle in the final game so it would not distract players from solving the puzzles.
 
 ##### Parameters
 
@@ -677,7 +677,7 @@ The particle system uses a Random Number Generator to influence its timing and m
 
 **Sabrina**: Tutorial design and development, game story, UI/UX improvements, visual and sound design, puzzle design and polish, Future Decay Shader, and macOS compatibility fixes.  
 
-**Will**: Object Distortion Shader, settings menu, 3D assets, and contributions to movement, gravity and documentation and evaluation materials.  
+**Will**: Object Distortion Shader, settings menu, 3D assets, contributions to movement, documentation and evaluation materials.  
 
 
 
