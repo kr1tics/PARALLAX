@@ -632,8 +632,6 @@ In the final game, this effect is toned down and barely noticable.
 
 ![alt text](Images/distortion-shader-still.jpeg)
 
-**Hologram Shader**
-
 
 **Activated distortion (`_EffectAmount = 1`):**
 
