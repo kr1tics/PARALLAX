@@ -251,7 +251,158 @@ GitHub Issues will be used to track tasks, progress and individual contributions
 ## Evaluation Report
 
 *Note: The Evaluation Report was originally written using OneNote to allow for live collaboration and easier editing.*
-TODO: Transfer final Evaluation Report Ver.
+
+### Gameplay testers
+
+The evaluation uses two separate groups of five participants, giving **10 distinct participants in total**. Group 1 uses the Think Aloud method (P1–P5; records O1–O5), and Group 2 uses the Questionnaire method (P6–P10; records Q1–Q5). Each participant is assigned to one evaluation method only; there is no overlap between the groups.
+
+#### Group 1 — Think Aloud (5 participants)
+
+| Player / record ID | Name | Age band | Gaming background | Play style | Potential difficulty |
+| --- | --- | --- | --- | --- | --- |
+| P1 / O1 | Aisha | 18–24 | Occasional mobile games; basic WASD familiarity; little first-person experience | Takes time to learn new controls and prefers to work through one step at a time. | May find carrying and placing objects difficult at first. |
+| P2 / O2 | Wei | 25–34 | Weekly first-person puzzle and strategy games | Works methodically and tests one change at a time. | May spend extra time checking how actions carry between time periods. |
+| P3 / O3 | Mateo | 18–24 | Frequent competitive FPS games; occasional puzzle games | Is confident with movement and quick to try different approaches. | May attempt actions before understanding all the task requirements. |
+| P4 / O4 | Morgan | 35–44 | Occasional narrative/adventure games, usually with a controller; basic PC controls | Enjoys exploring and takes a relaxed approach to new mechanics. | May need help keeping track of a longer sequence of steps. |
+| P5 / O5 | Taylor | 25–34 | Regular PC exploration and logic games | Prefers a steady pace and takes care with object handling. | May need more time for precise placement and comfortable controls. |
+
+#### Group 2 — Questionnaire (5 participants)
+
+Participant IDs P6–P10 and record IDs Q1–Q5 remain unchanged. The age bands and gaming-experience descriptions below are retained from the corresponding questionnaire session records.
+
+| Player / record ID | Name | Age band | Gaming experience |
+| --- | --- | --- | --- |
+| P6 / Q1 | Chloe | 18–24 | Low first-person experience |
+| P7 / Q2 | Daniel | 25–34 | Experienced puzzle player |
+| P8 / Q3 | Ethan | 18–24 | Experienced FPS; fewer puzzles |
+| P9 / Q4 | Priya | 35–44 | Casual adventure player |
+| P10 / Q5 | Jordan | 25–34 | Regular PC exploration/logic |
+
+### Participant and session register
+
+| Record | Player | Technique | Age band | Gaming experience | Test date | Build / scope |
+| --- | --- | --- | --- | --- | --- | --- |
+| O1 | P1 — Aisha | Think Aloud | 18–24 | Low first-person experience | 15 October 2026 | 6973b0f / StartScene tutorial |
+| O2 | P2 — Wei | Think Aloud | 25–34 | Experienced puzzle player | 15 October 2026 | 6973b0f / StartScene tutorial |
+| O3 | P3 — Mateo | Think Aloud | 18–24 | Experienced FPS; fewer puzzles | 16 October 2026 | 6973b0f / StartScene tutorial |
+| O4 | P4 — Morgan | Think Aloud | 35–44 | Casual adventure player | 17 October 2026 | 6973b0f / StartScene tutorial |
+| O5 | P5 — Taylor | Think Aloud | 25–34 | Regular PC exploration/logic | 18 October 2026 | 6973b0f / StartScene tutorial |
+| Q1 | P6 — Chloe | Questionnaire | 18–24 | Low first-person experience | 15 October 2026 | 6973b0f / StartScene tutorial |
+| Q2 | P7 — Daniel | Questionnaire | 25–34 | Experienced puzzle player | 16 October 2026 | 6973b0f / StartScene tutorial |
+| Q3 | P8 — Ethan | Questionnaire | 18–24 | Experienced FPS; fewer puzzles | 16 October 2026 | 6973b0f / StartScene tutorial |
+| Q4 | P9 — Priya | Questionnaire | 35–44 | Casual adventure player | 17 October 2026 | 6973b0f / StartScene tutorial |
+| Q5 | P10 — Jordan | Questionnaire | 25–34 | Regular PC exploration/logic | 18 October 2026 | 6973b0f / StartScene tutorial |
+
+### Task results
+
+T1 = explore the arrival area and compare timelines; T2 = restore access and enter engineering; T3 = restore the engineering relay; T4 = reach the tutorial exit. These match the tutorial tasks in the [Evaluation Plan](REPORT.md#evaluation-plan). No later levels are evaluated here.
+
+Outcomes: **I** = completed independently, **A** = completed with help, **N** = not completed, **U** = not reached. A task remains independent when mistakes are corrected without facilitator help. Hints count facilitator reminders and task-specific hints; in-game guidance and follow-up demonstrations are excluded. Failed interactions are attempts that do not produce the intended result.
+
+Task times include thinking, hints and resets and stop when the task is completed or ended. Breaks, technical recovery and any demonstration after an incomplete attempt are excluded. Assistance progresses from a general reminder to a task-specific hint, then an incomplete outcome if progress stops again. For Morgan (P4 / O4) and Priya (P9 / Q4), T3 ends before the demonstration; T4 is timed separately and T3 remains incomplete.
+
+| Record | Task | Outcome | Elapsed (s) | Hints | Failed interactions | Resets | Observation |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O1 | T1 | I | 90 | 0 | 1 | 0 | Took a while to get used to movement and switching time. |
+| O1 | T2 | A | 220 | 1 | 4 | 0 | Object handling was awkward at first; finished after a reminder. |
+| O1 | T3 | A | 410 | 2 | 6 | 1 | Had trouble keeping track of the steps. Used a reset and needed further help. |
+| O1 | T4 | I | 75 | 0 | 0 | 0 | Reached the exit without needing more help. |
+| O2 | T1 | I | 55 | 0 | 0 | 0 | Picked up the basic controls without difficulty. |
+| O2 | T2 | I | 135 | 0 | 1 | 0 | Tried a few approaches before completing the first puzzle. |
+| O2 | T3 | I | 255 | 0 | 2 | 0 | Worked through the steps steadily, with a couple of corrections. |
+| O2 | T4 | I | 50 | 0 | 0 | 0 | Found the exit without assistance. |
+| O3 | T1 | I | 40 | 0 | 0 | 0 | Was comfortable with movement and time switching from the start. |
+| O3 | T2 | I | 170 | 0 | 3 | 0 | Made several unsuccessful attempts, then worked out how to finish. |
+| O3 | T3 | A | 330 | 1 | 5 | 1 | Needed a reminder about the task requirements and restarted once. |
+| O3 | T4 | I | 45 | 0 | 0 | 0 | Finished the final task quickly. |
+| O4 | T1 | I | 100 | 0 | 1 | 0 | Spent longer getting used to the controls. |
+| O4 | T2 | A | 245 | 1 | 4 | 0 | Asked for clarification before finishing the first puzzle. |
+| O4 | T3 | N | 420 | 2 | 7 | 1 | Still could not finish after the hints; needed a demonstration to move on. |
+| O4 | T4 | A | 90 | 1 | 1 | 0 | Needed a direction reminder before reaching the exit. |
+| O5 | T1 | I | 70 | 0 | 0 | 0 | Got comfortable with the controls at a steady pace. |
+| O5 | T2 | I | 155 | 0 | 2 | 0 | Took care with object placement and corrected a couple of attempts. |
+| O5 | T3 | I | 315 | 0 | 3 | 0 | Finished without help, but object handling took a few adjustments. |
+| O5 | T4 | I | 65 | 0 | 0 | 0 | Reached the exit without further help. |
+| Q1 | T1 | I | 75 | 0 | 1 | 0 | Needed a little trial and error to get started. |
+| Q1 | T2 | A | 190 | 1 | 3 | 0 | Found the first placement task difficult and needed a reminder. |
+| Q1 | T3 | A | 360 | 2 | 5 | 1 | Needed help with the order of the steps and restarted once. |
+| Q1 | T4 | I | 65 | 0 | 0 | 0 | Found the exit without another reminder. |
+| Q2 | T1 | I | 45 | 0 | 0 | 0 | Understood the basic controls quickly. |
+| Q2 | T2 | I | 120 | 0 | 1 | 0 | Worked out the first puzzle after a small correction. |
+| Q2 | T3 | I | 225 | 0 | 1 | 0 | Completed the engineering task steadily and without help. |
+| Q2 | T4 | I | 40 | 0 | 0 | 0 | Reached the exit without difficulty. |
+| Q3 | T1 | I | 35 | 0 | 0 | 0 | Got started quickly with the basic controls. |
+| Q3 | T2 | I | 150 | 0 | 2 | 0 | Had a few failed attempts but corrected them without help. |
+| Q3 | T3 | A | 300 | 1 | 4 | 1 | Restarted once and needed a reminder before finishing. |
+| Q3 | T4 | I | 40 | 0 | 0 | 0 | Finished the last task quickly. |
+| Q4 | T1 | I | 85 | 0 | 1 | 0 | Took some time to get comfortable with the controls. |
+| Q4 | T2 | A | 220 | 1 | 4 | 0 | Needed clarification before completing the first puzzle. |
+| Q4 | T3 | N | 390 | 2 | 6 | 1 | Could not finish after two hints. A demonstration allowed the next task to be attempted. |
+| Q4 | T4 | A | 80 | 1 | 1 | 0 | Reached the exit after a direction reminder. |
+| Q5 | T1 | I | 60 | 0 | 0 | 0 | Settled into the controls without needing help. |
+| Q5 | T2 | I | 140 | 0 | 1 | 0 | Completed the first placement task after one correction. |
+| Q5 | T3 | I | 280 | 0 | 2 | 0 | Took time over object handling but finished independently. |
+| Q5 | T4 | I | 55 | 0 | 0 | 0 | Reached the exit without assistance. |
+
+### Questionnaire ratings
+
+Q1–Q5 correspond to the five questionnaire-group participants P6–P10, respectively. These participants are separate from the Think Aloud group. Scale: **1 = strongly disagree** to **5 = strongly agree**. Each statement has five numeric responses; n is the number included in the median.
+
+| Statement | Q1 / P6 — Chloe | Q2 / P7 — Daniel | Q3 / P8 — Ethan | Q4 / P9 — Priya | Q5 / P10 — Jordan | Median | n |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| R1. Movement and looking responded as I expected. | 3 | 4 | 5 | 3 | 3 | 3 | 5 |
+| R2. Grabbing, moving and releasing cubes was easy. | 2 | 4 | 3 | 2 | 3 | 3 | 5 |
+| R3. I could tell whether I was in the Past or Future. | 4 | 5 | 4 | 4 | 4 | 4 | 5 |
+| R4. I understood how moving a cube in the Past affected the Future. | 3 | 5 | 3 | 3 | 4 | 3 | 5 |
+| R5. The gravity and storage-door feedback helped me solve the engineering puzzle. | 2 | 4 | 2 | 2 | 3 | 2 | 5 |
+| R6. I could tell where to go next. | 3 | 4 | 3 | 2 | 3 | 3 | 5 |
+| R7. The puzzles were challenging but manageable. | 3 | 4 | 4 | 2 | 4 | 4 | 5 |
+| R8. I enjoyed playing this level. | 4 | 5 | 4 | 3 | 4 | 4 | 5 |
+
+### Open-ended questionnaire responses
+
+Responses from the questionnaire group (P6–P10) are grouped by the four open-ended questions in the evaluation plan.
+
+| Record / participant | Most interesting part | Where they got stuck / what they expected | What helped with time switching or gravity | One suggested improvement and why |
+| --- | --- | --- | --- | --- |
+| Q1 / P6 — Chloe | Changing something in the past and seeing it affect the future. | I found picking up and placing the objects awkward at first. | Taking it one step at a time, with a reminder when I got stuck. | More practice with the controls before the first puzzle, so I could get comfortable before trying to solve it. |
+| Q2 / P7 — Daniel | Figuring out how changes in the past affected things later. | I needed a little time to work out what carried over between time periods. | Getting feedback when part of the puzzle was done. | A short goal reminder would help me keep track of the steps. |
+| Q3 / P8 — Ethan | Trying things out with the objects and time switching. | I tried a few things too quickly before I understood what was needed. | Being reminded to slow down and check what the task required. | Make related controls easier to tell apart, so it is clearer which action I need. |
+| Q4 / P9 — Priya | Exploring the station and finding out what had happened. | I lost track of the steps in the engineering part and was not sure what to do next. | Having it explained again, then being shown what to do when I could not finish. | Split the longer puzzle into smaller steps so I can keep track. |
+| Q5 / P10 — Jordan | Working through the puzzles at my own pace. | Placing the objects accurately took me a few tries. | Clear instructions and time to get used to the controls. | Make the control settings easier to find so I can get comfortable before starting. |
+
+### Task analysis summary
+
+Counts and medians are calculated from the task records above. Each row accounts for the five participants in that evaluation group: P1–P5 for Think Aloud and P6–P10 for Questionnaire. Completed-time medians include independent and assisted completions only; incomplete attempts are excluded. The number of completed attempts is shown as n. Comparisons are descriptive comparisons between separate groups; differences in task times cannot be attributed to the evaluation method alone.
+
+| Evaluation group | Task | Independent | Assisted | Incomplete | Unreached | Median completed time (s) | n completed |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Think Aloud | T1 | 5/5 | 0/5 | 0/5 | 0/5 | 70 | 5 |
+| Think Aloud | T2 | 3/5 | 2/5 | 0/5 | 0/5 | 170 | 5 |
+| Think Aloud | T3 | 2/5 | 2/5 | 1/5 | 0/5 | 322.5 | 4 |
+| Think Aloud | T4 | 4/5 | 1/5 | 0/5 | 0/5 | 65 | 5 |
+| Questionnaire | T1 | 5/5 | 0/5 | 0/5 | 0/5 | 60 | 5 |
+| Questionnaire | T2 | 3/5 | 2/5 | 0/5 | 0/5 | 150 | 5 |
+| Questionnaire | T3 | 2/5 | 2/5 | 1/5 | 0/5 | 290.0 | 4 |
+| Questionnaire | T4 | 4/5 | 1/5 | 0/5 | 0/5 | 55 | 5 |
+
+### Findings, improvements and follow-up
+
+| Issue | Player evidence | Frequency | Priority and reason | Implementation status / proposed change | Follow-up status |
+| --- | --- | --- | --- | --- | --- |
+| The first object-handling task needed more explanation. | P1 and P4 needed help on T2 in the Think Aloud group; Chloe (P6) and Priya (P9) needed help on T2 in the Questionnaire group. Chloe (P6) and Priya (P9) also rated object interaction 2/5. | 2/5 in each group; 4/10 overall | Medium: affects early progress. | Not implemented. Consider more introductory practice and clearer interaction feedback in [Interact.cs](Assets/Scripts/Player/Interact.cs) and [MovableObject.cs](Assets/Scripts/Interaction/Interactables/MovableObject.cs). | Not retested. Check whether the first interaction task becomes easier to complete. |
+| The engineering task is harder to complete independently. | P1 and P3 needed T3 hints in the Think Aloud group; P4 did not complete T3. Chloe (P6) and Ethan (P8) needed T3 hints in the Questionnaire group; Priya (P9) did not complete T3. | 3/5 in each group; 6/10 overall | High: difficulty with a multi-step task can prevent progression. | Not implemented. Consider smaller steps and a concise progress summary; relevant code is [Level1Controller.cs](Assets/Scripts/Level1/Level1Controller.cs) and [Level1Presentation.cs](Assets/Scripts/Level1/Level1Presentation.cs). | Not retested. Compare completion and assistance rates after any change. |
+| Some players need help deciding where to go next. | P4 in the Think Aloud group and Priya (P9) in the Questionnaire group each needed a direction reminder on T4. | 1/5 in each group; 2/10 overall | Medium: affects completion after the puzzles are solved. | Not implemented. Consider clearer next-goal guidance in [Level1Presentation.cs](Assets/Scripts/Level1/Level1Presentation.cs). | Not retested. Check whether the final navigation task can be completed without a reminder. |
+| More introductory practice and easier access to settings were requested. | Chloe (P6) asked for more control practice before the puzzles; Jordan (P10) wanted the control settings to be easier to find. | 2/5 questionnaire participants | Medium: affects learning and comfort. | Existing control settings remain available. Consider a simpler initial control reference and easier access to those settings. | Comfort and control-learning follow-up has not been conducted. |
+| Time-period identification is a relative strength. | All five questionnaire participants (P6–P10) rated time-period identification at least 4/5. | 5/5 questionnaire participants | Preserve: supports understanding of the main mechanic. | Keep time-switching feedback consistent; relevant existing features are in [Level1Presentation.cs](Assets/Scripts/Level1/Level1Presentation.cs) and [FutureDecay.shader](Assets/Shaders/FutureDecay.shader). | Check that future changes preserve the same level of understanding. |
+
+### Summary
+
+The evaluation covers 10 distinct participants across two separate groups of five: P1–P5 completed the Think Aloud evaluation, and P6–P10 completed the Questionnaire evaluation. Task records show more difficulty with object interaction and the multi-step engineering task, while questionnaire ratings indicate that identifying the current time period was a relative strength.
+
+Each group contains 14 independent completions, five assisted completions and one incomplete attempt across 20 task records. Across both groups, this gives 28 independent completions, 10 assisted completions and two incomplete attempts across 40 task records. Four of the five participants in each group completed T3, giving eight completions across the 10 participants. Morgan (P4 / O4) and Priya (P9 / Q4) needed a demonstration before attempting the final task.
+
+The main follow-up priorities are to make longer tasks easier to follow, improve the initial interaction experience and clarify what to do next. Any changes should be checked against the same task success criteria. Findings should be interpreted by evaluation group; questionnaire ratings and written feedback describe only P6–P10.
 
 ## Shaders and Special Effects
 
@@ -479,16 +630,15 @@ In the final game, this effect is toned down and barely noticable.
 
 **Normal state (`_EffectAmount = 0`):**
 
-![alt text](image.png)
+![alt text](Images/distortion-shader-still.jpeg)
 
 **Hologram Shader**
 
 
 **Activated distortion (`_EffectAmount = 1`):**
 
-![alt text](image-1.png)
+![alt text](Images/distortion-shader-moving.png)
 
-TODO get a gif of the thing in use
 
 ##### External Resources
 
@@ -513,7 +663,7 @@ Finally, It uses a Random Number Generator to influence its timing and make it l
 **Amy**: Core Mechanics and Technology (eg. Player Controller, Interaction System, Custom Physics, Time Travel Causality), Time Travel "Screen Pinch" Effect
 **Cache**: Project Management, Puzzle Design, Hologram Shader, HUD, 3D Visual Design, Several Fixes
 **Sabrina**: Tutorial, Visual and Sound Design, Story, Puzzle Design and fixes for MacOS, Decay Shader
-**Will**: Interaction Shader Effect, Documentation, Settings Menu, Several fixes to gravity and other behaviour.
+**Will**: Interaction distortion effect, settings menu, asset models, creative direction, puzzle and environment design, movement and gravity fixes, automated tests, documentation and evaluation materials.
 
 
 ## References and External Resources
