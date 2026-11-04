@@ -504,13 +504,13 @@ as well as in the main game as a futuristic alternative to a status light.
 
 **Default parameter configuration**
 
-![Default hologram parameter configuration](shader-2-default.png)
+![Default hologram parameter configuration](Images/shader-2-default.png)
 
 *Default hologram configuration with 12 scanlines, 0.5 scan speed, 2 flicker speed, 0.15 flicker strength and 0.65 opacity.*
 
 **Stronger parameter configuration**
 
-![Stronger hologram parameter configuration](shader-2-strong.png)
+![Stronger hologram parameter configuration](Images/shader-2-strong.png)
 
 *Stronger configuration with 20 scanlines, 1.0 scan speed, 4 flicker speed, 0.45 flicker strength and 0.85 opacity. The increased scanline density is clearly visible, while the Inspector shows the increased animation and flicker parameters.*
 <img width="1116" height="640" alt="Hologram #2" src="https://github.com/user-attachments/assets/4b5e8e11-38cd-45af-b7d4-6b7a260c8552" />
