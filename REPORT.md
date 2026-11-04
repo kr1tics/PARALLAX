@@ -671,10 +671,14 @@ The particle system uses a Random Number Generator to influence its timing and m
 
 ## Summary of Contributions
 
-**Amy**: Core Mechanics and Technology (eg. Player Controller, Interaction System, Custom Physics, Time Travel Causality), Time Travel "Screen Pinch" Effect
-**Cache**: Project Management, Main puzzle design and development across all three levels, gameplay integration, Hologram Shader, HUD, 3D Visual Design, Several bug fixes
-**Sabrina**: Tutorial design and development, game story, UI/UX improvements, visual and sound design, puzzle design and polish, Future Decay Shader, and macOS compatibility fixes.
-**Will**: Object Distortion Shader, settings menu, 3D assets, and contributions to movement, gravity and documentation and evaluation materials.
+**Amy**: Core Mechanics and Technology (eg. Player Controller, Interaction System, Custom Physics, Time Travel Causality), Time Travel "Screen Pinch" Effect. 
+
+**Cache**: Project Management, Main puzzle design and development across all three levels, gameplay integration, Hologram Shader, HUD, 3D Visual Design, Several bug fixes. 
+
+**Sabrina**: Tutorial design and development, game story, UI/UX improvements, visual and sound design, puzzle design and polish, Future Decay Shader, and macOS compatibility fixes.  
+
+**Will**: Object Distortion Shader, settings menu, 3D assets, and contributions to movement, gravity and documentation and evaluation materials.  
+
 
 
 ## References and External Resources
