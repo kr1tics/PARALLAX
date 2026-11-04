@@ -660,7 +660,9 @@ It is based on the Legacy Particles/Alpha-Blended-Premultiply Shader and has had
 <img width="1138" height="632" alt="saprks" src="https://github.com/user-attachments/assets/7d7cf96c-f39d-4610-8929-7e3112821909" />
 
 It also uses [RouteOneSparks.cs](https://github.com/feit-comp30019/2026s2-project-2-four-sure/blob/main/Assets/Scripts/Level1/RouteOneSparks.cs) to control its behaviour, including how it is affected by the global gravity, and if it should be enabled.
-Finally, It uses a Random Number Generator to influence its timing and make it look more natural than it being on fixed intervals.
+
+Finally, the particle system uses short-lived sparks with varied emission timing to simulate electrical damage. It uses a Random Number Generator to influence its timing and make it look more natural than being on fixed intervals. Randomised bursts make the effect appear less repetitive, while its placement near the damaged connection helps players identify the faulty power route.
+
 
 ## Summary of Contributions
 
