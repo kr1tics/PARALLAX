@@ -65,6 +65,10 @@ public sealed class ColdStorageController : MonoBehaviour
     Interact interaction;
     TutorialObjectiveHud hud;
     PowerInteractionFeedback feedback;
+    bool handlingThought, bothSurvivedThought, oneInstalledThought;
+    string pendingThought;
+    bool recoveryThought, leakingSlotThought, sealedStorageThought;
+
     TMP_Text controls;
     AudioSource events, ambience, hum;
     TimeState previousTime;
@@ -73,6 +77,7 @@ public sealed class ColdStorageController : MonoBehaviour
     float[] lightIntensities;
     bool holdingInput, hatchWasOpen;
 
+    public int GuidanceResetVersion { get; private set; }
     public bool ServiceMode { get; private set; }
     public bool FlangeRepaired { get; private set; }
     public bool Starting { get; private set; }
@@ -106,6 +111,14 @@ public sealed class ColdStorageController : MonoBehaviour
         player.ResetForCheckpoint(arrival);
         Camera.main.GetComponent<Look>().Rotate(new Vector2(90, 0));
         previousTime = GlobalState.get().now;
+        if (warningLight != null)
+        {
+            warningLight.transform.position = new Vector3(0,2.7f,7.7f);
+            warningLight.color = new Color(1,.32f,.08f); warningLight.range = 8;
+            warningLight.shadows = LightShadows.None;
+        }
+        reactorLabel.enableAutoSizing = true;
+        reactorLabel.fontSizeMin = reactorLabel.fontSize * .65f;
         events = gameObject.AddComponent<AudioSource>(); events.playOnAwake = false;
         ambience = gameObject.AddComponent<AudioSource>(); ambience.playOnAwake = false; ambience.loop = true; ambience.ignoreListenerPause = true;
         hum = gameObject.AddComponent<AudioSource>(); hum.playOnAwake = false; hum.loop = true; hum.ignoreListenerPause = true;
@@ -155,6 +168,37 @@ public sealed class ColdStorageController : MonoBehaviour
             if (Held != null) { Play(sounds != null ? sounds.pickup : null); ExplainOnPickup(); }
             else if (previousHeld != null) previousHeld.GetComponent<ParallaxDropAudio>()?.Arm();
             previousHeld = Held;
+        }
+        if (!Past && !Completed && !Starting)
+        {
+            if (!bothSurvivedThought && !Ready && CellUsable(0) && CellUsable(1))
+            {
+                bothSurvivedThought = true;
+                pendingThought = "Both survived. I need them in the cooling slots here.";
+            }
+            if (!oneInstalledThought && SocketUsable(1) != SocketUsable(2))
+            {
+                oneInstalledThought = true;
+                pendingThought = "One is in place. I still need the other cell here.";
+            }
+        }
+        bool cellStoredInPastSlot = Past && s1.IsPressed && pastCells.Any(c => s1Site.Contains(c.transform.position) && (Held == null || Held.gameObject != c.gameObject));
+        if (cellStoredInPastSlot && !FlangeRepaired && !leakingSlotThought)
+        {
+            leakingSlotThought = true;
+            pendingThought = "The cell's in place, but this pipe is still leaking.";
+        }
+        if (cellStoredInPastSlot && LoopSealed && !sealedStorageThought)
+        {
+            sealedStorageThought = true;
+            pendingThought = "Cell sealed for long-term storage.";
+        }
+        if (pendingThought == "The cell's in place, but this pipe is still leaking." && (!cellStoredInPastSlot || FlangeRepaired)) pendingThought = null;
+        if (pendingThought == "Cell sealed for long-term storage." && (!cellStoredInPastSlot || !LoopSealed)) pendingThought = null;
+        if (pendingThought != null && string.IsNullOrEmpty(feedback.Message))
+        {
+            feedback.NotifyEnvironmentEvent(pendingThought);
+            pendingThought = null;
         }
         UpdateFeedback();
     }
@@ -212,7 +256,12 @@ public sealed class ColdStorageController : MonoBehaviour
         // Present-day mechanics only. The hatch never closes through the player or a cell, and holds while obstructed.
         bool hatchHeld = HatchOpen && (hatchOpening.Intersects(playerBounds) || active.Any(c => hatchOpening.Intersects(c.GetComponent<Collider>().bounds)));
         hatch.SetActive(!(pan.IsPressed || hatchHeld));
-        if (HatchOpen != hatchWasOpen) { hatchWasOpen = HatchOpen; Play(sounds != null ? sounds.click : null); }
+        if (HatchOpen != hatchWasOpen)
+        {
+            hatchWasOpen = HatchOpen;
+            Play(sounds != null ? sounds.click : null);
+            if (HatchOpen && PanLoaded) pendingThought = "Something opened above me. I should take a look.";
+        }
         // The plug rises as soon as the collider clears and settles once it is back; the pan dips under a cartridge.
         var target = hatchClosed + (HatchOpen ? Vector3.up * HatchTravel : Vector3.zero);
         hatchVisual.position = Vector3.MoveTowards(hatchVisual.position, target, Time.deltaTime * HatchTravel / (HatchOpen ? .4f : .25f));
@@ -230,17 +279,23 @@ public sealed class ColdStorageController : MonoBehaviour
         switch (kind)
         {
             case ColdStorageControl.Kind.Valve:
-                if (!Past) { Play(sounds != null ? sounds.drop : null); return Refuse(0, "Ice has seized the valve.", "It won't turn in 2176."); }
-                ServiceMode = !ServiceMode; Play(sounds != null ? sounds.click : null); return null;
+                if (!Past) { Play(sounds != null ? sounds.drop : null); return Refuse(0, "The valve won't turn.", "It's frozen in place."); }
+                ServiceMode = !ServiceMode;
+                Play(sounds != null ? sounds.click : null);
+                if (LoopSealed) feedback.NotifyEnvironmentEvent("Cooling loop sealed.", true);
+                return null;
             case ColdStorageControl.Kind.Flange:
-                if (!Past) return FlangeRepaired ? null : "That flange burst long ago.";
+                if (!Past) return FlangeRepaired ? null : "This pipe joint burst long ago.";
                 if (FlangeRepaired) return null;
-                if (!ServiceMode) return Refuse(1, "It's still under pressure.", "The line has to be vented first.");
+                if (!ServiceMode) return Refuse(1, "It's still under pressure.", "There's still pressure in the pipe.");
                 if (!CanRepair) return null;
-                FlangeRepaired = true; Play(sounds != null ? sounds.click : null); return null;
+                FlangeRepaired = true;
+                Play(sounds != null ? sounds.click : null);
+                feedback.NotifyEnvironmentEvent("The leak's fixed. I still need to close the loop.", true);
+                return null;
             default:
                 if (Past) return "The plant is running normally in 2026.";
-                if (!Ready) return Refuse(2, "Not ready — " + ConsoleState() + ".", "Not ready — " + ConsoleState() + ".");
+                if (!Ready) return Refuse(2, StartUpIssue(), StartUpIssue());
                 StartCoroutine(StartUp()); return null;
         }
     }
@@ -252,25 +307,46 @@ public sealed class ColdStorageController : MonoBehaviour
     // Picking up a 2176 cell explains its history once per change of that history; carrying it never alters it.
     void ExplainOnPickup()
     {
-        if (Past || feedback == null) return;
+        if (feedback == null) return;
+        if (Past)
+        {
+            if (!handlingThought)
+            {
+                handlingThought = true;
+                feedback.NotifyEnvironmentEvent("I need somewhere to keep this cold for 150 years.");
+            }
+            return;
+        }
         for (int i = 0; i < 2; i++)
         {
             if (Held.gameObject != futureCells[i].gameObject || explained[i].HasValue && explained[i].Value.Equals(history[i])) continue;
             explained[i] = history[i];
+            if (!history[i].usable && !recoveryThought)
+            {
+                recoveryThought = true;
+                pendingThought = "It didn't survive the 150 years. I need to store it differently in the past.";
+            }
             feedback.NotifyEnvironmentEvent("Cell " + (i == 0 ? "A" : "B") + " " + Explanation(history[i].reason), history[i].usable);
         }
     }
+    public void ObserveEquipment(string equipment)
+    {
+        if (GameSettingsMenu.GameplayInputBlocked || Completed || Starting) return;
+        pendingThought = equipment == "Reactor" ? "It's overheating. I need to get the cooling system working." :
+            "It's cold in here, even without power. This could keep a cell chilled.";
+    }
+
     static string Explanation(string reason) => reason switch
     {
-        "SEALED IN THE LOOP" => "survived — sealed in S1 for 150 years.",
-        "PASSIVE COLD" => "survived — R stayed sealed and cold.",
-        "BAY VENTED" => "boiled off — S1 was vented when I left 2026.",
-        "LOOP LEAKED AT F3" => "boiled off — the loop leaked at F3.",
-        "HATCH LEFT OPEN" => "boiled off — R's hatch was held open.",
-        "UNSEALED SOCKET" => "boiled off — S2 is an open cradle.",
-        "LEFT ON BALANCE PAN" => "boiled off — it spent 150 years on the balance pan.",
-        "ACTIVE CHILL FAILED" => "boiled off — the vault's chillers died with the power.",
-        _ => "boiled off — it was left out in the open.",
+        "SEALED IN THE LOOP" => "survived 150 years sealed in slot 1.",
+        "PASSIVE COLD" => "survived in the sealed cold chamber.",
+        "BAY VENTED" => "lost its coolant. Slot 1 was left open in 2026.",
+        "LOOP LEAKED AT F3" => "lost its coolant through the leak at F3.",
+        "HATCH LEFT OPEN" => "lost its coolant. The cold chamber was left open.",
+        "UNSEALED SOCKET" => "lost its coolant. Slot 2 did not keep it sealed.",
+        "LEFT ON BALANCE PAN" => "lost its coolant after 150 years on the balance pan.",
+        "ACTIVE CHILL FAILED" => "lost its coolant when the vault's power failed.",
+        _ => "lost its coolant after 150 years out in the open.",
     };
 
     // The usable cell resting in a socket, if any; present-day handling never changes a cell's condition.
@@ -290,18 +366,21 @@ public sealed class ColdStorageController : MonoBehaviour
         switch (kind)
         {
             case ColdStorageControl.Kind.Valve:
-                return !Past ? "Valve seized" : "E — Turn valve to " + (ServiceMode ? "LOOP" : "SERVICE");
+                return !Past ? "The valve won't turn." : "E — Turn valve to " + (ServiceMode ? "LOOP" : "SERVICE");
             case ColdStorageControl.Kind.Flange:
                 if (!Past) return FlangeRepaired ? "F3 intact" : "F3 burst";
                 if (FlangeRepaired) return "F3 repaired";
-                if (!ServiceMode) return "E — Repair F3 (line pressurised)";
+                if (!ServiceMode) return "F3 · Under pressure";
                 if (Held != null) return "Hands full";
-                return CanRepair ? "E — Repair flange F3" : "Float level with the flange";
+                return CanRepair ? "E — Repair F3" : "F3 · Out of reach";
             default:
                 if (Past) return "Plant running normally";
                 return Ready ? "E — Start the exchanger" : "Not ready";
         }
     }
+
+    string StartUpIssue() => !LoopSealed ? (ServiceMode ? "The cooling loop is still open." : "The cooling loop is leaking.") :
+        !SocketUsable(1) ? "Slot 1 needs usable coolant." : "Slot 2 needs usable coolant.";
 
     public string ConsoleState() => !LoopSealed ? (ServiceMode ? "loop open" : "loop empty") :
         "S1 " + SocketState(1) + " · S2 " + SocketState(2);
@@ -315,6 +394,12 @@ public sealed class ColdStorageController : MonoBehaviour
             if (site.Contains(futureCells[i].transform.position))
                 return (i == 0 ? "A" : "B") + (history[i].usable ? " usable" : " boiled off");
         return "empty";
+    }
+
+    public string DisplaySocketState(int socket)
+    {
+        string state = SocketState(socket);
+        return state.Contains("boiled off") ? "No coolant" : state.Contains("usable") ? "Coolant supplied" : state == "loaded" ? "Cell inserted" : "No cell";
     }
 
     IEnumerator StartUp()
@@ -352,6 +437,10 @@ public sealed class ColdStorageController : MonoBehaviour
     public void ResetPlant()
     {
         if (GameSettingsMenu.GameplayInputBlocked || Starting) return;
+        GuidanceResetVersion++;
+        handlingThought = bothSurvivedThought = oneInstalledThought = false;
+        pendingThought = null;
+        recoveryThought = leakingSlotThought = sealedStorageThought = false;
         interaction.DropHeldObject();
         foreach (var button in new[] { s1, s2, pan }) button.ResetButton();
         for (int i = 0; i < 2; i++)
@@ -399,16 +488,16 @@ public sealed class ColdStorageController : MonoBehaviour
     void UpdateFeedback()
     {
         bool past = Past;
-        Lamp(valveLamp, !ServiceMode);
+        Lamp(valveLamp, LoopSealed);
         flangeCrack.SetActive(past && !FlangeRepaired); flangeBurst.SetActive(!past && !FlangeRepaired); flangeIntact.SetActive(!past && FlangeRepaired);
         tankCoolant.SetActive(past || LoopSealed); s1Frost.SetActive(!past && LoopSealed);
         Lamp(consoleLamp, Completed || Ready);
-        if (!Starting) reactorLabel.text = "REACTOR LOOP\n" + (Completed ? "STABLE · 298 K" : past ? "NOMINAL · 305 K" : "CRITICAL · 612 K");
+        if (!Starting) reactorLabel.text = Completed ? "REACTOR STABLE" : past ? "COOLING SYSTEM ONLINE" : "REACTOR OVERHEATING";
         reactorLabel.color = Completed ? Satisfied : past ? Neutral : Warning;
         if (warningLight != null)
         {
             warningLight.enabled = !past && !Completed;
-            if (warningLight.enabled) warningLight.intensity = 1 + .8f * Mathf.Sin(Time.time * 4);
+            if (warningLight.enabled) warningLight.intensity = 1.65f + .12f * Mathf.Sin(Time.time * .8f);
         }
         UpdateObjective(past);
         hud.Status.text = (past ? "2026 / PAST" : "2176 / FUTURE") + (player.GetComponent<ArtificialGravity>().IsGravityActive ? "  ·  GRAVITY ON" : "  ·  JETPACK");
@@ -425,9 +514,15 @@ public sealed class ColdStorageController : MonoBehaviour
         if (Completed && !Starting) hud.SetObjective("Complete", "Station Stable", "Cooling restored.", "STATION STABLE\nCooling restored");
         else if (Starting) hud.SetObjective("Starting", "Exchanger Start-Up", "Coolant is reaching the reactor.", "EXCHANGER START-UP\nCoolant circulating");
         else if (Ready) hud.SetObjective("Start", "Start the Exchanger", "Everything is in place.",
-            "START THE EXCHANGER\nS1: " + SocketState(1) + " · S2: " + SocketState(2));
-        else hud.SetObjective("Cooling", "Restore Reactor Cooling", "Both cells boiled off. Whatever I store has to last 150 years.",
-            "RESTORE REACTOR COOLING\n" + (past ? "Stored cells must last 150 years" : "S1: " + SocketState(1) + " · S2: " + SocketState(2)));
+            "START THE EXCHANGER\nBoth cooling slots supplied");
+        else
+        {
+            string milestone = recoveryThought && !(CellUsable(0) && CellUsable(1)) ? "Preserve" : !FlangeRepaired ? "Cooling" : !(CellUsable(0) && CellUsable(1)) ? "Preserve" : "Supply";
+            string title = milestone == "Cooling" ? "Restore Reactor Cooling" : milestone == "Preserve" ? "Preserve the Coolant Cells" : "Supply Both Cooling Slots";
+            string detail = milestone == "Cooling" ? "The cooling system isn't working." : milestone == "Preserve" ? "Find a way to keep both cells usable until 2176." : "Both cells survived. The reactor still needs coolant.";
+            string compact = "RESTORE REACTOR COOLING\n" + (past ? "Stored cells must last 150 years" : "Slot 1: " + DisplaySocketState(1) + " · Slot 2: " + DisplaySocketState(2));
+            hud.SetObjective(milestone,title,detail,compact);
+        }
     }
 
     void Lamp(Renderer lamp, bool ready)

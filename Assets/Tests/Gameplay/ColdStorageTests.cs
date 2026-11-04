@@ -115,6 +115,44 @@ namespace Parallax.Gameplay.Tests
         }
 
         // ------------------------------------------------------------ rules
+        [UnityTest] public IEnumerator ProgressiveInvestigationPreservesFutureStartAndResetsAcrossTimelines()
+        {
+            var signs=Script(plant.gameObject,"ColdStorageSignage");
+            var focus=Script(plant.gameObject,"InvestigationFocus");
+            Assert.That(Past,Is.False);
+            Assert.That((bool)Prop(signs,"Overheating"),Is.True);
+            Assert.That((string)Prop(signs,"GuidanceTarget"),Is.EqualTo("Reactor"));
+            Assert.That(GameObject.Find("Reactor loop repeater").GetComponent<TMP_Text>().text,Is.EqualTo("REACTOR OVERHEATING"));
+            yield return new WaitForSeconds(.6f);
+            Assert.That((int)Prop(focus,"VisibleMarkerCount"),Is.EqualTo(1));
+            var marker=focus.transform.Find("Primary investigation marker");
+            Assert.That(marker.GetComponent<Collider>(),Is.Null);
+            Assert.That(marker.GetComponent<Renderer>().sharedMaterial.shader.name,Is.EqualTo("Unlit/SimpleHologram"));
+            Assert.That(marker.GetComponent<Renderer>().sharedMaterial.GetColor("_Color").r,Is.GreaterThan(.9f));
+            var point=(Vector3)focus.GetType().GetField("requestedPosition",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(focus);
+            Assert.That(Physics.OverlapSphere(point,.08f,~0,QueryTriggerInteraction.Ignore).Where(x=>!x.transform.IsChildOf(player.transform)),Is.Empty);
+            foreach(var name in new[]{"Plant valve plate","S1 plate","S2 plate","F3 tag","Vault plate"})
+                Assert.That(GameObject.Find(name).GetComponent<CanvasGroup>().alpha,Is.LessThan(.01f),name);
+            yield return PlacePlayer(new Vector3(-2.8f,1.05f,2.8f));
+            var console=GameObject.Find("Exchanger console plate").transform;
+            Camera.main.transform.position=console.position-Vector3.forward*2;
+            Camera.main.transform.LookAt(console.position);
+            yield return new WaitForSeconds(.6f);
+            Assert.That((string)Prop(signs,"GuidanceTarget"),Is.EqualTo("Cooling valve"));
+            Assert.That(Flag("ServiceMode"),Is.False);
+            Assert.That(Flag("FlangeRepaired"),Is.False);
+            yield return SwapTo(true);
+            Assert.That((bool)Prop(signs,"Overheating"),Is.False);
+            Assert.That(GameObject.Find("Reactor loop repeater").GetComponent<TMP_Text>().text,Is.EqualTo("COOLING SYSTEM ONLINE"));
+            GameSettingsMenu.Instance.Open(); yield return null;
+            Assert.That((int)Prop(focus,"VisibleMarkerCount"),Is.Zero);
+            GameSettingsMenu.Instance.Close(); yield return new WaitForSeconds(.4f);
+            Call(plant,"ResetPlant"); yield return new WaitForSeconds(.6f);
+            Assert.That(Past,Is.False);
+            Assert.That((string)Prop(signs,"GuidanceTarget"),Is.EqualTo("Reactor"));
+            Assert.That((int)Prop(focus,"VisibleMarkerCount"),Is.LessThanOrEqualTo(1));
+        }
+
         [UnityTest] public IEnumerator StartStateIsTheRecordOfThe2026Start()
         {
             Assert.That(Past, Is.False);
@@ -551,6 +589,14 @@ namespace Parallax.Gameplay.Tests
             Assert.That(GameObject.Find("Plant board"), Is.Null);
             var backings = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Where(t => t.name.EndsWith(" backing") && t.name != "R hull backing").Select(t => t.name).ToArray();
             Assert.That(backings, Is.EqualTo(new[] { "Reactor loop repeater backing" }), "Only the reactor wall display keeps a backing.");
+            var originalBacking = GameObject.Find("R hull backing");
+            var backingSurface = GameObject.Find("R hull backing surface");
+            Assert.That(originalBacking.GetComponent<Collider>(), Is.Null);
+            Assert.That(originalBacking.transform.position.x, Is.EqualTo(9.85f).Within(.001f));
+            Assert.That(backingSurface.GetComponent<Collider>(), Is.Null);
+            Assert.That(backingSurface.transform.position.x, Is.GreaterThan(originalBacking.transform.position.x + .1f));
+            foreach (var label in Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None).Where(t => t.transform.parent.name.StartsWith("Cell ")))
+                Assert.That(label.text, Is.Not.EqualTo("READY"));
             Assert.That(GameObject.Find("Balance pan plate"), Is.Not.Null); Assert.That(GameObject.Find("R plate"), Is.Not.Null);
             foreach (bool era in new[] { false, true })
             {
@@ -566,7 +612,7 @@ namespace Parallax.Gameplay.Tests
             var feedback = Script(plant.gameObject, "PowerInteractionFeedback");
             yield return PlacePlayer(new Vector3(-6, 1.3f, 4.6f)); yield return FreePlayer(); yield return Tap(Key.Q); yield return Fly(new Vector3(-6, 1.3f, 4.6f), 90);
             yield return Grab(future[A]); yield return null;
-            Assert.That(Prop(feedback, "Message"), Is.EqualTo("Cell A boiled off — the vault's chillers died with the power."));
+            Assert.That(Prop(feedback, "Message"), Is.EqualTo("Cell A lost its coolant when the vault's power failed."));
             yield return Tap(Key.E); yield return new WaitForSeconds(1); Call(feedback, "Clear");
             yield return Grab(future[A]); yield return null;
             Assert.That(Prop(feedback, "Message"), Is.EqualTo(""), "An unchanged history is not repeated.");
