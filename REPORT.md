@@ -1,5 +1,3 @@
-<img width="732" height="1398" alt="Particle" src="https://github.com/user-attachments/assets/2cce0a40-e5d5-4d13-8b98-81f1f111f88d" />
-<img width="366" height="699" alt="Particle" src="https://github.com/user-attachments/assets/25ffc732-aeee-4f94-a424-37aff3eb1396" />
 # Project 2 Report
 
 Read the [project 2
@@ -674,9 +672,9 @@ The particle system uses a Random Number Generator to influence its timing and m
 ## Summary of Contributions
 
 **Amy**: Core Mechanics and Technology (eg. Player Controller, Interaction System, Custom Physics, Time Travel Causality), Time Travel "Screen Pinch" Effect
-**Cache**: Project Management, Puzzle Design, Hologram Shader, HUD, 3D Visual Design, Several Fixes
-**Sabrina**: Tutorial, Visual and Sound Design, Story, Puzzle Design and fixes for MacOS, Decay Shader
-**Will**: Interaction distortion effect, settings menu, asset models, creative direction, puzzle and environment design, movement and gravity fixes, automated tests, documentation and evaluation materials.
+**Cache**: Project Management, Main puzzle design and development across all three levels, gameplay integration, Hologram Shader, HUD, 3D Visual Design, Several bug fixes
+**Sabrina**: Tutorial design and development, game story, UI/UX improvements, visual and sound design, puzzle design and polish, Future Decay Shader, and macOS compatibility fixes.
+**Will**: Object Distortion Shader, settings menu, 3D assets, and contributions to movement, gravity and documentation and evaluation materials.
 
 
 ## References and External Resources
