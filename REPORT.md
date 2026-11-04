@@ -480,6 +480,10 @@ In the final game, this effect is toned down and barely noticable.
 **Normal state (`_EffectAmount = 0`):**
 
 ![alt text](image.png)
+
+**Hologram Shader**
+
+
 **Activated distortion (`_EffectAmount = 1`):**
 
 ![alt text](image-1.png)
@@ -499,6 +503,8 @@ or in the scene `https://github.com/feit-comp30019/2026s2-project-2-four-sure/bl
 
 It models Electrical Damage, in the form of sparks, coming from a damaged wire that the player must bypass.
 It is based on the Legacy Particles/Alpha-Blended-Premultiply Shader and has had duration, shape, color and gravity modified to feel more like a spark.
+<img width="1138" height="632" alt="saprks" src="https://github.com/user-attachments/assets/7d7cf96c-f39d-4610-8929-7e3112821909" />
+
 It also uses [RouteOneSparks.cs](https://github.com/feit-comp30019/2026s2-project-2-four-sure/blob/main/Assets/Scripts/Level1/RouteOneSparks.cs) to control its behaviour, including how it is affected by the global gravity, and if it should be enabled.
 Finally, It uses a Random Number Generator to influence its timing and make it look more natural than it being on fixed intervals.
 
