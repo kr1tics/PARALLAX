@@ -516,7 +516,9 @@ as well as in the main game as a futuristic alternative to a status light.
 
 <img width="1106" height="634" alt="Screenshot 2026-11-04 at 9 53 33 PM" src="https://github.com/user-attachments/assets/7655769d-905c-4f82-b2c5-28f39c34d74c" />
 
+<img width="2212" height="1268" alt="Guidance indicators" src="https://github.com/user-attachments/assets/ea9b5671-2c6c-4142-a28d-c2472030d4d6" />
 
+The hologram shader is also used throughout the game for interactive guidance, equipment indicators and visual feedback. Its animated scanlines and flickering reinforce the station's futuristic atmosphere.
 
 #### Future Decay Shader
 
@@ -525,7 +527,9 @@ _Written by Sabrina Sun [1165949]_
 ##### Shader Source
 
 **Code can be found at 
-[Assets/Shaders/FutureDecay.shader](FutureDecay.shader) The effect can be triggered by switching time with `T` while in-game.**
+
+**Shader Source:** [Assets/Shaders/FutureDecay.shader](Assets/Shaders/FutureDecay.shader)
+The effect is visible when switching between Past and Future using the T key.
 
 ##### Behaviour
 
