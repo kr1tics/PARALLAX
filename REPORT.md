@@ -1,3 +1,5 @@
+<img width="732" height="1398" alt="Particle" src="https://github.com/user-attachments/assets/2cce0a40-e5d5-4d13-8b98-81f1f111f88d" />
+<img width="366" height="699" alt="Particle" src="https://github.com/user-attachments/assets/25ffc732-aeee-4f94-a424-37aff3eb1396" />
 # Project 2 Report
 
 Read the [project 2
@@ -666,8 +668,8 @@ It is based on the Legacy Particles/Alpha-Blended-Premultiply Shader and has had
 It also uses [RouteOneSparks.cs](https://github.com/feit-comp30019/2026s2-project-2-four-sure/blob/main/Assets/Scripts/Level1/RouteOneSparks.cs) to control its behaviour, including how it is affected by the global gravity, and if it should be enabled.
 
 The particle system uses a Random Number Generator to influence its timing and make it look more natural than being on fixed intervals. It creates small electrical sparks near the damaged wire. The sparks have different sizes, speeds and lifetimes, making them look more natural. A gravity setting of 0.55 makes them fall, while a separate script controls when they appear at random intervals. This helps players notice the damaged wire and understand why the power route isn't working.
+<img width="732" height="1398" alt="Particle" src="https://github.com/user-attachments/assets/59acf5c1-93c6-483f-a36c-f434c6993af9" />
 
-<img width="432" height="900" alt="particle shader" src="https://github.com/user-attachments/assets/3d9d333e-ca35-40ae-87a3-58bdb3dc2adb" />
 
 ## Summary of Contributions
 
