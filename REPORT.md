@@ -512,8 +512,10 @@ as well as in the main game as a futuristic alternative to a status light.
 ![Stronger hologram parameter configuration](shader-2-strong.png)
 
 *Stronger configuration with 20 scanlines, 1.0 scan speed, 4 flicker speed, 0.45 flicker strength and 0.85 opacity. The increased scanline density is clearly visible, while the Inspector shows the increased animation and flicker parameters.*
+<img width="1116" height="640" alt="Hologram #2" src="https://github.com/user-attachments/assets/4b5e8e11-38cd-45af-b7d4-6b7a260c8552" />
 
-TODO add a GIF of this shader working
+<img width="1106" height="634" alt="Screenshot 2026-11-04 at 9 53 33 PM" src="https://github.com/user-attachments/assets/7655769d-905c-4f82-b2c5-28f39c34d74c" />
+
 
 
 #### Future Decay Shader
@@ -556,7 +558,11 @@ The effect can be toggled using **T** to travel through time.
 
 <img width="1512" height="931" alt="Screenshot 2026-09-13 at 3 26 56 pm" src="https://github.com/user-attachments/assets/2022738f-835f-4772-bea3-aa635a8556b0" />
 
-*The Past environment provides the clean gameplay comparison.*
+<img width="1106" height="634" alt="Past" src="https://github.com/user-attachments/assets/442656ac-3af6-41e6-ac19-435a90f361b2" />
+
+<img width="2212" height="1268" alt="future" src="https://github.com/user-attachments/assets/9e625bfe-c726-4681-8bc0-4f16f7b98c80" />
+ 
+*The Past/Future environment provides the clean gameplay comparison between different timelines.*
 
 ###### Low Decay
 
