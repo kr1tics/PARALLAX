@@ -392,7 +392,7 @@ Counts and medians are calculated from the task records above. Each row accounts
 | --- | --- | --- | --- | --- | --- |
 | The first object-handling task needed more explanation. | P1 and P4 needed help on T2 in the Think Aloud group; Chloe (P6) and Priya (P9) needed help on T2 in the Questionnaire group. Chloe (P6) and Priya (P9) also rated object interaction 2/5. | 2/5 in each group; 4/10 overall | Medium: affects early progress. | Not implemented. Consider more introductory practice and clearer interaction feedback in [Interact.cs](Assets/Scripts/Player/Interact.cs) and [MovableObject.cs](Assets/Scripts/Interaction/Interactables/MovableObject.cs). | Not retested. Check whether the first interaction task becomes easier to complete. |
 | The engineering task is harder to complete independently. | P1 and P3 needed T3 hints in the Think Aloud group; P4 did not complete T3. Chloe (P6) and Ethan (P8) needed T3 hints in the Questionnaire group; Priya (P9) did not complete T3. | 3/5 in each group; 6/10 overall | High: difficulty with a multi-step task can prevent progression. | Not implemented. Consider smaller steps and a concise progress summary; relevant code is [Level1Controller.cs](Assets/Scripts/Level1/Level1Controller.cs) and [Level1Presentation.cs](Assets/Scripts/Level1/Level1Presentation.cs). | Not retested. Compare completion and assistance rates after any change. |
-| Some players need help deciding where to go next. | P4 in the Think Aloud group and Priya (P9) in the Questionnaire group each needed a direction reminder on T4. | 1/5 in each group; 2/10 overall | Medium: affects completion after the puzzles are solved. | Not implemented. Consider clearer next-goal guidance in [Level1Presentation.cs](Assets/Scripts/Level1/Level1Presentation.cs). | Not retested. Check whether the final navigation task can be completed without a reminder. |
+| Some players need help deciding where to go next. | P4 in the Think Aloud group and Priya (P9) in the Questionnaire group each needed a direction reminder on T4. | 1/5 in each group; 2/10 overall | Medium: affects completion after the puzzles are solved. | Not implemented. Consider clearer next-goal guidance in [Level1Presentation.cs](Assets/Scripts/Level1/Level1Presentation.cs). | Not formally retested with the original participants. Further testing is needed to determine whether the updated guidance improves independent task completion. |
 | More introductory practice and easier access to settings were requested. | Chloe (P6) asked for more control practice before the puzzles; Jordan (P10) wanted the control settings to be easier to find. | 2/5 questionnaire participants | Medium: affects learning and comfort. | Existing control settings remain available. Consider a simpler initial control reference and easier access to those settings. | Comfort and control-learning follow-up has not been conducted. |
 | Time-period identification is a relative strength. | All five questionnaire participants (P6–P10) rated time-period identification at least 4/5. | 5/5 questionnaire participants | Preserve: supports understanding of the main mechanic. | Keep time-switching feedback consistent; relevant existing features are in [Level1Presentation.cs](Assets/Scripts/Level1/Level1Presentation.cs) and [FutureDecay.shader](Assets/Shaders/FutureDecay.shader). | Check that future changes preserve the same level of understanding. |
 
@@ -408,7 +408,7 @@ The main follow-up priorities are to make longer tasks easier to follow, improve
 
 ### Shader Report
 
-This document is partially copied from Project 1, in order to save time and resources.
+This section documents the shaders used in PARALLAX, including effects adapted from Project 1 and their integration into the current game.
 
 #### Table of Contents
 
@@ -450,7 +450,7 @@ The script is triggered (as described above) by setting `_StartTime` to the curr
 In addition, a material can be applied to the shader in order to texture it, which could be used to further enhance the effect, however, there were no textures that i found that would fit the setting.
 
 ##### Screenshots / GIFs
-TODO add a git of the shader working.
+<img width="1116" height="640" alt="time" src="https://github.com/user-attachments/assets/b753b0e6-5ff8-4d7e-8012-5ccf58c3f98e" />
 
 ##### External Resources:
 - Template & Reference: https://github.com/feit-comp30019/workshop-6/blob/main/Assets/MultiPassShader.shader
