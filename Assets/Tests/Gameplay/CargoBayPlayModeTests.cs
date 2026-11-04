@@ -147,6 +147,197 @@ namespace Parallax.Gameplay.Tests
             camera.targetTexture = null; RenderTexture.active = null; canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             Object.Destroy(image); Object.Destroy(target);
         }
+        [UnityTest] public IEnumerator PastPlacementAndClampConnectionHaveAccurateFeedbackBeforeFutureReceipt()
+        {
+            var rack=Rigid("rackFuture").GetComponent<Collider>(); AimCargoSurface(rack,Vector3.right);
+            yield return null; yield return null;
+            Assert.That(GameObject.Find("Contextual interaction prompt").GetComponent<TMPro.TMP_Text>().text,Is.EqualTo("C2 · Secured"));
+            yield return Keys(.06f,Key.E);
+            Assert.That(CargoNotice,Is.EqualTo("Something's holding C2 in place."));
+            yield return Swap();
+            level.GetType().GetField("<FreightAccessGranted>k__BackingField",Fields).SetValue(level,true);
+            Component(level.gameObject,"CargoBaySignage").GetType().GetField("gatePassed",Fields).SetValue(Component(level.gameObject,"CargoBaySignage"),true);
+            Place(Rigid("pastCrate"),P); yield return new WaitForSeconds(.7f);
+            Assert.That(Pressed("counterweight"),Is.True);
+            var cables=Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None).Where(x=>x.name=="Counterweight cable").ToArray();
+            Assert.That(cables.Length,Is.GreaterThan(0));
+            foreach(var cable in cables)
+            {
+                var properties=new MaterialPropertyBlock(); cable.GetPropertyBlock(properties);
+                var colour=properties.GetColor("_Color"); Assert.That(colour.g,Is.GreaterThan(colour.r));
+            }
+            Place(Rigid("rackPast"),R2); yield return new WaitForSeconds(.7f);
+            Assert.That((bool)level.GetType().GetProperty("C2Positioned").GetValue(level),Is.True);
+            Assert.That(Flag("CargoDelivered"),Is.False);
+            var receiver=GameObject.Find("R2 receiving plate").transform.Find("Equipment state").GetComponent<TMPro.TMP_Text>();
+            Assert.That(receiver.text,Is.EqualTo("POSITIONED"));
+            Assert.That(GameObject.Find("Current instruction").GetComponent<TMPro.TMP_Text>().text,Does.Contain("C2: positioned"));
+            CaptureCargoGuidance("past-positioned-cargo");
+            yield return Swap(); yield return new WaitForSeconds(.7f);
+            Assert.That(receiver.text,Is.EqualTo("RECEIVED"));
+            Place(Rigid("futureCrate"),R1); yield return new WaitForSeconds(.5f);
+            Assert.That(Flag("CargoDelivered"),Is.True);
+            var title=GameObject.Find("Objective title").GetComponent<TMPro.TMP_Text>();
+            Assert.That(title.text,Is.EqualTo("Complete the Cargo Transfer"));
+            Assert.That(GameObject.Find("Current instruction").GetComponent<TMPro.TMP_Text>().text,Is.EqualTo("Cargo transfer: complete"));
+            yield return new WaitForSeconds(1.7f);
+            Assert.That(title.text,Is.EqualTo("Reach Maintenance Access"));
+            var controls=GameObject.Find("Cargo Bay Objective UI").GetComponentsInChildren<TMPro.TMP_Text>(true);
+            Assert.That(controls.Any(x=>x.text.Contains("CTRL — Descend in Zero-G")),Is.True);
+            Call(level,"ResetCurrentPuzzle"); yield return new WaitForSeconds(.5f);
+            Assert.That(Flag("CargoDelivered"),Is.False);
+        }
+
+        [UnityTest] public IEnumerator EquipmentPairingUsesShortIdsAndKeepsCargoStateTextHidden()
+        {
+            var signs=Component(level.gameObject,"CargoBaySignage");
+            var roots=(System.Collections.IEnumerable)Get(signs,"roots");
+            foreach (GameObject root in roots)
+            {
+                if (root.name.StartsWith("Cargo unit"))
+                {
+                    var title=root.transform.Find("Equipment title").GetComponent<TMPro.TMP_Text>();
+                    Assert.That(title.text,Is.EqualTo("C1").Or.EqualTo("C2"));
+                    Assert.That(root.transform.Find("Equipment state").GetComponent<TMPro.TMP_Text>().enabled,Is.False);
+                    int stripes=root.GetComponentsInChildren<UnityEngine.UI.Image>(true).Count(x=>x.name=="Equipment pairing stripe");
+                    Assert.That(stripes,Is.EqualTo(title.text=="C1" ? 1 : 2));
+                }
+                if (root.name=="A freight plate")
+                    Assert.That(root.transform.Find("Equipment title").GetComponent<TMPro.TMP_Text>().text,Is.EqualTo("A / C1"));
+                if (root.name=="R1 receiving plate")
+                    Assert.That(root.transform.Find("Equipment title").GetComponent<TMPro.TMP_Text>().text,Is.EqualTo("R1 / C1"));
+            }
+            yield return Swap();
+            player.enabled=false; body.isKinematic=true;
+            body.position=new Vector3(-10.5f,.02f,-11.5f); player.transform.position=body.position;
+            Camera.main.transform.position=new Vector3(-10.5f,.6f,-11.5f);
+            Camera.main.transform.LookAt(Rigid("pastCrate").transform.position);
+            Physics.SyncTransforms(); yield return new WaitForSeconds(.6f);
+            CaptureCargoGuidance("compact-cargo-pairing");
+        }
+
+        [UnityTest] public IEnumerator GateArrivalAndIdleHintsRespectProgressPauseAndReset()
+        {
+            Assert.That(Vector3.Distance(body.position, new Vector3(10.5f,.02f,.25f)), Is.LessThan(.7f));
+            var gate = (UnityEngine.Component)Get(level,"freightDoor");
+            var direction = gate.transform.position - Camera.main.transform.position; direction.y=0;
+            var forward = Camera.main.transform.forward; forward.y=0;
+            Assert.That(Vector3.Dot(direction.normalized,forward.normalized), Is.GreaterThan(.95f));
+            var obstacles = Physics.OverlapSphere(body.position + Vector3.up*.2f,.3f,~0,QueryTriggerInteraction.Ignore)
+                .Where(c => !c.transform.IsChildOf(player.transform) && c.bounds.max.y > -.5f);
+            Assert.That(obstacles, Is.Empty);
+            Capture("gate-arrival");
+            var notice = Component(level.gameObject,"PowerInteractionFeedback");
+            Call(notice,"Clear");
+            void Tick(float seconds) => level.GetType().GetMethod("TickIdleHints",Fields).Invoke(level,new object[]{seconds});
+            Tick(44f);
+            Assert.That((int)Get(level,"idleHintCount"), Is.Zero);
+            Tick(2f);
+            Assert.That((int)Get(level,"idleHintCount"), Is.EqualTo(1));
+            Assert.That((string)notice.GetType().GetProperty("Message").GetValue(notice), Does.Contain("sealed cargo"));
+            Call(notice,"Clear");
+            GameSettingsMenu.Instance.Open();
+            float before=(float)Get(level,"idleSeconds");
+            Tick(120f);
+            Assert.That((float)Get(level,"idleSeconds"), Is.EqualTo(before));
+            GameSettingsMenu.Instance.Close(); yield return new WaitForSeconds(.4f);
+            Tick(45f);
+            Assert.That((int)Get(level,"idleHintCount"), Is.EqualTo(2));
+            Call(notice,"Clear"); Tick(180f);
+            Assert.That((int)Get(level,"idleHintCount"), Is.EqualTo(2));
+            level.GetType().GetField("<FreightAccessGranted>k__BackingField",Fields).SetValue(level,true);
+            Tick(1f);
+            Assert.That((int)Get(level,"idleHintCount"), Is.Zero);
+            Call(level,"ResetCurrentPuzzle"); yield return null; yield return null;
+            Assert.That((int)Get(level,"idleHintCount"), Is.Zero);
+            Assert.That(Vector3.Distance(body.position,new Vector3(10.5f,.02f,.25f)), Is.LessThan(.7f));
+        }
+
+        [UnityTest] public IEnumerator CargoInvestigationDoesNotAdvanceForDistanceOrOcclusionAndResetsOnReplay()
+        {
+            var signs=Component(level.gameObject,"CargoBaySignage");
+            string Target() => (string)signs.GetType().GetProperty("GuidanceTarget").GetValue(signs);
+            var cage=CargoSurface("Sealed freight cage front");
+            player.enabled=false;
+            AimCargoSurface(cage,Vector3.back,4); yield return new WaitForSeconds(.6f);
+            Assert.That(Target(),Is.EqualTo("C1"));
+            AimCargoSurface(cage,Vector3.back);
+            var obstruction=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            obstruction.transform.position=Camera.main.transform.position+Camera.main.transform.forward*.3f;
+            obstruction.transform.localScale=Vector3.one*.15f; Physics.SyncTransforms(); yield return new WaitForSeconds(.6f);
+            Assert.That(Target(),Is.EqualTo("C1"));
+            Object.Destroy(obstruction); player.enabled=true;
+            yield return Keys(.06f,Key.E); Assert.That(Target(),Is.Empty);
+            yield return Swap(); Assert.That(Target(),Is.Empty,"Looking at Future cargo must not mark it again after switching timelines.");
+            Call(level,"ResetCurrentPuzzle"); yield return new WaitForSeconds(.6f);
+            Assert.That(Target(),Is.EqualTo("C1"));
+        }
+
+        [UnityTest] public IEnumerator CargoMarkerProgressFollowsGateCrossingInspectionAndActualClampState()
+        {
+            var signs = Component(level.gameObject,"CargoBaySignage");
+            string Target() => (string)signs.GetType().GetProperty("GuidanceTarget").GetValue(signs);
+            Assert.That(Target(),Is.EqualTo("C1"));
+            var focus = Component(level.gameObject,"InvestigationFocus");
+            Assert.That((bool)Get(focus,"framed"),Is.True);
+            void MarkerClear()
+            {
+                var point=(Vector3)Get(focus,"requestedPosition");
+                Assert.That(Physics.OverlapSphere(point,.04f,~0,QueryTriggerInteraction.Ignore).Where(c=>!c.transform.IsChildOf(player.transform)),Is.Empty,"Marker must not be inside solid geometry: "+Target());
+            }
+            MarkerClear();
+            var marker=focus.transform.Find("Primary investigation marker");
+            Assert.That(marker.GetComponent<MeshFilter>().sharedMesh.vertexCount,Is.EqualTo(24));
+            var markerColour=marker.GetComponent<Renderer>().sharedMaterial.GetColor("_Color");
+            Assert.That(markerColour.r,Is.GreaterThan(.9f)); Assert.That(markerColour.g,Is.GreaterThan(.7f)); Assert.That(markerColour.b,Is.LessThan(.3f));
+            yield return Swap(); yield return WalkTo(10.5f,-15); yield return WalkTo(0,-15); yield return WalkTo(-10.5f,-11);
+            yield return Face(90,-.07f); yield return Keys(.06f,Key.E);
+            Assert.That(Held,Is.Not.Null); Assert.That(Target(),Is.EqualTo("A")); MarkerClear();
+            yield return WalkTo(-10.5f,-5); yield return Face(90,-.09f); yield return new WaitForSeconds(.8f);
+            yield return Keys(.06f,Key.E); yield return new WaitForSeconds(1);
+            Assert.That(Target(),Is.Empty,"Loading A must not claim the gate is open in the Past.");
+            Assert.That(CargoNotice,Is.EqualTo("Cargo registered."));
+            Assert.That(GameObject.Find("Objective title").GetComponent<TMPro.TMP_Text>().text,Is.EqualTo("Restore Freight Access"));
+            yield return Swap(); yield return new WaitForSeconds(.6f);
+            Assert.That(Flag("FreightAccessGranted"),Is.True); Assert.That(Target(),Is.EqualTo("Freight gate")); MarkerClear();
+            Assert.That(CargoNotice,Is.EqualTo("Freight gate unlocked."));
+            Assert.That(GameObject.Find("Objective title").GetComponent<TMPro.TMP_Text>().text,Is.EqualTo("Restore Freight Access"));
+            Assert.That(GameObject.Find("Current instruction").GetComponent<TMPro.TMP_Text>().text,Is.EqualTo("Access restored"));
+            var gate=(MonoBehaviour)Get(level,"freightDoor");
+            Assert.That(((Collider)Get(gate,"col")).enabled,Is.False);
+            yield return WalkTo(-10.5f,-11); yield return WalkTo(10.5f,-11); yield return WalkTo(10.5f,4);
+            yield return Face(90); yield return new WaitForSeconds(.5f); CaptureCargoGuidance("marker-open-gate");
+            yield return WalkTo(10.5f,8);
+            Assert.That(Target(),Is.EqualTo("C2 clamp")); MarkerClear();
+            Assert.That(GameObject.Find("Objective title").GetComponent<TMPro.TMP_Text>().text,Is.EqualTo("Release the Secured Cargo"));
+            yield return Swap();
+            AimCargoSurface(Rigid("rackPast").GetComponent<Collider>(),Vector3.right,4);
+            yield return new WaitForSeconds(.9f); CaptureCargoGuidance("marker-c2-rack");
+            AimCargoSurface(Rigid("rackPast").GetComponent<Collider>(),Vector3.right);
+            yield return Keys(.06f,Key.E); yield return null;
+            Assert.That(Target(),Is.EqualTo("P")); MarkerClear();
+            var look=Component(Camera.main.gameObject,"Look");
+            body.position=new Vector3(-13.6f,2.02f,1.0f); player.transform.position=body.position; Physics.SyncTransforms();
+            var direction=new Vector3(-13.55f,2.4f,2.4f)-(body.position+Vector3.up*.55f);
+            Call(look,"Rotate",new Vector2(Mathf.Atan2(direction.z,direction.x)*Mathf.Rad2Deg,direction.y/new Vector2(direction.x,direction.z).magnitude*.25f));
+            yield return new WaitForSeconds(.9f); CaptureCargoGuidance("marker-counterweight");
+            Assert.That((bool)signs.GetType().GetProperty("FreightGatePassed").GetValue(signs),Is.True);
+            Place(Rigid("pastCrate"),P); yield return new WaitForSeconds(1);
+            Assert.That(Rigid("rackPast").isKinematic,Is.False);
+            Assert.That(Target(),Is.EqualTo("Receiving C1")); MarkerClear();
+            var pState=GameObject.Find("P counterweight plate").GetComponentsInChildren<TMPro.TMP_Text>().Single(x=>x.name=="Equipment state");
+            Assert.That(pState.text,Is.EqualTo("CLAMP RELEASED"));
+            var pLight=GameObject.Find("P counterweight plate").transform.Find("Status light").GetComponent<UnityEngine.UI.Image>();
+            Assert.That(pLight.color.g,Is.GreaterThan(pLight.color.r));
+            Place(Rigid("rackPast"),R2); yield return new WaitForSeconds(1);
+            Place(Rigid("pastCrate"),R1); yield return new WaitForSeconds(1);
+            yield return Swap(); yield return new WaitForSeconds(1);
+            Assert.That(Flag("CargoDelivered"),Is.True); Assert.That(Target(),Is.EqualTo("Maintenance")); MarkerClear();
+            Call(level,"ResetCurrentPuzzle"); yield return new WaitForSeconds(.7f);
+            Assert.That(Target(),Is.EqualTo("C1")); Assert.That(Flag("FreightAccessGranted"),Is.False);
+            Assert.That((bool)signs.GetType().GetProperty("FreightGatePassed").GetValue(signs),Is.False);
+        }
+
         [UnityTest] public IEnumerator CargoFailureHintsRequireActualAttemptsAndProgressSeparately()
         {
             var gate = ((Component)Get(level, "freightDoor")).GetComponent<Collider>();
@@ -211,6 +402,9 @@ namespace Parallax.Gameplay.Tests
             yield return Swap();
             level.GetType().GetField("<FreightAccessGranted>k__BackingField", Fields).SetValue(level, true);
             yield return null; yield return null;
+            var signObserver=Component(level.gameObject,"CargoBaySignage");
+            signObserver.GetType().GetField("gatePassed",Fields).SetValue(signObserver,true);
+            yield return null; yield return null;
             Assert.That(detail.text, Is.EqualTo("C2: secured"));
             int revision = (int)level.GetType().GetProperty("ObjectiveRevision").GetValue(level);
             Place(Rigid("pastCrate"), P); yield return new WaitForSeconds(.7f);
@@ -233,6 +427,7 @@ namespace Parallax.Gameplay.Tests
             Place(Rigid("futureCrate"), R1); yield return new WaitForSeconds(.8f); Assert.That(CargoNotice, Is.Empty);
             Place(Rigid("rackFuture"), R2); yield return new WaitForSeconds(.8f);
             Assert.That(Flag("CargoDelivered"), Is.True); Assert.That(CargoNotice, Is.EqualTo("The way forward is open."));
+            yield return new WaitForSeconds(1.7f);
             Assert.That(GameObject.Find("Objective title").GetComponent<TMPro.TMP_Text>().text, Is.EqualTo("Reach Maintenance Access"));
             Assert.That(detail.text, Is.EqualTo("Cargo transfer: complete"));
             Call(level, "ResetCurrentPuzzle"); yield return null; yield return null;
@@ -264,6 +459,10 @@ namespace Parallax.Gameplay.Tests
             CaptureCargoGuidance("freight-compact"); yield return Swap();
             Assert.That((int)level.GetType().GetProperty("ObjectiveRevision").GetValue(level), Is.EqualTo(revision));
             level.GetType().GetField("<FreightAccessGranted>k__BackingField", Fields).SetValue(level, true); yield return null; yield return null;
+            Assert.That(title.text, Is.EqualTo("Restore Freight Access"));
+            var signObserver=Component(level.gameObject,"CargoBaySignage");
+            signObserver.GetType().GetField("gatePassed",Fields).SetValue(signObserver,true);
+            yield return null; yield return null;
             Assert.That(title.text, Is.EqualTo("Release the Secured Cargo"));
             Place(Rigid("rackPast"), new Vector3(-8, -.2f, 0)); yield return null; yield return null;
             Assert.That(title.text, Is.EqualTo("Complete the Cargo Transfer"));
@@ -398,7 +597,7 @@ namespace Parallax.Gameplay.Tests
         [UnityTest] public IEnumerator UnavailableMaintenanceDestinationReturnsToMenu()
         {
             var completion = Component(level.gameObject, "TutorialCompletionScreen");
-            Assert.That((string)Get(completion, "nextScene"), Is.EqualTo("Level3_ColdStorage"));
+            Assert.That((string)Get(completion, "nextScene"), Is.EqualTo("Level3_MaintenanceShaft"));
             // Isolate the fallback contract even when another branch later supplies Level 3.
             completion.GetType().GetField("nextScene", Fields).SetValue(completion, "UnavailableSceneForTest");
             level.GetType().GetField("<Completed>k__BackingField", Fields).SetValue(level, true);

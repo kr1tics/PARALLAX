@@ -45,6 +45,14 @@ public sealed class CargoBayController : MonoBehaviour
     float[] lightIntensities;
     public bool CargoDelivered { get; private set; }
     public bool FreightAccessGranted { get; private set; }
+    public Door FreightGate => freightDoor;
+    public bool StagingOccupied => stagingPlate.IsPressed || (GlobalState.get().now == TimeState.Past && PastCrateOnTarget(stagingPlate));
+    public bool FreightCargoExamined => failedAttempts[0] > 0;
+    public bool SecuredCargoExamined => failedAttempts[2] > 0;
+    public int ReceivingStatus => receivingStatus;
+    public bool C1Positioned => PastCrateOnTarget(plate);
+    public bool C2Positioned => PastBodyOnTarget(rackPast, rackPlate);
+    public int GuidanceResetVersion { get; private set; }
     public bool Completed { get; private set; }
     // C2 has left the clamp in 2026; its Future copy follows on the next switch to 2176.
     public bool RackReleased => !cradle.Contains(rackPast.transform.position);
@@ -56,8 +64,12 @@ public sealed class CargoBayController : MonoBehaviour
     readonly int[] failedAttempts = new int[5];
     bool rackHandled, rackWasClamped;
     string displayedObjective;
+    string idleProgress;
+    float idleSeconds;
+    int idleHintCount;
     int receivingStatus, receivingSeen;
-    bool clampReleaseAnnounced;
+    bool clampReleaseAnnounced, stagingWasRegistered;
+    float transferConfirmedAt = -10;
     Bounds cageBounds;
     bool hasCageBounds;
     public bool ObjectiveExpanded => hud != null && hud.Expanded;
@@ -152,6 +164,19 @@ public sealed class CargoBayController : MonoBehaviour
         hud.SetVisible(Completed || !GameSettingsMenu.GameplayInputBlocked);
         if (GameSettingsMenu.GameplayInputBlocked) return;
         bool past = GlobalState.get().now == TimeState.Past;
+        if (previousTime != GlobalState.get().now)
+        {
+            previousTime = GlobalState.get().now;
+            feedback.Clear();
+            Play(sounds != null ? sounds.timeSwitch : null); UpdateAmbience(); ApplyTimeline();
+        }
+        bool registered = PastCrateOnTarget(stagingPlate);
+        if (past && registered && !stagingWasRegistered && !FreightAccessGranted)
+        {
+            feedback.NotifyEnvironmentEvent("Cargo registered.", true);
+            Play(sounds != null ? sounds.drop : null);
+        }
+        stagingWasRegistered = registered;
         ObserveFailedInteractions(past);
         hud.Tick(Time.deltaTime);
         bool anchored = PastCrateOnTarget(stagingPlate);
@@ -160,6 +185,7 @@ public sealed class CargoBayController : MonoBehaviour
             FreightAccessGranted = true;
             feedback.Clear();
             freightDoor.onStartTrigger();
+            feedback.NotifyEnvironmentEvent("Freight gate unlocked.", true);
             Play(sounds != null ? sounds.click : null);
         }
         bool c1 = plate.IsPressed, c2 = rackPlate.IsPressed;
@@ -177,6 +203,7 @@ public sealed class CargoBayController : MonoBehaviour
         if (!CargoDelivered && FreightAccessGranted && !past && c1 && c2)
         {
             CargoDelivered = true;
+            transferConfirmedAt = Time.time;
             feedback.Clear();
             feedback.NotifyEnvironmentEvent("The way forward is open.", true);
             exitDoor.onStartTrigger();
@@ -187,12 +214,6 @@ public sealed class CargoBayController : MonoBehaviour
             Completed = true;
             Play(sounds != null ? sounds.complete : null);
             GetComponent<TutorialCompletionScreen>()?.ShowCompletion();
-        }
-        if (previousTime != GlobalState.get().now)
-        {
-            previousTime = GlobalState.get().now;
-            feedback.Clear();
-            Play(sounds != null ? sounds.timeSwitch : null); UpdateAmbience(); ApplyTimeline();
         }
         if (previousHeld != interaction.HeldObject)
         {
@@ -207,13 +228,13 @@ public sealed class CargoBayController : MonoBehaviour
             feedback.NotifyEnvironmentEvent("Looks like that worked.", true);
         }
         UpdateObjective(past, c1, c2);
+        TickIdleHints(Time.deltaTime);
         hud.Status.text = (past ? "2026 / PAST" : "2176 / FUTURE") + (playerGravity.IsGravityActive ? "  ·  GRAVITY ON" : "  ·  GRAVITY OFF");
-        controls.text = Completed ? "" : "ESC / P — Settings / Resume    ·    R — Reset cargo" +
-            (!playerGravity.IsGravityActive ? "    ·    Q — Toggle jetpack" : "");
+        controls.text = Completed ? "" : "CTRL — Descend in Zero-G    ·    R — Reset cargo";
         var hit = interaction.fireInteractRay(true);
         var aimed = hit.Item1 ? hit.Item2.collider.GetComponentInParent<MovableObject>() : null;
         hud.Prompt.text = Completed ? "" : interaction.HeldObject != null ? "E — Place" : aimed == null ? "" :
-            aimed.GetComponent<Rigidbody>().isKinematic ? "" : "E — Pick up";
+            aimed.GetComponent<Rigidbody>().isKinematic ? (aimed.GetComponent<Rigidbody>() == rackPast || aimed.GetComponent<Rigidbody>() == rackFuture ? "C2 · Secured" : "") : "E — Pick up";
         doorLabel.text = CargoDelivered ? "MAINTENANCE ACCESS / OPEN" : "MAINTENANCE LIFT\nAWAITING C1 + C2";
         plateIndicator.sharedMaterial = CargoDelivered || (!past && c1) ? readyMaterial : waitingMaterial;
         rackPlateIndicator.sharedMaterial = CargoDelivered || (!past && c2) ? readyMaterial : waitingMaterial;
@@ -231,13 +252,13 @@ public sealed class CargoBayController : MonoBehaviour
 
     void UpdateObjective(bool past, bool c1, bool c2)
     {
-        string stage = Completed ? "Complete" : CargoDelivered ? "Exit" : !FreightAccessGranted ? "Freight" : !RackReleased ? "Release" : "Transfer";
+        string stage = Completed ? "Complete" : CargoDelivered && Time.time - transferConfirmedAt >= 1.6f ? "Exit" : CargoDelivered ? "Transfer" : (!FreightAccessGranted || (GetComponent<CargoBaySignage>() is CargoBaySignage signs && !signs.FreightGatePassed)) ? "Freight" : !RackReleased ? "Release" : "Transfer";
         string title = stage == "Complete" ? "Cargo Bay Complete" : stage == "Exit" ? "Reach Maintenance Access" :
             stage == "Freight" ? "Restore Freight Access" : stage == "Release" ? "Release the Secured Cargo" : "Complete the Cargo Transfer";
-        string status = stage == "Freight" ? "Freight access: locked" : stage == "Release" ?
+        string status = stage == "Freight" ? (FreightAccessGranted ? "Access restored" : "Freight access: locked") : stage == "Release" ?
             (past && counterweight.IsPressed ? "C2: clamp released" : "C2: secured") :
-            stage == "Transfer" ? "C1: " + ((receivingStatus & 1) != 0 ? "received" : "pending") +
-                " · C2: " + ((receivingStatus & 2) != 0 ? "received" : "pending") : "Cargo transfer: complete";
+            stage == "Transfer" ? CargoDelivered ? "Cargo transfer: complete" : "C1: " + (past ? C1Positioned ? "positioned" : "pending" : (receivingStatus & 1) != 0 ? "received" : "pending") +
+                " · C2: " + (past ? C2Positioned ? "positioned" : "pending" : (receivingStatus & 2) != 0 ? "received" : "pending") : "Cargo transfer: complete";
         string display = stage + "|" + status;
         if (display == displayedObjective) return;
         bool enteringTransfer = stage == "Transfer" && (displayedObjective == null || !displayedObjective.StartsWith(stage + "|"));
@@ -245,6 +266,31 @@ public sealed class CargoBayController : MonoBehaviour
         hud.SetObjective(stage, title, status, title.ToUpperInvariant() + "\n" + status);
         if (enteringTransfer && string.IsNullOrEmpty(feedback.Message))
             feedback.NotifyEnvironmentEvent("Both cargo units need to be delivered.");
+    }
+
+    void TickIdleHints(float elapsed)
+    {
+        if (GameSettingsMenu.GameplayInputBlocked || Completed) return;
+        string progress = FreightAccessGranted + "/" + RackReleased + "/" + counterweight.IsPressed + "/" +
+            receivingStatus + "/" + CargoDelivered + "/" + (interaction.HeldObject != null ? interaction.HeldObject.name : "");
+        if (progress != idleProgress)
+        {
+            idleProgress = progress; idleSeconds = 0; idleHintCount = 0;
+            return;
+        }
+        if (!FreightAccessGranted && StagingOccupied) return;
+        idleSeconds += elapsed;
+        if (idleHintCount >= 2 || idleSeconds < (idleHintCount + 1) * 45f || !string.IsNullOrEmpty(feedback.Message)) return;
+        bool later = idleHintCount > 0;
+        string hint = CargoDelivered ? "The maintenance entrance is open now." :
+            !FreightAccessGranted ? interaction.HeldObject != null ?
+                (later ? "That staging platform looks like it registers cargo." : "There should be somewhere to stage this cargo.") :
+                (later ? "Maybe that cargo wasn't always sealed away." : "That sealed cargo unit might be worth a closer look.") :
+            GetComponent<CargoBaySignage>() is CargoBaySignage signs && !signs.FreightGatePassed ? "The freight gate is open. I can look beyond it." :
+            !RackReleased ? counterweight.IsPressed ? "The clamp is open. I should check the cargo." :
+                (later ? "That mechanism seems connected to the cargo rack." : "Something is keeping the upper cargo secured.") :
+            later ? "The receiving stations still need both cargo units." : "I should check which receiving station is still waiting.";
+        if (feedback.NotifyEnvironmentEvent(hint)) idleHintCount++;
     }
 
     bool IsCage(Collider surface) => surface.GetComponentsInParent<Transform>().Any(item => item.name.StartsWith("Sealed freight cage"));
@@ -280,21 +326,25 @@ public sealed class CargoBayController : MonoBehaviour
             Hint(4, "Looks like this section has collapsed.", "I wonder what this area looked like before...", surface);
     }
 
-    bool PastCrateOnTarget(PressureButton targetPlate)
+    bool PastCrateOnTarget(PressureButton targetPlate) => PastBodyOnTarget(pastCrate, targetPlate);
+
+    bool PastBodyOnTarget(Rigidbody body, PressureButton targetPlate)
     {
         Bounds target = targetPlate.GetComponent<Collider>().bounds;
-        Vector3 p = pastCrate.transform.position;
-        return interaction.HeldObject != pastCrate.GetComponent<MovableObject>() && Mathf.Abs(p.x - target.center.x) < target.extents.x &&
+        Vector3 p = body.transform.position;
+        return interaction.HeldObject != body.GetComponent<MovableObject>() && Mathf.Abs(p.x - target.center.x) < target.extents.x &&
             Mathf.Abs(p.z - target.center.z) < target.extents.z && p.y > target.max.y && p.y < target.max.y + 1.2f;
     }
 
     public void ResetCurrentPuzzle()
     {
         if (GameSettingsMenu.GameplayInputBlocked) return;
+        GuidanceResetVersion++;
+        idleProgress = null; idleSeconds = 0; idleHintCount = 0;
         interaction.DropHeldObject();
         System.Array.Clear(failedAttempts, 0, failedAttempts.Length); rackHandled = false;
-        rackWasClamped = true; previousHeld = null; displayedObjective = null;
-        receivingStatus = receivingSeen = 0; clampReleaseAnnounced = false;
+        rackWasClamped = true; stagingWasRegistered = false; previousHeld = null; displayedObjective = null;
+        receivingStatus = receivingSeen = 0; clampReleaseAnnounced = false; transferConfirmedAt = -10;
         feedback.Clear(); hud.Reannounce();
         plate.ResetButton();
         stagingPlate.ResetButton();
