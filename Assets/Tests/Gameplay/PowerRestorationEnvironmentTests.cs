@@ -97,6 +97,32 @@ namespace Parallax.Gameplay.Tests
             Object.Destroy(image); Object.Destroy(target);
         }
 
+        [UnityTest] public IEnumerator PowerPathRevealsOnlyAfterAAndResetsWithA()
+        {
+            var renderers = Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+            var lamps = renderers.Where(r => r.name is "A feed lamp" or "Route 1 lamp" or "Route 2 lamp").ToArray();
+            var pieces = renderers.Where(r => r.name == "Power path reveal segment").ToArray();
+            Assert.That(pieces.Length, Is.GreaterThan(20));
+            Assert.That(lamps.All(r => !r.enabled), Is.True);
+            Assert.That(pieces.All(r => !r.enabled), Is.True);
+            var a = Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x => x.GetType().Name == "PowerModuleA");
+            var repaired = a.GetType().GetField("<IsRepaired>k__BackingField", Fields);
+            repaired.SetValue(a, true);
+            yield return new WaitForSeconds(1);
+            Assert.That(lamps.Where(r => r.name == "A feed lamp").Any(r => r.enabled), Is.True);
+            Assert.That(lamps.Where(r => r.name.StartsWith("Route")).All(r => !r.enabled), Is.True);
+            yield return new WaitForSeconds(2);
+            Assert.That(pieces.Count(r => r.enabled), Is.InRange(1, pieces.Length - 1));
+            yield return new WaitForSeconds(2.3f);
+            Assert.That(lamps.All(r => r.enabled), Is.True);
+            Assert.That(pieces.Where(r => r.gameObject.activeInHierarchy).All(r => r.enabled), Is.True);
+            Capture("power-path-revealed");
+            repaired.SetValue(a, false);
+            yield return null; yield return null;
+            Assert.That(lamps.All(r => !r.enabled), Is.True);
+            Assert.That(pieces.All(r => !r.enabled), Is.True);
+        }
+
         [UnityTest] public IEnumerator TimelineDressingIsColliderFreeAndFollowsTheTimeline()
         {
             var past = Environment.transform.Find("2026 only").gameObject; var future = Environment.transform.Find("2176 only").gameObject;
@@ -235,6 +261,76 @@ namespace Parallax.Gameplay.Tests
             Assert.That(GameObject.Find("Power Restoration Completion Screen"), Is.Not.Null);
         }
 
+        [UnityTest] public IEnumerator SolidIndicatorsRemainOpaqueAndFollowPowerRoutesAcrossTimelines()
+        {
+            var circuit=Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x=>x.GetType().Name=="PowerCircuit");
+            var a=Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x=>x.GetType().Name=="PowerModuleA");
+            var b=Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x=>x.GetType().Name=="PowerModuleB");
+            var console=(Renderer[])circuit.GetType().GetField("consoleLamps",Fields).GetValue(circuit);
+            var one=(Renderer[])circuit.GetType().GetField("routeOneLamps",Fields).GetValue(circuit);
+            var two=(Renderer[])circuit.GetType().GetField("routeTwoLamps",Fields).GetValue(circuit);
+            var surfaces=Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include,FindObjectsSortMode.None);
+            var grip=surfaces.Single(x=>x.name=="Route lever");
+            var selector=Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x=>x.GetType().Name=="PowerRouteSelector");
+            var marker=GameObject.Find("Primary investigation marker").GetComponent<Renderer>();
+            Assert.That(marker.sharedMaterial.shader.name,Is.EqualTo("Unlit/SimpleHologram"));
+            Assert.That(marker.sharedMaterial.GetColor("_Color").r,Is.GreaterThan(.9f));
+            Assert.That(grip.sharedMaterial.shader.name,Is.EqualTo("Standard"));
+            foreach(var lamp in console.Concat(one).Concat(two))
+            { Assert.That(lamp.sharedMaterial.shader.name,Is.EqualTo("Standard")); Assert.That(lamp.sharedMaterial.GetFloat("_Mode"),Is.Zero); Assert.That(lamp.sharedMaterial.color.a,Is.EqualTo(1)); }
+            a.GetType().GetField("<IsRepaired>k__BackingField",Fields).SetValue(a,true);
+            b.GetType().GetField("<IsRepaired>k__BackingField",Fields).SetValue(b,true);
+            yield return new WaitForSeconds(.4f);
+            Assert.That(console[0].sharedMaterial.name,Is.EqualTo("PowerIndicatorLive"));
+            Assert.That(console[1].sharedMaterial.name,Is.EqualTo("PowerIndicatorStandby"));
+            Assert.That(one[0].sharedMaterial.name,Is.EqualTo("PowerIndicatorLive"));
+            Assert.That(one.Last().sharedMaterial.name,Is.EqualTo("PowerIndicatorStandby"));
+            Assert.That(two.All(x=>x.sharedMaterial.name=="PowerIndicatorStandby"),Is.True);
+            var upper=surfaces.Where(x=>x.name=="Route 1 cable" && x.transform.position.y>9);
+            Assert.That(upper.All(x=>x.sharedMaterial.name=="PowerConduitIdle"),Is.True,"Future power must not continue beyond the break.");
+            foreach(var behaviour in player.GetComponents<MonoBehaviour>()) if(behaviour.GetType().Name=="PlayerController") behaviour.enabled=false;
+            player.isKinematic=true; player.interpolation=RigidbodyInterpolation.None;
+            Place(new Vector3(6.4f,1.05f,1)); Face(0,-.06f); yield return new WaitForSeconds(.4f); Capture("solid-selector-future-route1");
+            Place(new Vector3(5.2f,2f,0)); Face(30,.13f); yield return null; Capture("solid-routing-future-broken");
+            Call(circuit,"SelectRoute",2); yield return new WaitForSeconds(.4f);
+            Assert.That(console[1].sharedMaterial.name,Is.EqualTo("PowerIndicatorLive"));
+            Assert.That(two.All(x=>x.sharedMaterial.name=="PowerIndicatorLive"),Is.True);
+            Assert.That(surfaces.Where(x=>x.name=="Route 2 cable").All(x=>x.sharedMaterial.name=="PowerIndicatorLive"),Is.True);
+            Place(new Vector3(3.5f,1.05f,.7f)); Face(90,.05f);
+            state.GetType().GetField("gravity").SetValue(state,0f); yield return new WaitForSeconds(.4f);
+            Assert.That(console[2].sharedMaterial.name,Is.EqualTo("PowerIndicatorStandby")); Capture("solid-console-rods-floating");
+            state.GetType().GetField("gravity").SetValue(state,9.8f); yield return new WaitForSeconds(.4f);
+            Assert.That(console.All(x=>x.sharedMaterial.name=="PowerIndicatorLive"),Is.True); Capture("solid-console-secured");
+            yield return Swap("Past"); Call(circuit,"SelectRoute",1); yield return new WaitForSeconds(.4f);
+            Assert.That(one.All(x=>x.sharedMaterial.name=="PowerIndicatorLive"),Is.True);
+            Assert.That((string)Prop(selector,"InteractionHint"),Is.EqualTo("E — Switch Power Route"));
+            Place(new Vector3(6.4f,1.05f,1)); Face(0,-.06f); yield return new WaitForSeconds(.6f); Capture("solid-selector-past");
+        }
+
+        [UnityTest] public IEnumerator B02RepairSignDistinguishesAvailableMaintenanceFromCompletedRepair()
+        {
+            var b=Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x=>x.GetType().Name=="PowerModuleB");
+            var a=Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Single(x=>x.GetType().Name=="PowerModuleA");
+            TMPro.TMP_Text Text(string name) => Object.FindObjectsByType<TMPro.TMP_Text>(FindObjectsSortMode.None).Single(x=>x.name==name);
+            Assert.That(Text("Module B identification detail").text,Is.EqualTo("SERVICE PANEL / REPAIRABLE"));
+            Assert.That(Text("Module B identification state").text,Is.EqualTo("REPAIR REQUIRED"));
+            a.GetType().GetField("<IsRepaired>k__BackingField",Fields).SetValue(a,true);
+            yield return Swap("Past");
+            foreach(var component in player.GetComponents<MonoBehaviour>()) if(component.GetType().Name=="PlayerController") component.enabled=false;
+            player.isKinematic=true; player.interpolation=RigidbodyInterpolation.None;
+            Place(new Vector3(6.5f,11.2f,1.4f));
+            Camera.main.transform.SetPositionAndRotation(new Vector3(6.5f,11.8f,1.4f),Quaternion.LookRotation(Vector3.right));
+            Physics.SyncTransforms(); yield return new WaitForSeconds(.7f);
+            Assert.That((bool)Prop(b,"CanRepair"),Is.True);
+            Assert.That((string)Prop(b,"InteractionHint"),Is.EqualTo("E — Repair B-02"));
+            Assert.That(Text("Module B identification state").color.r,Is.GreaterThan(Text("Module B identification state").color.g),"Power alone must not show repair success.");
+            Capture("b02-repairable-panel");
+            Call(Component(player.gameObject,"Interact"),"TryInteract"); yield return null; yield return null;
+            Assert.That((bool)Prop(b,"IsRepaired"),Is.True);
+            Assert.That(Text("Module B identification detail").text,Is.Empty);
+            Assert.That(Text("Module B identification state").color.g,Is.GreaterThan(Text("Module B identification state").color.r));
+        }
+
         [UnityTest] public IEnumerator EquipmentSignageReviewViews()
         {
             var views = new[] {
@@ -261,7 +357,7 @@ namespace Parallax.Gameplay.Tests
         [UnityTest] public IEnumerator EquipmentSignsAreContainedAndFollowExistingDeviceState()
         {
             var panels = Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None).Where(c => c.name == "Power Restoration Equipment Signs").ToArray();
-            Assert.That(panels.Length, Is.EqualTo(13));
+            Assert.That(panels.SelectMany(c => c.GetComponentsInChildren<TMPro.TMP_Text>()).Any(t => t.name == "Control rod assembly title"), Is.True);
             foreach (var panel in panels)
             {
                 Assert.That(panel.renderMode, Is.EqualTo(RenderMode.WorldSpace));
@@ -288,7 +384,7 @@ namespace Parallax.Gameplay.Tests
             Assert.That(consolePlate.transform.position.z, Is.LessThan(GameObject.Find("Inactive screen").GetComponent<Renderer>().bounds.min.z));
             Assert.That(aPlate.transform.parent, Is.EqualTo(a.transform));
             Assert.That(Label("Module A identification detail").text, Is.EqualTo("380 KG / HEAVY LOAD"));
-            Assert.That(Label("Module B identification state").text, Is.EqualTo("CONNECTION LOST"));
+            Assert.That(Label("Module B identification state").text, Is.EqualTo("REPAIR REQUIRED"));
             Assert.That((int)Prop(circuit, "Route"), Is.EqualTo(1));
             a.GetType().GetField("<IsRepaired>k__BackingField", Fields).SetValue(a, true);
             b.GetType().GetField("<IsRepaired>k__BackingField", Fields).SetValue(b, true);

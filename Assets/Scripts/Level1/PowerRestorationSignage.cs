@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,6 +16,14 @@ public sealed class PowerRestorationSignage : MonoBehaviour
     readonly List<GameObject> plates = new();
     readonly List<bool> originalVisibility = new();
     TMP_FontAsset titleFont, bodyFont;
+    InvestigationFocus focus;
+    Interact interaction;
+    Material solidLive, solidStandby, solidIdle, solidGrip;
+    readonly List<(Renderer cable, Renderer signal)> cableFinishes = new();
+    readonly List<(Renderer visual, Renderer signal, float distance)> pathReveal = new();
+    readonly List<Renderer> originalCables = new();
+    float pathStartedAt = -1;
+    Renderer routeGrip;
     Plate identityA, socketA, nodeB, reactorStatus, console, selector, gravity, rodsStatus;
     readonly List<Image> dockIndicators = new();
     readonly List<RectTransform> docks = new();
@@ -30,6 +39,14 @@ public sealed class PowerRestorationSignage : MonoBehaviour
 
     void Start()
     {
+        focus = gameObject.AddComponent<InvestigationFocus>();
+        focus.UseFramedMarker();
+        solidLive = Resources.Load<Material>("UI/PowerIndicatorLive");
+        solidStandby = Resources.Load<Material>("UI/PowerIndicatorStandby");
+        solidIdle = Resources.Load<Material>("UI/PowerConduitIdle");
+        solidGrip = Resources.Load<Material>("UI/PowerSelectorGrip");
+        circuit.SetIndicatorFinishes(solidLive,solidStandby);
+        interaction = FindFirstObjectByType<Interact>();
         var fonts = Resources.Load<GameObject>("UI/ContextIntro").GetComponent<ContextIntro>();
         titleFont = fonts.font; bodyFont = fonts.metadataFont;
         var rodLabel = GameObject.Find("Control rod status");
@@ -82,15 +99,55 @@ public sealed class PowerRestorationSignage : MonoBehaviour
         rodAudio.rolloffMode = AudioRolloffMode.Linear; rodAudio.dopplerLevel = 0;
         foreach (var socket in GameObject.Find("Control rods").GetComponentsInChildren<Renderer>())
             if (socket.name == "Rod socket") MakeDock(socket.transform.position + Vector3.up * .071f);
+        var surfaces = gameObject.scene.GetRootGameObjects().SelectMany(root=>root.GetComponentsInChildren<Renderer>(true)).ToArray();
+        foreach (var renderer in surfaces)
+            if (renderer.name is "Module A alignment marker" or "Slot guide rail") focus.RegisterProjection(renderer, 0, .16f, () => interaction != null && interaction.HeldObject == moduleA);
+            else if (renderer.name == "Floor lane inlay") focus.RegisterProjection(renderer, -3, .035f);
+            else if (renderer.name is "Vertical service marker" or "Gantry beacon") focus.RegisterProjection(renderer, 1, .10f, equipment: true);
+            else if (renderer.name == "Rod socket") focus.RegisterProjection(renderer, 3, .16f, equipment: true);
+            else if (renderer.name == "Repair hologram") focus.RegisterProjection(renderer, 1, .14f, equipment: true);
+            else if (renderer.name == "Maintenance bay marking") focus.RegisterProjection(renderer, 0, .07f);
+            else if (renderer.name is "Emergency guide" or "B gantry edge marking") focus.RegisterProjection(renderer, -3, .045f);
+            else if (renderer.name == "Reactor floor marking") focus.RegisterProjection(renderer, 3, .07f);
+        foreach (var surface in surfaces)
+        {
+            string signalName = surface.name.StartsWith("Route 1 cable") ? "Route 1 lamp" :
+                surface.name.StartsWith("Route 2 cable") ? "Route 2 lamp" : surface.name == "A feed cable" ? "A feed lamp" : null;
+            if (signalName != null)
+            {
+                var signal = surfaces.Where(item=>item.name==signalName).OrderBy(item=>(item.transform.position-surface.transform.position).sqrMagnitude).FirstOrDefault();
+                if (signal != null)
+                {
+                    cableFinishes.Add((surface,signal));
+                    MakePathSegments(surface, signal);
+                }
+            }
+            if (surface.name=="Route lever") routeGrip=surface;
+        }
+        foreach (var lamp in surfaces.Where(r => r.name is "A feed lamp" or "Route 1 lamp" or "Route 2 lamp"))
+            pathReveal.Add((lamp, lamp, PathDistance(lamp.transform.position, lamp.name.StartsWith("A feed"))));
         Refresh();
     }
     void LateUpdate() { if (identityA != null) Refresh(); }
     void Refresh()
     {
+        foreach (var item in cableFinishes)
+            Finish(item.cable,item.signal.sharedMaterial==solidLive ? solidLive : solidIdle);
+        RefreshPathReveal();
+        Finish(routeGrip,solidGrip);
+        int stage = reactor.IsOnline ? -1 : !moduleA.IsRepaired ? 0 : !moduleB.IsRepaired ? 1 : circuit.Route != 2 ? 2 : 3;
+        var anchor = stage == 0 ? moduleA.transform : stage == 1 ? nodeB.Indicator.transform.parent : stage == 2 ? selector.Indicator.transform.parent : console.Indicator.transform.parent;
+        bool held = interaction != null && interaction.HeldObject == moduleA;
+        Vector3 point = anchor.position + Vector3.up * (stage == 0 ? 1.3f : .55f);
+        if (stage == 0 && held) point = socketA.Indicator.transform.parent.position + Vector3.up * .5f;
+        if (stage==2) point = new Vector3(8.02f,1.68f,1.85f);
+        if (stage==3) point = new Vector3(2.45f,1.65f,2.5f);
+        focus.SetFocus(stage, stage < 0 ? null : "Power section " + stage + (held ? " carrying" : ""), point, stage == 0 && !held ? moduleA.transform : null);
         State(identityA, moduleA.IsRepaired ? "ONLINE" : "OFFLINE", moduleA.IsRepaired);
         State(socketA, moduleA.IsRepaired ? "CONNECTED" : "AWAITING MODULE", moduleA.IsRepaired);
         string b = connectionFeedback.text;
-        State(nodeB, b, b == "REPAIR COMPLETE" || b == "FEED LIVE");
+        State(nodeB, moduleB.IsRepaired ? b : "REPAIR REQUIRED", moduleB.IsRepaired && (b == "REPAIR COMPLETE" || b == "FEED LIVE"));
+        nodeB.Detail.text = moduleB.IsRepaired ? "" : "SERVICE PANEL / REPAIRABLE";
         State(reactorStatus, reactor.IsOnline ? "ONLINE" : "OFFLINE", reactor.IsOnline);
         string status = consoleFeedback.text;
         State(console, reactor.IsOnline ? "POWER RESTORED" : status.Contains("READY") ? "READY" : "LOCKED", reactor.IsOnline || status.Contains("READY"));
@@ -112,11 +169,57 @@ public sealed class PowerRestorationSignage : MonoBehaviour
         foreach (var indicator in dockIndicators) indicator.color = dockColor;
         foreach (var dock in docks) dock.localScale = Vector3.one * (.01f * (1 + pulse * .08f));
     }
+    static float PathDistance(Vector3 position, bool floor)
+    {
+        if (floor) return position.x < -5.9f ? Mathf.Max(0, 3 - position.z) : 2 + position.x + 6;
+        return 16.4f + Mathf.Abs(position.z - 1) + Mathf.Max(0, position.y - 1);
+    }
+    void MakePathSegments(Renderer source, Renderer signal)
+    {
+        var filter = source.GetComponent<MeshFilter>();
+        if (filter == null) return;
+        originalCables.Add(source);
+        var scale = source.transform.localScale;
+        int axis = scale.x >= scale.y && scale.x >= scale.z ? 0 : scale.y >= scale.z ? 1 : 2;
+        int count = Mathf.Max(1, Mathf.CeilToInt(source.bounds.size[axis] / .5f));
+        for (int i = 0; i < count; i++)
+        {
+            var piece = new GameObject("Power path reveal segment", typeof(MeshFilter), typeof(MeshRenderer));
+            piece.transform.SetParent(source.transform, false);
+            var offset = Vector3.zero; offset[axis] = -.5f + (i + .5f) / count;
+            var size = Vector3.one; size[axis] = 1f / count;
+            piece.transform.localPosition = offset; piece.transform.localScale = size;
+            piece.GetComponent<MeshFilter>().sharedMesh = filter.sharedMesh;
+            var visual = piece.GetComponent<MeshRenderer>(); visual.sharedMaterial = solidIdle;
+            visual.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            pathReveal.Add((visual, signal, PathDistance(piece.transform.position, source.name == "A feed cable")));
+        }
+    }
+    void RefreshPathReveal()
+    {
+        if (!moduleA.IsRepaired) pathStartedAt = -1;
+        else if (pathStartedAt < 0) pathStartedAt = Time.time;
+        float progress = pathStartedAt < 0 ? -1 : Mathf.Clamp01((Time.time - pathStartedAt) / 5f);
+        foreach (var cable in originalCables) cable.enabled = false;
+        foreach (var item in pathReveal)
+        {
+            item.visual.enabled = progress >= 0 && (progress >= 1 || item.distance <= progress * 34);
+            if (item.visual != item.signal)
+                Finish(item.visual, item.signal.sharedMaterial == solidLive ? solidLive : solidIdle);
+        }
+    }
+    static void Finish(Renderer renderer, Material material)
+    {
+        if (renderer == null || material == null || renderer.sharedMaterial == material) return;
+        renderer.sharedMaterial = material;
+        renderer.SetPropertyBlock(null);
+    }
     void MakeDock(Vector3 position)
     {
         var root = new GameObject("Control rod docking frame", typeof(RectTransform), typeof(Canvas));
         root.transform.SetParent(transform, false); root.transform.SetPositionAndRotation(position, Quaternion.Euler(90, 0, 0));
         root.transform.localScale = Vector3.one * .01f;
+        focus.Register(root, 3);
         root.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
         root.GetComponent<RectTransform>().sizeDelta = new Vector2(72, 72); docks.Add(root.GetComponent<RectTransform>());
         for (int x = -1; x <= 1; x += 2) for (int y = -1; y <= 1; y += 2)
@@ -140,6 +243,10 @@ public sealed class PowerRestorationSignage : MonoBehaviour
     {
         var go = new GameObject("Power Restoration Equipment Signs", typeof(RectTransform), typeof(Canvas));
         plates.Add(go); go.transform.SetParent(parent, false);
+        int group = name.StartsWith("Module A") ? 0 : name.StartsWith("Module B") ? 1 :
+            name.StartsWith("Route") || name.StartsWith("Distribution") ? 2 :
+            name.StartsWith("Reactor") || name.StartsWith("Control rod") ? 3 : -1;
+        focus.Register(go, group);
         go.transform.SetPositionAndRotation(position, Quaternion.Euler(0, yaw, 0)); go.transform.localScale = Vector3.one * .01f;
         var rect = go.GetComponent<RectTransform>(); rect.sizeDelta = size * 100;
         var canvas = go.GetComponent<Canvas>(); canvas.renderMode = RenderMode.WorldSpace; canvas.worldCamera = Camera.main;
@@ -166,6 +273,13 @@ public sealed class PowerRestorationSignage : MonoBehaviour
     }
     void OnDestroy()
     {
+        foreach (var cable in originalCables) if (cable != null) cable.enabled = true;
+        foreach (var item in pathReveal)
+            if (item.visual != null)
+            {
+                if (item.visual == item.signal) item.visual.enabled = true;
+                else Destroy(item.visual.gameObject);
+            }
         for (int i = 0; i < originalVisibility.Count; i++) if (legacyLabels[i] != null) legacyLabels[i].enabled = originalVisibility[i];
         foreach (var plate in plates) if (plate != null) Destroy(plate);
     }

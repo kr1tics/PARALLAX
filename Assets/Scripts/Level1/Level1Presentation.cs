@@ -347,8 +347,8 @@ public sealed class Level1Presentation : MonoBehaviour
             hologramOpacity[i] = Mathf.MoveTowards(hologramOpacity[i], target, Time.deltaTime / .6f);
             foreach (var edge in hologramEdges[i])
             {
-                edge.enabled = hologramOpacity[i] > .001f;
-                properties.Clear(); properties.SetFloat("_Alpha", hologramAmber.GetFloat("_Alpha") * hologramOpacity[i] * (edge.name == "Hologram edge" ? 1.15f : edge.name == "Hologram direction" ? .75f : 1f));
+                edge.enabled = hologramOpacity[i] > .001f && edge.name != "Hologram direction";
+                properties.Clear(); properties.SetFloat("_Alpha", hologramAmber.GetFloat("_Alpha") * hologramOpacity[i] * (edge.name == "Hologram edge" ? .55f : .10f));
                 if (edge.name == "Hologram direction") properties.SetFloat("_ScanDensity", 4f);
                 edge.SetPropertyBlock(properties);
             }

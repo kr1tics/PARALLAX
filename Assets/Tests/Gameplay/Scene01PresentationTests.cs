@@ -255,44 +255,32 @@ namespace Parallax.Gameplay.Tests
             Assert.That((bool)Property(presentation, "ShowEngineeringPlacement"), Is.False);
         }
 
-        [UnityTest] public IEnumerator YellowGuidanceHidesLegacyStatusAndShowsOneLeftTurn()
+        [UnityTest] public IEnumerator TutorialFramedMarkerAndFloorArrowFollowProgress()
         {
-            var holograms = GameObject.Find("Holographic guidance").GetComponents<MonoBehaviour>().Single(x=>x.GetType().Name=="LevelHolograms");
-            Assert.That(((TMPro.TMP_Text)Field(holograms,"storageText")).enabled, Is.False);
-            Assert.That(((TMPro.TMP_Text)Field(holograms,"consoleText")).enabled, Is.False);
-            Assert.That((bool)Property(holograms,"LeftArrowVisible"),Is.False);
-            var player = GameObject.Find("Player");var body=player.GetComponent<Rigidbody>();
-            foreach(var behaviour in player.GetComponents<MonoBehaviour>())if(behaviour.GetType().Name=="PlayerController")behaviour.enabled=false;
-            body.isKinematic=true;player.GetComponent<Renderer>().enabled=false;
-            var camera=Camera.main;
-            foreach(var behaviour in camera.GetComponents<MonoBehaviour>())if(behaviour.GetType().Name=="Look")behaviour.enabled=false;
-            level.GetType().GetField("<IntroSolved>k__BackingField",Fields).SetValue(level,true);
-            camera.transform.position=new Vector3(3.5f,1.25f,10.5f);camera.transform.LookAt(new Vector3(.4f,-.7f,13.45f));
-            yield return null;yield return new WaitForSeconds(.3f);
-            Assert.That((bool)Property(holograms,"LeftArrowVisible"),Is.True);
-            var arrow=GameObject.Find("Console route left arrow");
-            Assert.That(arrow.GetComponent<Collider>(),Is.Null);
-            Assert.That(arrow.GetComponent<Renderer>().sharedMaterial, Is.SameAs(Field(presentation,"hologramAmber")));
-            Assert.That(arrow.GetComponent<Renderer>().sharedMaterial.shader.name,Is.EqualTo("Unlit/SimpleHologram"));
-            Assert.That(arrow.GetComponent<MeshFilter>().sharedMesh.uv.Length,Is.EqualTo(7));
-            Capture(camera,"yellow-left-turn",1280,720);
-            body.position=new Vector3(-2,.02f,8.2f);body.transform.position=body.position;
-            camera.transform.position=new Vector3(-2,1.1f,7.5f);camera.transform.LookAt(new Vector3(-2,1.2f,10.5f));
-            Physics.SyncTransforms();yield return null;yield return null;
-            Assert.That((bool)Property(holograms,"LeftArrowVisible"),Is.False);
-            Assert.That((string)Property(holograms,"ActiveCue"),Is.EqualTo("GRAVITY CONSOLE"));
-            var caption=(TMPro.TMP_Text)Field(holograms,"objectiveText");
-            Assert.That(caption.color.r,Is.GreaterThan(.9f));Assert.That(caption.color.b,Is.LessThan(.3f));
-            Assert.That(caption.fontMaterial.GetFloat(TMPro.ShaderUtilities.ID_OutlineWidth),Is.Zero);
-            var chevrons=((Transform)Field(holograms,"objectiveMarker")).GetComponentsInChildren<Renderer>().Where(x=>x.name=="Yellow target chevron").ToArray();
-            Assert.That(chevrons.Length,Is.EqualTo(2));
-            Assert.That(chevrons.All(x=>x.sharedMaterial==Field(presentation,"hologramAmber") as Material),Is.True);
-            Capture(camera,"yellow-console-target",1280,720);
-            GameSettingsMenu.Instance.Open();yield return null;
-            Assert.That((string)Property(holograms,"ActiveCue"),Is.Empty);
-            GameSettingsMenu.Instance.Close();yield return null;yield return null;
-            Call(level,"ResetCurrentPuzzle");yield return null;yield return null;
-            Assert.That((bool)Property(holograms,"LeftArrowVisible"),Is.False);
+            var holograms = GameObject.Find("Holographic guidance").GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "LevelHolograms");
+            Assert.That(((TMPro.TMP_Text)Field(holograms, "storageText")).enabled, Is.False);
+            Assert.That(((TMPro.TMP_Text)Field(holograms, "consoleText")).enabled, Is.False);
+            Assert.That(((Transform)Field(holograms, "objectiveMarker")).gameObject.activeSelf, Is.False);
+            Assert.That((bool)Property(holograms, "LeftArrowVisible"), Is.False);
+            level.GetType().GetField("<IntroSolved>k__BackingField", Fields).SetValue(level, true);
+            yield return null; yield return null;
+            Assert.That((bool)Property(holograms, "LeftArrowVisible"), Is.True);
+            var arrow = GameObject.Find("Console route left arrow");
+            Assert.That(arrow.GetComponent<Collider>(), Is.Null);
+            Assert.That(arrow.GetComponent<Renderer>().sharedMaterial.shader.name, Is.EqualTo("Unlit/SimpleHologram"));
+            var focus = holograms.GetComponents<MonoBehaviour>().Single(x => x.GetType().Name == "InvestigationFocus");
+            var marker = focus.transform.Find("Primary investigation marker");
+            Assert.That(marker.GetComponent<MeshFilter>().sharedMesh.vertexCount, Is.GreaterThan(8));
+            Assert.That(marker.GetComponent<Collider>(), Is.Null);
+            Assert.That(marker.GetComponent<Renderer>().sharedMaterial.shader.name, Is.EqualTo("Unlit/SimpleHologram"));
+            GameSettingsMenu.Instance.Open(); yield return null;
+            Assert.That((int)Property(focus, "VisibleMarkerCount"), Is.Zero);
+            Assert.That((bool)Property(holograms, "LeftArrowVisible"), Is.False);
+            GameSettingsMenu.Instance.Close(); yield return new WaitForSeconds(.35f);
+            Assert.That((bool)Property(holograms, "LeftArrowVisible"), Is.True);
+            state.GetType().GetField("gravity").SetValue(state, 0f);
+            yield return Swap(); yield return null;
+            Assert.That((bool)Property(holograms, "LeftArrowVisible"), Is.False);
         }
 
         [UnityTest] public IEnumerator ExpandedAndCompactObjectivesNeverDrawTogether()

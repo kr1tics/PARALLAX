@@ -37,6 +37,12 @@ public sealed class PowerCircuit : MonoBehaviour
 
     public void SelectRoute(int route) => Route = route;
 
+    public void SetIndicatorFinishes(Material live, Material standby)
+    {
+        if (live != null) liveMaterial = live;
+        if (standby != null) deadMaterial = standby;
+    }
+
     void Awake()
     {
         rodSeats = controlRods.Select(r => r.localPosition).ToArray();

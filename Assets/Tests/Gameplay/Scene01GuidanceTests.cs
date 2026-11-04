@@ -73,9 +73,9 @@ namespace Parallax.Gameplay.Tests
             yield return null;
             Assert.That(tip.gameObject.activeSelf, Is.True);
             tip.ForceMeshUpdate(); Assert.That(tip.isTextOverflowing, Is.False);
-            Set(guidance, "pauseTipElapsed", 8f); yield return null;
+            Set(guidance, "pauseTipElapsed", 10f); yield return null;
             Assert.That(tip.gameObject.activeSelf, Is.False);
-            Set(guidance, "pauseTipElapsed", 0f); yield return null;
+            Set(guidance, "pauseTipElapsed", 6f); yield return null;
             GameSettingsMenu.Instance.Open(); yield return null;
             GameSettingsMenu.Instance.Close(); yield return null; yield return null;
             Assert.That(tip.gameObject.activeSelf, Is.False, "Do not repeat the introduction after Settings has been used.");

@@ -89,14 +89,14 @@ namespace Parallax.Gameplay.Tests
             Keys(); player.linearVelocity = Vector3.zero; // Stabilise the test at the panel after real Zero-G ascent.
             yield return null; yield return null;
             Assert.That(player.position.y, Is.GreaterThan(10.5f)); Assert.That(Ready, Is.True);
-            Assert.That(GameObject.Find("Contextual interaction prompt").GetComponent<TMP_Text>().text, Is.EqualTo("E — Repair Module B"));
+            Assert.That(GameObject.Find("Contextual interaction prompt").GetComponent<TMP_Text>().text, Is.EqualTo("E — Repair B-02"));
             Keys(Key.E); yield return null; yield return null; Keys();
             Assert.That(Repaired, Is.True);
             Assert.That(GameObject.Find("Interaction result").GetComponent<TMP_Text>().text, Is.EqualTo("Connection restored."));
             Assert.That(GameObject.Find("B / REPAIR").GetComponent<TextMesh>().text, Is.EqualTo("B / REPAIRED"));
             Assert.That(GameObject.Find("CONNECTION LOST").GetComponent<TextMesh>().text, Is.EqualTo("REPAIR COMPLETE"));
             Assert.That(GameObject.Find("B / REPAIR").GetComponent<TextMesh>().color.g, Is.GreaterThan(.9f));
-            Assert.That(GameObject.Find("Current instruction").GetComponent<TMP_Text>().text, Does.Contain("A repaired · B repaired"));
+            Assert.That(GameObject.Find("Current instruction").GetComponent<TMP_Text>().text, Does.Contain("Both modules are repaired."));
             yield return null; Keys(Key.E); yield return null; Keys();
             Assert.That(Repaired, Is.True); Assert.That(Ready, Is.False, "Repeated interaction cannot repair twice.");
             Assert.That((string)Prop(module, "InteractionHint"), Is.EqualTo("Module B repaired"));
@@ -136,8 +136,8 @@ namespace Parallax.Gameplay.Tests
                 Assert.That((Color32)GameObject.Find("B / REPAIR").GetComponent<TextMesh>().color,
                     Is.EqualTo((Color32)new Color(.35f, 1, .65f)));
                 Assert.That(GameObject.Find("CONNECTION LOST").GetComponent<TextMesh>().text, Is.EqualTo(cycle % 2 == 0 ? "NO FEED" : "REPAIR COMPLETE"));
-                Assert.That(GameObject.Find("Current instruction").GetComponent<TMP_Text>().text, Does.Contain("A repaired · B repaired"));
-                Assert.That(GameObject.Find("Contextual interaction prompt").GetComponent<TMP_Text>().text, Is.Empty);
+                Assert.That(GameObject.Find("Current instruction").GetComponent<TMP_Text>().text, Does.Contain("Both modules are repaired."));
+                Assert.That(Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include,FindObjectsSortMode.None).Single(x=>x.name=="Contextual interaction prompt").text, Is.Empty);
                 Assert.That(GameObject.Find("Interaction result").GetComponent<TMP_Text>().text, Is.Empty);
             }
         }

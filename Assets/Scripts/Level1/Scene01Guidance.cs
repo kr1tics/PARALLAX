@@ -47,7 +47,8 @@ public sealed class Scene01Guidance : MonoBehaviour
         if (GameSettingsMenu.Instance != null && GameSettingsMenu.Instance.IsOpen) pauseTipDismissed = true;
         if (GameSettingsMenu.GameplayInputBlocked) return;
         pauseTipElapsed += Time.unscaledDeltaTime;
-        pauseTip.gameObject.SetActive(!pauseTipDismissed && pauseTipElapsed < 8f && !level.Completed);
+        pauseTip.text = pauseTipElapsed < 5f ? "! — Marks an area worth investigating." : "ESC / P — Pause and open Settings";
+        pauseTip.gameObject.SetActive((pauseTipElapsed < 5f || !pauseTipDismissed) && pauseTipElapsed < 10f && !level.Completed);
         bool floating = !playerGravity.IsGravityActive;
         bool showRecovery = level.IntroSolved && !level.MainSolved && !level.Completed && floating && !HasFloor();
         recovery.text = showRecovery ? "Hold CTRL to descend while floating.\nSPACE — Thrust up" : "";

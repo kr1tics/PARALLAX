@@ -13,18 +13,15 @@ public sealed class LevelHolograms : MonoBehaviour
     [SerializeField] private Transform objectiveMarker;
     [SerializeField] private Material guidance, locked, ready;
     private string previousStorage, previousConsole;
-    private Camera view;
     Level1Presentation presentation;
+    InvestigationFocus focus;
     Mesh routeMesh;
     GameObject leftArrow;
     public bool LeftArrowVisible => leftArrow != null && leftArrow.activeSelf;
-    static readonly Color TargetYellow = new Color(1f, .80f, .18f);
-    readonly RaycastHit[] sightHits = new RaycastHit[32];
-    public string ActiveCue => objectiveMarker.gameObject.activeSelf ? objectiveText.text : "";
+    public string ActiveCue => focus != null && focus.VisibleMarkerCount > 0 ? presentation.CueLabel : "";
 
     void Start()
     {
-        view = Camera.main;
         presentation = level.GetComponent<Level1Presentation>();
         objectiveText.rectTransform.sizeDelta = new Vector2(4.6f, .65f);
         objectiveText.rectTransform.anchoredPosition = new Vector2(0, .38f);
@@ -33,8 +30,20 @@ public sealed class LevelHolograms : MonoBehaviour
         storagePanel.enabled = consolePanel.enabled = false;
         foreach (var renderer in objectiveMarker.GetComponentsInChildren<MeshRenderer>(true))
             if (renderer.GetComponent<TMP_Text>() == null) renderer.enabled = false;
-        Chevron(-1); Chevron(1);
+        focus = gameObject.AddComponent<InvestigationFocus>();
+        focus.UseFramedMarker();
         BuildLeftArrow();
+        foreach (var text in level.GetComponentsInChildren<TMP_Text>(true))
+        {
+            if (text == objectiveText || text == storageText || text == consoleText || (text.GetComponentInParent<Canvas>() != null && text.GetComponentInParent<Canvas>().renderMode != RenderMode.WorldSpace)) continue;
+            string label = text.text.ToUpperInvariant();
+            int group = label.Contains("STATION 01") || label.Contains("ARRIVAL") ? 0 : label.Contains("GRAVITY") ? 1 :
+                label.Contains("STORAGE") ? 2 : label.Contains("STATION 02") ? 3 : label.Contains("EXIT") ? 4 : -1;
+            var renderer = text.GetComponent<Renderer>();
+            if (renderer != null) focus.RegisterProjection(renderer, group, -1);
+            else focus.Register(text.gameObject, group);
+            text.fontSize = Mathf.Min(text.fontSize, 2.1f);
+        }
         objectiveMarker.gameObject.SetActive(false);
     }
 
@@ -43,6 +52,7 @@ public sealed class LevelHolograms : MonoBehaviour
         UpdateCue();
         leftArrow.SetActive(presentation != null && presentation.Stage == Level1Presentation.GuidanceStage.FindConsole &&
             !GameSettingsMenu.GameplayInputBlocked && !level.Completed);
+
         string storage = interlock.ClosingDeferred ? "STORAGE / SAFETY HOLD" :
             interlock.IsOpen ? "STORAGE / OPEN" :
             !level.IntroSolved ? "STORAGE / LOCKED\nRESTORE ACCESS RELAY" :
@@ -66,42 +76,15 @@ public sealed class LevelHolograms : MonoBehaviour
     void UpdateCue()
     {
         var target = presentation != null ? presentation.CueTarget : null;
-        bool show = target != null && !level.Completed && !GameSettingsMenu.GameplayInputBlocked;
-        Vector3 position = target != null ? target.position + Vector3.up * .85f : Vector3.zero;
+        int group = presentation == null ? -1 : presentation.Stage == Level1Presentation.GuidanceStage.AccessRelay ? 0 :
+            presentation.Stage == Level1Presentation.GuidanceStage.FindConsole || presentation.Stage == Level1Presentation.GuidanceStage.UnlockStorage ||
+            presentation.Stage == Level1Presentation.GuidanceStage.RestoreGravity || presentation.Stage == Level1Presentation.GuidanceStage.ReturnFuture ? 1 :
+            presentation.Stage == Level1Presentation.GuidanceStage.FindCube ? 2 : presentation.Stage == Level1Presentation.GuidanceStage.MoveCube ? 3 : 4;
+        if (target == null && presentation != null)
+            target = level.transform.Find(group == 0 ? "Pressure Plate 01" : "Pressure Plate 02");
+        Vector3 position = target == null ? Vector3.zero : target.position + Vector3.up * .85f;
         if (target != null && presentation.CueLabel == "STORAGE AREA") position = new Vector3(-6, .95f, 11.5f);
-        if (show && view != null)
-        {
-            Vector3 viewport = view.WorldToViewportPoint(position);
-            show = viewport.z > 0 && viewport.x > 0 && viewport.x < 1 && viewport.y > 0 && viewport.y < 1;
-            Vector3 delta = position - view.transform.position;
-            int count = Physics.RaycastNonAlloc(view.transform.position, delta.normalized, sightHits, delta.magnitude, ~0, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < count && show; i++)
-            {
-                var hit = sightHits[i].collider.transform;
-                if (hit.GetComponentInParent<PlayerController>() != null || hit == target || hit.IsChildOf(target)) continue;
-                show = false;
-            }
-        }
-        objectiveMarker.gameObject.SetActive(show);
-        if (!show) return;
-        objectiveMarker.position = position;
-        objectiveText.text = presentation.CueLabel;
-        objectiveText.color = TargetYellow;
-        objectiveText.fontMaterial.SetFloat(ShaderUtilities.ID_OutlineWidth, 0f);
-        if (view != null) objectiveMarker.rotation = view.transform.rotation;
-    }
-    void Chevron(float side)
-    {
-        var go = GameObject.CreatePrimitive(PrimitiveType.Cube); go.name = "Yellow target chevron";
-        var collider = go.GetComponent<Collider>(); collider.enabled = false; Destroy(collider);
-        go.transform.SetParent(objectiveMarker, false);
-        go.transform.localPosition = new Vector3(side * .065f, -.04f, 0);
-        go.transform.localRotation = Quaternion.Euler(0, 0, -side * 34);
-        go.transform.localScale = new Vector3(.035f, .25f, .025f);
-        var renderer = go.GetComponent<Renderer>(); renderer.sharedMaterial = presentation.PlacementHologram;
-        var properties = new MaterialPropertyBlock(); properties.SetFloat("_Alpha", .65f);
-        renderer.SetPropertyBlock(properties);
-        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; renderer.receiveShadows = false;
+        focus.SetFocus(level.Completed ? -1 : group, target == null || level.Completed ? null : "Tutorial section " + group + "/" + target.name, position, target);
     }
     void BuildLeftArrow()
     {
@@ -130,5 +113,6 @@ public sealed class LevelHolograms : MonoBehaviour
         if (routeMesh != null) Destroy(routeMesh);
         if (leftArrow != null) Destroy(leftArrow);
     }
+
 
 }

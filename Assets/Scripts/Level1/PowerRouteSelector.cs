@@ -9,7 +9,7 @@ public sealed class PowerRouteSelector : Interactable
     [SerializeField] Transform lever;
 
     public string InteractionHint => GlobalState.get().now != TimeState.Past ? "Selector seized" :
-        "E — Switch B feed to route " + (circuit.Route == 1 ? 2 : 1);
+        "E — Switch Power Route";
 
     public override void onInteract(Interact owner)
     {
